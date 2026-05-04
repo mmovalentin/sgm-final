@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/claude", "destination": "/api/claude.js" },
+    { "source": "/api/claude", "destination": "/api/claude.mjs" },
     { "source": "/((?!api).*)", "destination": "/index.html" }
   ]
 }
