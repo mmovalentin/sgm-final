@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0D2137">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SGM">
+<title>SGM Construcción</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --navy:#0D2137;--blue-dk:#1565C0;--blue:#1976D2;--blue-md:#42A5F5;
+  --blue-lt:#E3F2FD;--blue-xlt:#F0F7FF;
+  --green:#2E7D32;--green-lt:#E8F5E9;
+  --amber:#E65100;--amber-lt:#FFF3E0;
+  --red:#C62828;--red-lt:#FFEBEE;
+  --gray:#607D8B;--gray-lt:#ECEFF1;
+  --bg:#F4F6F9;--card:#FFFFFF;--text:#1A2332;--text2:#607D8B;
+  --border:rgba(0,0,0,0.08);--r:14px;--r2:10px;
+  --shadow:0 2px 12px rgba(13,33,55,0.08);
+}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
+.app{display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto;background:var(--card);box-shadow:0 0 40px rgba(0,0,0,.1);position:relative;overflow:hidden}
+
+/* TOPBAR */
+.topbar{background:var(--navy);padding:13px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.tl{display:flex;align-items:center;gap:10px}
+.tlogo{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff}
+.ttitle{color:#fff;font-size:15px;font-weight:700}
+.tsub{color:#90CAF9;font-size:11px;margin-top:1px}
+.tact{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+
+/* BOTTOM NAV */
+.bnav-bar{display:flex;background:var(--navy);padding:6px 0 env(safe-area-inset-bottom,0);flex-shrink:0;border-top:1px solid rgba(255,255,255,.06)}
+.bnav{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 0;cursor:pointer;background:none;border:none;position:relative}
+.bnav-i{font-size:21px;opacity:.4;transition:all .2s}
+.bnav-l{font-size:10px;color:rgba(255,255,255,.4);font-weight:600;transition:color .2s}
+.bnav.on .bnav-i{opacity:1;transform:translateY(-1px)}
+.bnav.on .bnav-l{color:#90CAF9}
+.bnav-dot{position:absolute;top:2px;right:20%;width:8px;height:8px;background:#EF5350;border-radius:50%;border:2px solid var(--navy)}
+
+/* SCREENS */
+.scr{display:none}.scr.on{display:block}
+
+/* ── HOME ── */
+.home-hero{background:var(--navy);padding:20px 16px 22px;position:relative;overflow:hidden}
+.home-hero::before{content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;background:rgba(66,165,245,.07);border-radius:50%}
+.hg{color:#90CAF9;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.hp{color:#fff;font-size:22px;font-weight:700;margin-top:4px;line-height:1.2}
+.hd{color:rgba(255,255,255,.4);font-size:11px;margin-top:3px}
+.hstats{display:flex;margin-top:16px;background:rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
+.hstat{flex:1;padding:11px 6px;text-align:center;border-right:1px solid rgba(255,255,255,.08)}
+.hstat:last-child{border-right:none}
+.hv{font-size:17px;font-weight:700;color:#fff}
+.hl{font-size:10px;color:#90CAF9;margin-top:1px}
+.hprog{margin-top:14px;position:relative;z-index:1}
+.hpr{display:flex;justify-content:space-between;margin-bottom:5px}
+.hpr span{font-size:11px;color:rgba(255,255,255,.55)}
+.hpr span:last-child{color:#90CAF9;font-weight:600}
+.hbar{height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden}
+.hfill{height:100%;background:linear-gradient(90deg,#42A5F5,#90CAF9);border-radius:3px}
+
+.home-body{padding:14px;display:flex;flex-direction:column;gap:12px}
+
+/* CARDS */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.ch{padding:13px 14px 0;display:flex;align-items:center;justify-content:space-between}
+.ct{font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.5px}
+.ca{font-size:12px;color:var(--blue);font-weight:600;cursor:pointer;background:none;border:none;font-family:inherit}
+.cb{padding:10px 14px 13px}
+
+/* KPIs */
+.kgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.kpi{background:var(--card);border-radius:var(--r2);padding:13px;box-shadow:var(--shadow);border-left:3px solid}
+.kpi.g{border-color:var(--green)}.kpi.r{border-color:var(--red)}.kpi.b{border-color:var(--blue)}.kpi.a{border-color:var(--amber)}
+.kl{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.kv{font-size:21px;font-weight:700;margin-top:3px}
+.kv.g{color:var(--green)}.kv.r{color:var(--red)}.kv.b{color:var(--blue-dk)}.kv.a{color:var(--amber)}
+.kt{font-size:10px;color:var(--text2);margin-top:1px}
+
+/* ALERTS */
+.ai{display:flex;align-items:flex-start;gap:11px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ai:last-child{border-bottom:none}
+.adot{width:9px;height:9px;border-radius:50%;margin-top:3px;flex-shrink:0}
+.at{font-size:13px;font-weight:500;color:var(--text);line-height:1.3}
+.am{font-size:11px;color:var(--text2);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700}
+.badge.r{background:var(--red-lt);color:var(--red)}.badge.g{background:var(--green-lt);color:var(--green)}
+.badge.a{background:var(--amber-lt);color:var(--amber)}.badge.b{background:var(--blue-lt);color:var(--blue-dk)}
+
+/* QUICK */
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qc{border-radius:var(--r2);padding:14px 12px;cursor:pointer;transition:transform .15s;border:none;text-align:left}
+.qc:active{transform:scale(.97)}
+.qi{font-size:23px}.qn{font-size:13px;font-weight:700;color:#fff;margin-top:5px}.qs{font-size:10px;color:rgba(255,255,255,.65);margin-top:1px}
+
+/* ── RUBROS ── */
+.rbody{padding:14px}
+.rsearch{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:var(--r2);padding:10px 13px;box-shadow:var(--shadow);margin-bottom:12px;border:1.5px solid transparent}
+.rsearch:focus-within{border-color:var(--blue)}
+.rsearch input{border:none;outline:none;font-size:14px;color:var(--text);background:transparent;flex:1;font-family:inherit}
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.rc{border-radius:var(--r);padding:15px 12px;cursor:pointer;transition:transform .15s;border:none;text-align:left}
+.rc:active{transform:scale(.97)}
+.rci{font-size:25px}.rcn{font-size:13px;font-weight:700;color:#fff;margin-top:7px}.rcc{font-size:10px;color:rgba(255,255,255,.6);margin-top:1px}
+.rcp{height:3px;background:rgba(255,255,255,.2);border-radius:2px;margin-top:9px;overflow:hidden}
+.rcpf{height:100%;background:rgba(255,255,255,.65);border-radius:2px}
+
+/* ── COTIZADOR ── */
+.cbody{padding:14px;display:flex;flex-direction:column;gap:12px}
+.chero{background:var(--navy);border-radius:var(--r);padding:18px;color:#fff;position:relative;overflow:hidden}
+.chero::after{content:'✨';position:absolute;right:14px;top:14px;font-size:26px;opacity:.25}
+.chero h2{font-size:19px;font-weight:700}
+.chero p{font-size:12px;color:#90CAF9;margin-top:5px;line-height:1.5}
+.cpill{display:inline-block;background:rgba(255,255,255,.12);border-radius:20px;padding:4px 11px;font-size:10px;color:#E3F2FD;margin-top:9px;font-weight:500}
+
+.sbar{display:flex;gap:5px}
+.sd{flex:1;height:4px;border-radius:2px;background:var(--gray-lt);transition:background .3s}
+.sd.done{background:var(--blue-dk)}.sd.act{background:var(--blue-md)}
+.ss{display:none;flex-direction:column;gap:11px}.ss.on{display:flex}
+
+/* FORM */
+.stl{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fl{font-size:13px;font-weight:500;color:var(--text)}
+.fh{font-size:11px;color:var(--text2)}
+.fi{border:1.5px solid var(--border);border-radius:var(--r2);padding:11px 12px;font-size:14px;background:var(--card);color:var(--text);outline:none;width:100%;font-family:inherit;transition:border-color .2s}
+.fi:focus{border-color:var(--blue)}
+textarea.fi{resize:vertical;min-height:75px;line-height:1.5}
+
+/* PILLS */
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{padding:7px 13px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--text2);transition:all .18s;font-weight:500;box-shadow:var(--shadow)}
+.pill.on{background:var(--blue-dk);border-color:var(--blue-dk);color:#fff}
+
+/* CALIDAD */
+.calgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.calcard{border:2px solid var(--border);border-radius:var(--r2);padding:13px 8px;text-align:center;cursor:pointer;transition:all .18s;background:var(--card);box-shadow:var(--shadow)}
+.calcard.on{border-color:var(--blue-dk);background:var(--blue-lt)}
+.calcard.on .caln{color:var(--blue-dk)}
+.cali{font-size:22px}.caln{font-size:12px;font-weight:700;color:var(--text);margin-top:5px}.calt{font-size:10px;color:var(--text2);margin-top:2px;line-height:1.3}
+
+/* TOGGLES */
+.togrow{display:flex;align-items:center;justify-content:space-between;padding:9px 11px;border-radius:var(--r2);background:var(--card);box-shadow:var(--shadow)}
+.togl{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:500;color:var(--text)}
+.tog{width:40px;height:22px;border-radius:11px;background:var(--gray-lt);position:relative;cursor:pointer;border:none;transition:background .2s;flex-shrink:0}
+.tog.on{background:var(--blue-dk)}
+.tog::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog.on::after{transform:translateX(18px)}
+
+/* BTNS */
+.btn{padding:13px;border-radius:var(--r2);font-size:14px;font-weight:700;cursor:pointer;border:none;width:100%;font-family:inherit;transition:all .18s}
+.btnp{background:var(--blue-dk);color:#fff;box-shadow:0 3px 10px rgba(21,101,192,.25)}
+.btnp:active{transform:scale(.98)}
+.btns{background:var(--card);color:var(--text);border:1.5px solid var(--border);box-shadow:var(--shadow)}
+.brow{display:flex;gap:8px}.brow .btn{flex:1}
+
+/* RESULTADO */
+.reshero{background:var(--navy);border-radius:var(--r);padding:20px;color:#fff;text-align:center;position:relative;overflow:hidden}
+.reshero::before{content:'';position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:220px;height:220px;background:rgba(66,165,245,.07);border-radius:50%}
+.resl{font-size:11px;color:#90CAF9;font-weight:600;text-transform:uppercase;letter-spacing:.8px}
+.rest{font-size:38px;font-weight:800;margin:7px 0 3px;letter-spacing:-1.5px;position:relative;z-index:1}
+.resm{font-size:13px;color:#B3E5FC;font-weight:500}
+.respills{display:flex;justify-content:center;gap:5px;margin-top:12px;flex-wrap:wrap;position:relative;z-index:1}
+.respill{background:rgba(255,255,255,.12);border-radius:20px;padding:4px 11px;font-size:10px;color:#E3F2FD;font-weight:500}
+
+/* DESGLOSE */
+.drr{display:flex;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:9px}
+.drr:last-child{border-bottom:none}
+.drrl{display:flex;align-items:flex-start;gap:9px;flex:1;min-width:0}
+.drri{font-size:17px;width:22px;flex-shrink:0;margin-top:1px}
+.drrn{font-size:12px;font-weight:600;color:var(--text)}
+.drrs{font-size:10px;color:var(--text2);margin-top:2px;line-height:1.4}
+.drrp{font-size:10px;color:var(--text2);margin-top:3px}
+.prog{height:3px;background:var(--gray-lt);border-radius:2px;overflow:hidden;margin-top:3px;max-width:90px}
+.progb{height:100%;border-radius:2px;background:var(--blue-md)}
+.drra{font-size:13px;font-weight:700;color:var(--blue-dk);flex-shrink:0}
+
+/* AI BOX */
+.aibox{background:var(--blue-xlt);border:1.5px solid var(--blue-lt);border-radius:var(--r2);padding:13px}
+.ailbl{font-size:10px;font-weight:700;color:var(--blue-dk);text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.aidot{width:7px;height:7px;border-radius:50%;background:var(--blue-md);animation:pulse 1.2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.aitxt{font-size:13px;line-height:1.6;color:var(--text);white-space:pre-line}
+
+/* ── CHAT ── */
+.chatwrap{display:flex;flex-direction:column}
+.chatmsgs{overflow-y:auto;padding:13px 14px;display:flex;flex-direction:column;gap:9px;min-height:0}
+.msg{padding:10px 13px;border-radius:13px;max-width:86%;font-size:13px;line-height:1.5;animation:fup .2s ease}
+@keyframes fup{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.msg.u{background:var(--blue-dk);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.msg.a{background:var(--card);color:var(--text);align-self:flex-start;border-bottom-left-radius:3px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.chips{padding:7px 14px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;padding:6px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--text2);font-weight:500;box-shadow:var(--shadow);flex-shrink:0;font-family:inherit}
+.cinput{padding:9px 14px calc(9px + env(safe-area-inset-bottom,0));border-top:1px solid var(--border);display:flex;gap:7px;flex-shrink:0;background:var(--card)}
+.cin{flex:1;border:1.5px solid var(--border);border-radius:20px;padding:9px 15px;font-size:13px;background:var(--bg);color:var(--text);outline:none;font-family:inherit}
+.cin:focus{border-color:var(--blue)}
+.csend{width:40px;height:40px;border-radius:50%;background:var(--blue-dk);border:none;cursor:pointer;color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(21,101,192,.3)}
+.csend:disabled{opacity:.4}
+
+/* ── AGENDA ── */
+.agbody{padding:14px;display:flex;flex-direction:column;gap:12px}
+.agitem{display:flex;align-items:flex-start;gap:11px;padding:10px 0;border-bottom:1px solid var(--border)}
+.agitem:last-child{border-bottom:none}
+.agdot{width:9px;height:9px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.agtext{font-size:13px;font-weight:500;color:var(--text);line-height:1.3}
+.agmeta{font-size:11px;color:var(--text2);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+
+/* SPEC TABLE */
+.stbl{width:100%;border-collapse:collapse;font-size:11px}
+.stbl th{background:var(--blue-lt);padding:7px 8px;text-align:left;font-weight:700;color:var(--blue-dk);border-bottom:2px solid var(--blue-md);white-space:nowrap}
+.stbl td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.4;color:var(--text)}
+.stbl tr:last-child td{border-bottom:none}
+.stbl td:first-child{font-weight:600;color:var(--text2)}
+.stoggle{font-size:12px;color:var(--blue);cursor:pointer;font-weight:600;background:none;border:none;font-family:inherit;padding:4px 0}
+
+/* OVERLAY */
+.overlay{position:fixed;inset:0;background:rgba(13,33,55,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999;backdrop-filter:blur(6px)}
+.overlay.hide{display:none}
+.spin{width:44px;height:44px;border:3px solid rgba(255,255,255,.15);border-top-color:#42A5F5;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ovt{color:#fff;font-size:15px;font-weight:600}
+.ovs{color:#90CAF9;font-size:12px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="tl">
+      <div class="tlogo">🏗</div>
+      <div><div class="ttitle">SGM Construcción</div><div class="tsub" id="tsub">Sistema de Gestión</div></div>
+    </div>
+    <button class="tact" id="tact" onclick="topAct()">💬</button>
+  </div>
+
+  <div class="content" id="content">
+
+    <!-- HOME -->
+    <div class="scr on" id="s-home">
+      <div class="home-hero">
+        <div class="hg">Bienvenido a tu obra</div>
+        <div class="hp">Mi Proyecto 2026</div>
+        <div class="hd" id="hdate"></div>
+        <div class="hstats">
+          <div class="hstat"><div class="hv">67%</div><div class="hl">Avance</div></div>
+          <div class="hstat"><div class="hv">$4.2M</div><div class="hl">Presup.</div></div>
+          <div class="hstat"><div class="hv">12</div><div class="hl">Proveed.</div></div>
+          <div class="hstat"><div class="hv">8</div><div class="hl">Operarios</div></div>
+        </div>
+        <div class="hprog">
+          <div class="hpr"><span>Progreso general</span><span>67%</span></div>
+          <div class="hbar"><div class="hfill" style="width:67%"></div></div>
+        </div>
+      </div>
+      <div class="home-body">
+        <div class="kgrid">
+          <div class="kpi g"><div class="kl">Ingresos</div><div class="kv g">$2.8M</div><div class="kt">↑ 12% mes ant.</div></div>
+          <div class="kpi r"><div class="kl">Egresos</div><div class="kv r">$1.9M</div><div class="kt">↑ 8% mes ant.</div></div>
+          <div class="kpi b"><div class="kl">Ahorro mat.</div><div class="kv b">$180K</div><div class="kt">vs proveedor caro</div></div>
+          <div class="kpi a"><div class="kl">Saldo</div><div class="kv a">$900K</div><div class="kt">disponible</div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">⚠️ Alertas</div><button class="ca" onclick="go('agenda')">Ver todas</button></div>
+          <div class="cb">
+            <div class="ai"><div class="adot" style="background:#C62828"></div><div><div class="at">Pago proveedor hierros vencido</div><div class="am">Hace 2 días · $85,000 <span class="badge r">Urgente</span></div></div></div>
+            <div class="ai"><div class="adot" style="background:#E65100"></div><div><div class="at">Cotizar hormigón H25</div><div class="am">Vence en 3 días <span class="badge a">Próximo</span></div></div></div>
+            <div class="ai"><div class="adot" style="background:#2E7D32"></div><div><div class="at">Liquidación mensual operarios</div><div class="am">Completado <span class="badge g">OK</span></div></div></div>
+          </div>
+        </div>
+        <div>
+          <div class="ch" style="padding:0 0 10px"><div class="ct">Acceso rápido</div></div>
+          <div class="qgrid">
+            <button class="qc" style="background:#0D47A1" onclick="go('cot')"><div class="qi">✨</div><div class="qn">Cotizador IA</div><div class="qs">Presupuesto rápido</div></button>
+            <button class="qc" style="background:#1B5E20" onclick="go('chat')"><div class="qi">🤖</div><div class="qn">Asistente IA</div><div class="qs">Consultá tu obra</div></button>
+            <button class="qc" style="background:#4A148C" onclick="go('rubros')"><div class="qi">📦</div><div class="qn">Materiales</div><div class="qs">Precios y rubros</div></button>
+            <button class="qc" style="background:#E65100" onclick="go('agenda')"><div class="qi">📅</div><div class="qn">Agenda</div><div class="qs">Pagos y fechas</div></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RUBROS -->
+    <div class="scr" id="s-rubros">
+      <div class="rbody">
+        <div class="rsearch"><span>🔍</span><input placeholder="Buscar rubro..." id="srch" oninput="filterR(this.value)"></div>
+        <div class="rgrid" id="rgrid"></div>
+      </div>
+    </div>
+
+    <!-- COTIZADOR -->
+    <div class="scr" id="s-cot">
+      <div class="cbody">
+        <div class="chero">
+          <h2>Cotizador de Obra</h2>
+          <p>Ingresá los datos y la IA genera un presupuesto con productos reales de Córdoba.</p>
+          <div class="cpill">✨ Precios Mayo 2026</div>
+        </div>
+        <div class="sbar"><div class="sd act" id="d1"></div><div class="sd" id="d2"></div><div class="sd" id="d3"></div><div class="sd" id="d4"></div></div>
+
+        <!-- S1 -->
+        <div class="ss on" id="c1">
+          <div class="stl">Datos del proyecto</div>
+          <div class="fg"><div class="fl">Superficie total</div>
+            <div style="display:flex;align-items:center;gap:8px"><input class="fi" type="number" id="mts" placeholder="120" style="max-width:120px"><span style="font-size:14px;font-weight:600;color:var(--text2)">m²</span></div>
+          </div>
+          <div class="fg"><div class="fl">Tipo de construcción</div>
+            <div class="pills" id="tg">
+              <div class="pill on" data-v="Casa familiar">🏠 Casa</div>
+              <div class="pill" data-v="Departamento">🏢 Depto</div>
+              <div class="pill" data-v="Local comercial">🏪 Local</div>
+              <div class="pill" data-v="Oficina">💼 Oficina</div>
+              <div class="pill" data-v="Galpón">🏭 Galpón</div>
+              <div class="pill" data-v="Ampliación">🔧 Ampliación</div>
+            </div>
+          </div>
+          <div class="fg"><div class="fl">Zona</div>
+            <select class="fi" id="zona"><option>Córdoba Capital</option><option>GBA / Buenos Aires</option><option>CABA</option><option>Rosario</option><option>Mendoza</option><option>Interior del país</option></select>
+          </div>
+          <div class="fg"><div class="fl">Descripción <span style="font-size:11px;color:var(--text2)">(opcional)</span></div>
+            <textarea class="fi" id="desc" placeholder="Ej: 3 dormitorios, 2 baños, cocina integrada al living..."></textarea>
+          </div>
+          <button class="btn btnp" onclick="cgo(2)">Continuar →</button>
+        </div>
+
+        <!-- S2 -->
+        <div class="ss" id="c2">
+          <div class="stl">Nivel de terminaciones</div>
+          <div class="calgrid">
+            <div class="calcard" data-v="economico" onclick="selCal(this)"><div class="cali">🪨</div><div class="caln">Económico</div><div class="calt">SF básico · Herrero · Cerámico · Roca</div></div>
+            <div class="calcard on" data-v="standard" onclick="selCal(this)"><div class="cali">🏠</div><div class="caln">Standard</div><div class="calt">SF reforzado · Módena · Porcelanato · Ferrum</div></div>
+            <div class="calcard" data-v="premium" onclick="selCal(this)"><div class="cali">💎</div><div class="caln">Premium</div><div class="calt">SF alta prest. · A30/DVH · Gran formato · J&J</div></div>
+          </div>
+          <div class="card" style="padding:11px 13px">
+            <button class="stoggle" onclick="tspec()">▸ Ver especificaciones por nivel</button>
+            <div id="spbody" style="display:none;margin-top:9px;overflow-x:auto">
+              <table class="stbl"><thead><tr><th>Rubro</th><th>🪨 Econ.</th><th>🏠 Stand.</th><th>💎 Prem.</th></tr></thead>
+              <tbody>
+                <tr><td>Estructura</td><td>SF básico</td><td>SF reforzado</td><td>SF alta prest.</td></tr>
+                <tr><td>Cubierta</td><td>Chapa galv.</td><td>Chapa color</td><td>Cubierta prem.</td></tr>
+                <tr><td>Aberturas</td><td>Herrero trad.</td><td>Módena</td><td>A30 / DVH</td></tr>
+                <tr><td>Exterior</td><td>Tarquini</td><td>PVC símil madera</td><td>Piedra natural</td></tr>
+                <tr><td>Pisos</td><td>Cerámico est.</td><td>Porcelanato med.</td><td>Gran formato</td></tr>
+                <tr><td>Piso dorm.</td><td>Cerámico</td><td>Flotante/porcel.</td><td>Vinílico prem.</td></tr>
+                <tr><td>Mesada</td><td>Acero inox.</td><td>Granito natural</td><td>Mármol/cuarzo</td></tr>
+                <tr><td>Sanitarios</td><td>Roca econ.</td><td>Ferrum med.</td><td>J&J premium</td></tr>
+                <tr><td>Griferías</td><td>Roca econ.</td><td>Ferrum med.</td><td>Johnson prem.</td></tr>
+                <tr><td>Eléctrica</td><td>Línea econ.</td><td>Cambre/Sica</td><td>Cambre prem.</td></tr>
+                <tr><td>Calefacción</td><td>Salamandra</td><td>Tiro balanceado</td><td>Piso radiante</td></tr>
+                <tr><td>Placares</td><td>No incluye</td><td>Frente placard</td><td>Completo</td></tr>
+                <tr><td>Portón</td><td>Manual</td><td>Corredizo</td><td>Automatizado</td></tr>
+              </tbody></table>
+            </div>
+          </div>
+          <div class="fg"><div class="fl">Mano de obra</div>
+            <div class="pills" id="mog">
+              <div class="pill on" data-v="completa">Incluir MO completa</div>
+              <div class="pill" data-v="sin">Solo materiales</div>
+              <div class="pill" data-v="parcial">MO parcial</div>
+            </div>
+          </div>
+          <div class="brow"><button class="btn btns" onclick="cgo(1)">← Atrás</button><button class="btn btnp" onclick="cgo(3)">Continuar →</button></div>
+        </div>
+
+        <!-- S3 -->
+        <div class="ss" id="c3">
+          <div class="stl">Rubros a incluir</div>
+          <div style="display:flex;flex-direction:column;gap:6px" id="ctogs"></div>
+          <div class="brow"><button class="btn btns" onclick="cgo(2)">← Atrás</button><button class="btn btnp" onclick="generar()">✨ Generar cotización</button></div>
+        </div>
+
+        <!-- S4 -->
+        <div class="ss" id="c4">
+          <div class="reshero">
+            <div class="resl">Presupuesto estimado</div>
+            <div class="rest" id="rtotal">—</div>
+            <div class="resm" id="rm2"></div>
+            <div class="respills" id="rpills"></div>
+          </div>
+          <div class="aibox" id="aibox">
+            <div class="ailbl"><div class="aidot"></div>Análisis del proyecto</div>
+            <div class="aitxt" id="aitxt">Generando análisis...</div>
+          </div>
+          <div class="card"><div class="ch"><div class="ct">Desglose por rubro</div></div><div class="cb" id="desglose"></div></div>
+          <div class="brow">
+            <button class="btn btns" onclick="cgo(1);resetC()">🔄 Nueva</button>
+            <button class="btn btnp" onclick="go('chat');setTimeout(()=>{document.getElementById('cin').value='Tengo esta cotización: '+getRes()+'. ¿Qué recomendás optimizar?'},100)">💬 Consultar IA</button>
+          </div>
+          <p style="font-size:10px;color:var(--text2);text-align:center;line-height:1.5;padding:0 8px">* Estimación referencial basada en precios Córdoba, Mayo 2026.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="scr" id="s-chat">
+      <div class="chatwrap" style="height:calc(100vh - 118px)">
+        <div class="chatmsgs" id="cmsgs">
+          <div class="msg a">¡Hola! Soy tu asistente de obra SGM. Puedo ayudarte a comparar precios, analizar proveedores, armar presupuestos y mucho más. ¿Qué necesitás hoy?</div>
+        </div>
+        <div class="chips">
+          <button class="chip" onclick="qc('¿Cuánto cuesta fundar una casa de 100m²?')">Costo fundaciones</button>
+          <button class="chip" onclick="qc('¿Qué conviene, Steel Frame o mampostería?')">SF vs mampostería</button>
+          <button class="chip" onclick="qc('¿Cuánto pagar de mano de obra por m² en Córdoba hoy?')">MO por m²</button>
+          <button class="chip" onclick="qc('Checklist para iniciar una obra')">Checklist inicio</button>
+          <button class="chip" onclick="qc('¿Cómo optimizar costos sin perder calidad?')">Optimizar costos</button>
+        </div>
+        <div class="cinput">
+          <input class="cin" id="cin" placeholder="Consultá sobre tu obra..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendC()}">
+          <button class="csend" id="csend" onclick="sendC()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENDA -->
+    <div class="scr" id="s-agenda">
+      <div class="agbody">
+        <div class="card">
+          <div class="ch"><div class="ct">📅 Esta semana</div></div>
+          <div class="cb" id="aglist">
+            <div class="agitem"><div class="agdot" style="background:#C62828"></div><div><div class="agtext">Pago hierros — Proveedor A</div><div class="agmeta">Lunes 5/5 · $85,000 <span class="badge r">Vencido</span></div></div></div>
+            <div class="agitem"><div class="agdot" style="background:#E65100"></div><div><div class="agtext">Cotizar hormigón H25</div><div class="agmeta">Miércoles 7/5 <span class="badge a">Pendiente</span></div></div></div>
+            <div class="agitem"><div class="agdot" style="background:#1565C0"></div><div><div class="agtext">Inspección municipal</div><div class="agmeta">Jueves 8/5 · 10hs <span class="badge b">Programado</span></div></div></div>
+            <div class="agitem"><div class="agdot" style="background:#2E7D32"></div><div><div class="agtext">Liquidación operarios</div><div class="agmeta">Viernes 9/5 <span class="badge g">Completado</span></div></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">➕ Nuevo evento</div></div>
+          <div class="cb" style="display:flex;flex-direction:column;gap:9px">
+            <div class="fg"><div class="fl">Descripción</div><input class="fi" id="evd" placeholder="Ej: Pago proveedor cemento"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="fg"><div class="fl">Fecha</div><input class="fi" type="date" id="evf"></div>
+              <div class="fg"><div class="fl">Tipo</div><select class="fi" id="evt"><option>Pago</option><option>Cotización</option><option>Reunión</option><option>Inspección</option><option>Entrega</option></select></div>
+            </div>
+            <button class="btn btnp" onclick="addEv()">Agregar evento</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <nav class="bnav-bar">
+    <button class="bnav on" onclick="go('home')" id="bn-home"><span class="bnav-i">🏠</span><span class="bnav-l">Inicio</span></button>
+    <button class="bnav" onclick="go('rubros')" id="bn-rubros"><span class="bnav-i">📦</span><span class="bnav-l">Rubros</span></button>
+    <button class="bnav" onclick="go('cot')" id="bn-cot"><span class="bnav-i">✨</span><span class="bnav-l">Cotizar</span></button>
+    <button class="bnav" onclick="go('chat')" id="bn-chat"><span class="bnav-i">🤖</span><span class="bnav-l">IA</span></button>
+    <button class="bnav" onclick="go('agenda')" id="bn-agenda"><span class="bnav-i">📅</span><span class="bnav-l">Agenda</span><div class="bnav-dot"></div></button>
+  </nav>
+</div>
+
+<div class="overlay hide" id="ov">
+  <div class="spin"></div>
+  <div class="ovt">Generando cotización...</div>
+  <div class="ovs">Claude está analizando tu proyecto</div>
+</div>
+
+<script>
+const API = '/api/claude';
+
+// RUBROS
+const RUBROS=[
+  {name:"Fundaciones",icon:"🏗️",color:"#0D47A1",count:46,pct:85},
+  {name:"Mampostería",icon:"🧱",color:"#4E342E",count:52,pct:70},
+  {name:"Steel Frame",icon:"🔩",color:"#1B5E20",count:11,pct:60},
+  {name:"Drywall",icon:"🧱",color:"#4A148C",count:11,pct:40},
+  {name:"Exterior",icon:"🏠",color:"#006064",count:15,pct:50},
+  {name:"Eléctrica",icon:"⚡",color:"#E65100",count:17,pct:90},
+  {name:"Sanitaria",icon:"🚿",color:"#0277BD",count:23,pct:75},
+  {name:"Gas",icon:"🔥",color:"#BF360C",count:7,pct:80},
+  {name:"Carpintería",icon:"🚪",color:"#37474F",count:10,pct:30},
+  {name:"Muebles",icon:"🛋️",color:"#6A1B9A",count:6,pct:20},
+  {name:"Climatización",icon:"❄️",color:"#00695C",count:4,pct:10},
+  {name:"Iluminación",icon:"💡",color:"#F9A825",count:5,pct:15},
+  {name:"Pintura",icon:"🎨",color:"#1565C0",count:30,pct:25},
+  {name:"Pisos",icon:"🪵",color:"#4E342E",count:29,pct:35},
+  {name:"Cubierta",icon:"🏚️",color:"#283593",count:20,pct:65},
+  {name:"Final",icon:"✅",color:"#2E7D32",count:3,pct:5},
+];
+
+// SPECS COTIZADOR
+const SP={
+  economico:{
+    estructura:{label:"Steel Frame básico + OSB + barrera hidrófuga",pm2:95000},
+    cubierta:{label:"Chapa galvanizada + cielorraso PVC blanco",pm2:38000},
+    aberturas:{label:"Herrero tradicional + vidrio simple + puertas chapa",pm2:28000},
+    exterior:{label:"Revestimiento Tarquini + zócalo cementicio",pm2:18000},
+    pisos:{label:"Cerámico estándar + cemento alisado galerías",pm2:22000},
+    cocina:{label:"Mesada acero inox. + MDF simple + grifería Roca",pm2:15000},
+    banios:{label:"Sanitarios Roca + grifería Roca + cortina baño",pm2:18000},
+    electrica:{label:"Llaves económicas + iluminación básica + tablero estándar",pm2:20000},
+    sanitaria:{label:"Termofusión estándar + PVC + termotanque",pm2:16000},
+    climatizacion:{label:"Salamandra + preinstalación AA opcional",pm2:8000},
+    exteriores:{label:"Vereda cemento peinado + portón manual",pm2:10000},
+    mo:{label:"Mano de obra categoría estándar",pm2:65000},
+  },
+  standard:{
+    estructura:{label:"Steel Frame reforzado + OSB estructural premium",pm2:115000},
+    cubierta:{label:"Chapa color + cielorraso PVC texturado + aislación ref.",pm2:50000},
+    aberturas:{label:"Línea Módena + DVH opcional + puertas MDF texturado",pm2:42000},
+    exterior:{label:"PVC símil madera / terminaciones varias + zócalo text.",pm2:28000},
+    pisos:{label:"Porcelanato línea media + flotante dorm. + cerám. ext.",pm2:38000},
+    cocina:{label:"Granito natural + melamina texturada + grifería Ferrum",pm2:28000},
+    banios:{label:"Ferrum línea media + mampara estándar + MDF texturado",pm2:30000},
+    electrica:{label:"Cambre/Sica + spots LED + tablero sectorizado",pm2:30000},
+    sanitaria:{label:"Termofusión reforzada + Awaduct + TT alta recuperación",pm2:24000},
+    climatizacion:{label:"Tiro balanceado + preinstalación AA incluida",pm2:18000},
+    exteriores:{label:"Hormigón alisado + portón corredizo + WPC estándar",pm2:18000},
+    mo:{label:"Mano de obra categoría media-alta",pm2:90000},
+  },
+  premium:{
+    estructura:{label:"Steel Frame alta prestación + OSB premium + rigidización",pm2:145000},
+    cubierta:{label:"Cubierta premium oculta + yeso suspendido c/buñas",pm2:72000},
+    aberturas:{label:"Línea A30 + DVH obligatorio + puertas laqueadas premium",pm2:68000},
+    exterior:{label:"Piedra natural / símil madera premium / combinados",pm2:52000},
+    pisos:{label:"Porcelanato gran formato rectificado + vinílico premium",pm2:65000},
+    cocina:{label:"Mármol/cuarzo + muebles diseño premium + Johnson",pm2:55000},
+    banios:{label:"Ferrum/J&J premium + mampara templada + vanitory diseño",pm2:55000},
+    electrica:{label:"Cambre premium + diseño LED completo + domótica básica",pm2:50000},
+    sanitaria:{label:"Sistema premium + Awaduct premium + caldera dual",pm2:38000},
+    climatizacion:{label:"Piso radiante / multisplit + caldera dual",pm2:40000},
+    exteriores:{label:"Porcelánico ext. + portón automatizado + WPC premium",pm2:35000},
+    mo:{label:"Mano de obra especializada alta categoría",pm2:130000},
+  }
+};
+
+const CRUBROS=[
+  {id:"estructura",name:"Estructura",icon:"🔩",on:true},
+  {id:"cubierta",name:"Cubierta",icon:"🏚️",on:true},
+  {id:"aberturas",name:"Aberturas",icon:"🚪",on:true},
+  {id:"exterior",name:"Exterior",icon:"🏠",on:true},
+  {id:"pisos",name:"Pisos",icon:"🪵",on:true},
+  {id:"cocina",name:"Cocina",icon:"🍳",on:true},
+  {id:"banios",name:"Baños",icon:"🚿",on:true},
+  {id:"electrica",name:"Eléctrica",icon:"⚡",on:true},
+  {id:"sanitaria",name:"Sanitaria",icon:"🔧",on:true},
+  {id:"climatizacion",name:"Climatización",icon:"❄️",on:false},
+  {id:"exteriores",name:"Exteriores",icon:"🌿",on:false},
+  {id:"mo",name:"Mano de obra",icon:"👷",on:true},
+];
+
+// STATE
+let cur='home', cstep=1, cal='standard', tipo='Casa familiar', mo='completa';
+let crubs=CRUBROS.map(r=>({...r})), chatH=[], cotD=null;
+
+// INIT
+document.addEventListener('DOMContentLoaded',()=>{
+  buildRubros(); buildCTogs(); initPills();
+  document.getElementById('hdate').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+});
+
+// NAV
+const META={
+  home:{sub:'Dashboard de obra',btn:'💬'},
+  rubros:{sub:'Materiales y rubros',btn:'🔍'},
+  cot:{sub:'Cotizador de obra',btn:'ℹ️'},
+  chat:{sub:'Asistente IA',btn:'🗑️'},
+  agenda:{sub:'Agenda y compromisos',btn:'➕'},
+};
+function go(n){
+  cur=n;
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('on'));
+  document.getElementById('s-'+n).classList.add('on');
+  document.getElementById('bn-'+n)?.classList.add('on');
+  const m=META[n]||{sub:'',btn:'💬'};
+  document.getElementById('tsub').textContent=m.sub;
+  document.getElementById('tact').textContent=m.btn;
+  document.getElementById('content').scrollTop=0;
+}
+function topAct(){
+  if(cur==='chat'){chatH=[];document.getElementById('cmsgs').innerHTML='<div class="msg a">Chat reiniciado. ¿En qué te ayudo?</div>';}
+  else go('chat');
+}
+
+// RUBROS
+function buildRubros(){
+  const g=document.getElementById('rgrid');
+  RUBROS.forEach(r=>{
+    const b=document.createElement('button');
+    b.className='rc'; b.style.background=r.color;
+    b.innerHTML=`<div class="rci">${r.icon}</div><div class="rcn">${r.name}</div><div class="rcc">${r.count} materiales</div><div class="rcp"><div class="rcpf" style="width:${r.pct}%"></div></div>`;
+    b.onclick=()=>{chatH=[];go('chat');setTimeout(()=>qc(`Contame sobre el rubro ${r.name}: materiales principales, precios en Córdoba y consejos clave`),150);};
+    g.appendChild(b);
+  });
+}
+function filterR(q){document.querySelectorAll('#rgrid .rc').forEach((c,i)=>{c.style.display=RUBROS[i].name.toLowerCase().includes(q.toLowerCase())?'':'none'});}
+
+// COTIZADOR
+function buildCTogs(){
+  const c=document.getElementById('ctogs');
+  crubs.forEach((r,i)=>{
+    const d=document.createElement('div'); d.className='togrow';
+    d.innerHTML=`<div class="togl"><span style="font-size:16px;width:20px;text-align:center">${r.icon}</span><span>${r.name}</span></div><button class="tog ${r.on?'on':''}" id="ct${i}" onclick="togR(${i})"></button>`;
+    c.appendChild(d);
+  });
+}
+function initPills(){
+  ['tg','mog'].forEach(g=>{
+    const el=document.getElementById(g); if(!el) return;
+    el.querySelectorAll('.pill').forEach(p=>{
+      p.addEventListener('click',()=>{
+        el.querySelectorAll('.pill').forEach(x=>x.classList.remove('on'));
+        p.classList.add('on');
+        if(g==='tg') tipo=p.dataset.v; else mo=p.dataset.v;
+      });
+    });
+  });
+}
+function selCal(el){document.querySelectorAll('.calcard').forEach(c=>c.classList.remove('on'));el.classList.add('on');cal=el.dataset.v;}
+function togR(i){crubs[i].on=!crubs[i].on;document.getElementById('ct'+i).className='tog'+(crubs[i].on?' on':'');}
+function tspec(){const b=document.getElementById('spbody'),t=document.querySelector('.stoggle'),o=b.style.display!=='none';b.style.display=o?'none':'block';t.textContent=o?'▸ Ver especificaciones por nivel':'▾ Ocultar especificaciones';}
+function cgo(n){
+  if(n===2&&!document.getElementById('mts').value){document.getElementById('mts').focus();return;}
+  document.getElementById('c'+cstep).classList.remove('on');
+  document.getElementById('d'+cstep).classList.remove('act'); document.getElementById('d'+cstep).classList.add('done');
+  cstep=n;
+  document.getElementById('c'+n).classList.add('on');
+  document.getElementById('d'+n).classList.add('act');
+  document.getElementById('content').scrollTop=0;
+}
+function resetC(){cstep=1;}
+function getRes(){return cotD?`${cotD.tipo} ${cotD.mts}m², ${cotD.cal}, $${cotD.total.toLocaleString('es-AR')} total`:'sin datos';}
+
+async function generar(){
+  const mts=parseFloat(document.getElementById('mts').value);
+  if(!mts||mts<1){alert('Ingresá los metros cuadrados');return;}
+  const desc=document.getElementById('desc').value, zona=document.getElementById('zona').value;
+  const specs=SP[cal]; let desglose=[],total=0;
+  crubs.filter(r=>r.on&&specs[r.id]).forEach(r=>{
+    if(r.id==='mo'&&mo==='sin') return;
+    const s=specs[r.id],sub=Math.round(s.pm2*mts);
+    desglose.push({...r,label:s.label,pm2:s.pm2,sub}); total+=sub;
+  });
+  cotD={mts,tipo,cal,zona,total,desglose,desc};
+  document.getElementById('ov').classList.remove('hide');
+  cgo(4);
+  document.getElementById('rtotal').textContent='$'+total.toLocaleString('es-AR');
+  document.getElementById('rm2').textContent=`$${Math.round(total/mts).toLocaleString('es-AR')} / m²`;
+  document.getElementById('rpills').innerHTML=`<span class="respill">${mts}m²</span><span class="respill">${tipo}</span><span class="respill">${cal.charAt(0).toUpperCase()+cal.slice(1)}</span><span class="respill">${zona}</span>`;
+  const mx=Math.max(...desglose.map(d=>d.sub));
+  document.getElementById('desglose').innerHTML=desglose.map(d=>`
+    <div class="drr"><div class="drrl"><span class="drri">${d.icon}</span>
+      <div style="flex:1;min-width:0"><div class="drrn">${d.name}</div><div class="drrs">${d.label}</div>
+      <div class="drrp">${Math.round(d.sub/total*100)}% · $${d.pm2.toLocaleString('es-AR')}/m²</div>
+      <div class="prog"><div class="progb" style="width:${Math.round(d.sub/mx*100)}%"></div></div></div></div>
+      <div class="drra">$${d.sub.toLocaleString('es-AR')}</div></div>`).join('');
+  try{
+    const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,
+        system:'Sos experto en presupuestos de construcción en Argentina, especialmente Córdoba. Respondés en español rioplatense, conciso y práctico.',
+        messages:[{role:'user',content:`Analizá este presupuesto:\n- ${tipo}, ${mts}m², calidad ${cal}, ${zona}\n- Total: $${total.toLocaleString('es-AR')} ($${Math.round(total/mts).toLocaleString('es-AR')}/m²)\n- ${desc||'Sin descripción adicional'}\nDame: 1) Si está en rango para Córdoba 2026, 2) Los 2 rubros de mayor impacto y si hay margen de optimización, 3) Una recomendación práctica. Máximo 120 palabras.`}]})});
+    const d=await res.json();
+    document.getElementById('aitxt').textContent=d.content?.[0]?.text||'No disponible.';
+    document.querySelector('.aidot').style.animation='none';
+  }catch(e){document.getElementById('aitxt').textContent='Presupuesto listo. Verificá conexión para el análisis IA.';}
+  document.getElementById('ov').classList.add('hide');
+}
+
+// CHAT
+function qc(t){document.getElementById('cin').value=t;sendC();}
+async function sendC(){
+  const inp=document.getElementById('cin'),txt=inp.value.trim();
+  if(!txt) return; inp.value='';
+  document.getElementById('csend').disabled=true;
+  const m=document.getElementById('cmsgs');
+  const u=document.createElement('div');u.className='msg u';u.textContent=txt;m.appendChild(u);m.scrollTop=m.scrollHeight;
+  const l=document.createElement('div');l.className='msg a';l.textContent='...';m.appendChild(l);m.scrollTop=m.scrollHeight;
+  chatH.push({role:'user',content:txt});
+  try{
+    const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,
+        system:'Sos asistente experto en construcción y gestión de obras en Argentina. El usuario usa SGM (Sistema de Gestión de Materiales). Respondés en español rioplatense, conciso y práctico. Usás pesos argentinos ($).',
+        messages:chatH})});
+    const d=await res.json();
+    const r=d.content?.[0]?.text||'No pude procesar la respuesta.';
+    chatH.push({role:'assistant',content:r});
+    l.textContent=r;
+  }catch(e){l.textContent='Error de conexión. Verificá tu internet.';}
+  document.getElementById('csend').disabled=false;
+  m.scrollTop=m.scrollHeight;
+}
+
+// AGENDA
+function addEv(){
+  const desc=document.getElementById('evd').value.trim();
+  if(!desc) return;
+  const date=document.getElementById('evf').value, tipo=document.getElementById('evt').value;
+  const list=document.getElementById('aglist');
+  const item=document.createElement('div');item.className='agitem';
+  item.innerHTML=`<div class="agdot" style="background:#1565C0"></div><div><div class="agtext">${desc}</div><div class="agmeta">${date?new Date(date+'T12:00:00').toLocaleDateString('es-AR'):''} <span class="badge b">${tipo}</span></div></div>`;
+  list.appendChild(item);
+  document.getElementById('evd').value='';document.getElementById('evf').value='';
+}
+</script>
+</body>
+</html>
