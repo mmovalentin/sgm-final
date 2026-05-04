@@ -464,7 +464,8 @@ textarea.fi{resize:vertical;min-height:75px;line-height:1.5}
 </div>
 
 <script>
-const API = '/api/claude';
+const AKEY="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";
+const callAPI=async(body)=>{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":AKEY,"anthropic-version":"2023-06-01"},body:JSON.stringify(body)});return r.json();}
 
 // RUBROS
 const RUBROS=[
@@ -655,11 +656,10 @@ async function generar(){
       <div class="prog"><div class="progb" style="width:${Math.round(d.sub/mx*100)}%"></div></div></div></div>
       <div class="drra">$${d.sub.toLocaleString('es-AR')}</div></div>`).join('');
   try{
-    const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,
+    const res=await callAPI({model:'claude-sonnet-4-20250514',max_tokens:500,
         system:'Sos experto en presupuestos de construcción en Argentina, especialmente Córdoba. Respondés en español rioplatense, conciso y práctico.',
-        messages:[{role:'user',content:`Analizá este presupuesto:\n- ${tipo}, ${mts}m², calidad ${cal}, ${zona}\n- Total: $${total.toLocaleString('es-AR')} ($${Math.round(total/mts).toLocaleString('es-AR')}/m²)\n- ${desc||'Sin descripción adicional'}\nDame: 1) Si está en rango para Córdoba 2026, 2) Los 2 rubros de mayor impacto y si hay margen de optimización, 3) Una recomendación práctica. Máximo 120 palabras.`}]})});
-    const d=await res.json();
+        messages:[{role:'user',content:`Analizá este presupuesto:\n- ${tipo}, ${mts}m², calidad ${cal}, ${zona}\n- Total: $${total.toLocaleString('es-AR')} ($${Math.round(total/mts).toLocaleString('es-AR')}/m²)\n- ${desc||'Sin descripción adicional'}\nDame: 1) Si está en rango para Córdoba 2026, 2) Los 2 rubros de mayor impacto y si hay margen de optimización, 3) Una recomendación práctica. Máximo 120 palabras.`}]});
+    const d=res;
     document.getElementById('aitxt').textContent=d.content?.[0]?.text||'No disponible.';
     document.querySelector('.aidot').style.animation='none';
   }catch(e){document.getElementById('aitxt').textContent='Presupuesto listo. Verificá conexión para el análisis IA.';}
@@ -677,11 +677,10 @@ async function sendC(){
   const l=document.createElement('div');l.className='msg a';l.textContent='...';m.appendChild(l);m.scrollTop=m.scrollHeight;
   chatH.push({role:'user',content:txt});
   try{
-    const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,
+    const res=await callAPI({model:'claude-sonnet-4-20250514',max_tokens:700,
         system:'Sos asistente experto en construcción y gestión de obras en Argentina. El usuario usa SGM (Sistema de Gestión de Materiales). Respondés en español rioplatense, conciso y práctico. Usás pesos argentinos ($).',
-        messages:chatH})});
-    const d=await res.json();
+        messages:chatH});
+    const d=res;
     const r=d.content?.[0]?.text||'No pude procesar la respuesta.';
     chatH.push({role:'assistant',content:r});
     l.textContent=r;
