@@ -287,6 +287,19 @@ textarea.fi{resize:vertical;min-height:72px;line-height:1.5}
 .stbl td:first-child{font-weight:600;color:var(--t2)}
 .stoggle{font-size:12px;color:var(--acc);cursor:pointer;font-weight:600;background:none;border:none;font-family:inherit;padding:4px 0;display:flex;align-items:center;gap:4px}
 
+/* LEAD CAPTURE MODAL */
+.lead-modal{position:fixed;inset:0;background:rgba(10,22,40,.88);z-index:998;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);animation:fadeIn .2s ease}
+.lead-modal.hide{display:none}
+.lead-sheet{background:var(--card);border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:430px;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.lead-close{position:absolute;top:16px;right:20px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--t3)}
+.lead-title{font-size:18px;font-weight:700;color:var(--t1);font-family:'Plus Jakarta Sans',sans-serif;margin-bottom:4px}
+.lead-sub{font-size:13px;color:var(--t3);margin-bottom:20px;line-height:1.5}
+.lead-form{display:flex;flex-direction:column;gap:10px}
+.lead-input{border:1.5px solid var(--border2);border-radius:10px;padding:12px 14px;font-size:14px;background:var(--off);color:var(--t1);outline:none;width:100%;font-family:inherit;transition:border-color .2s}
+.lead-input:focus{border-color:var(--acc)}
+.lead-note{font-size:11px;color:var(--t3);text-align:center;margin-top:4px}
+
 /* OVERLAY */
 .overlay{position:fixed;inset:0;background:rgba(10,22,40,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999;backdrop-filter:blur(8px)}
 .overlay.hide{display:none}
@@ -366,7 +379,7 @@ function initGoogleMap(){
             <button class="qc" style="background:#E65100" onclick="go('agenda')"><div class="qi">📅</div><div class="qn" data-i18n="agenda">Agenda</div><div class="qs" data-i18n="agendaSub">Pagos y fechas</div></button>
           </div>
         </div>
-        <button class="btn btnwa" onclick="window.open('https://wa.me/message/HAVPMBHE4QTVH1')">
+        <button class="btn btnwa" onclick="showLead(()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1'),'whatsapp')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.509 5.833L0 24l6.335-1.491A11.942 11.942 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.507-5.173-1.389l-.371-.22-3.761.886.902-3.659-.242-.381A9.952 9.952 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
           <span data-i18n="consultWA">Consultar por WhatsApp</span>
         </button>
@@ -582,7 +595,7 @@ function initGoogleMap(){
             <button class="btn btns" onclick="cgo(1);resetC()" data-i18n="newQuote">🔄 Nueva cotización</button>
             <button class="btn btnp" onclick="go('chat');setTimeout(()=>{document.getElementById('cin').value=t('consultCot')+getRes();sendC()},150)" data-i18n="askAI">💬 Consultar IA</button>
           </div>
-          <button class="btn btnwa" onclick="window.open('https://wa.me/message/HAVPMBHE4QTVH1')">
+          <button class="btn btnwa" onclick="showLead(()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1'),'whatsapp')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.509 5.833L0 24l6.335-1.491A11.942 11.942 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.507-5.173-1.389l-.371-.22-3.761.886.902-3.659-.242-.381A9.952 9.952 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
             <span data-i18n="consultWA">Consultar por WhatsApp</span>
           </button>
@@ -636,7 +649,7 @@ function initGoogleMap(){
             <button class="btn btnp" onclick="addEv()" data-i18n="addEvent">Agregar evento</button>
           </div>
         </div>
-        <button class="btn btnwa" onclick="window.open('https://wa.me/message/HAVPMBHE4QTVH1')">
+        <button class="btn btnwa" onclick="showLead(()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1'),'whatsapp')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.509 5.833L0 24l6.335-1.491A11.942 11.942 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.507-5.173-1.389l-.371-.22-3.761.886.902-3.659-.242-.381A9.952 9.952 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
           <span data-i18n="consultWA">Consultar por WhatsApp</span>
         </button>
@@ -671,8 +684,13 @@ function initGoogleMap(){
         <!-- KPIs empresa -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div style="background:var(--card);border-radius:10px;padding:13px;border:0.5px solid var(--border);border-left:3px solid #2E7D32">
+            <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px">Leads capturados</div>
+            <div style="font-size:24px;font-weight:700;color:#2E7D32;margin-top:3px" id="stat-leads">0</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:1px">esta sesión</div>
+          </div>
+          <div style="background:var(--card);border-radius:10px;padding:13px;border:0.5px solid var(--border);border-left:3px solid #1565C0">
             <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px">Cotizaciones</div>
-            <div style="font-size:24px;font-weight:700;color:#2E7D32;margin-top:3px" id="stat-cot">0</div>
+            <div style="font-size:24px;font-weight:700;color:#1565C0;margin-top:3px" id="stat-cot">0</div>
             <div style="font-size:10px;color:var(--t3);margin-top:1px">generadas hoy</div>
           </div>
           <div style="background:var(--card);border-radius:10px;padding:13px;border:0.5px solid var(--border);border-left:3px solid #1565C0">
@@ -745,6 +763,17 @@ function initGoogleMap(){
           </div>
         </div>
 
+        <!-- Leads panel -->
+        <div style="background:var(--card);border-radius:10px;border:0.5px solid var(--border);overflow:hidden">
+          <div style="padding:12px 14px 0;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px">🎯 Leads capturados</div>
+            <div id="leads-count" style="font-size:10px;color:var(--t3)">0 leads</div>
+          </div>
+          <div style="padding:10px 14px 14px" id="leads-list">
+            <div style="font-size:12px;color:var(--t3);text-align:center;padding:10px 0">Los leads aparecen aquí cuando un cliente completa sus datos</div>
+          </div>
+        </div>
+
         <!-- Roadmap -->
         <div style="background:var(--c1);border-radius:10px;padding:14px;color:#fff">
           <div style="font-size:12px;font-weight:700;margin-bottom:10px;font-family:'Plus Jakarta Sans',sans-serif">🚀 Próximamente en SGM</div>
@@ -780,7 +809,7 @@ function initGoogleMap(){
         <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:12px 14px">
           <div style="font-size:12px;font-weight:700;color:#0C447C;margin-bottom:4px">¿Sos constructor?</div>
           <div style="font-size:11px;color:#1E40AF;line-height:1.5;margin-bottom:8px">Sumáte a la red SGM y llegá a clientes que ya están buscando construir en tu zona.</div>
-          <button onclick="window.open('https://wa.me/message/HAVPMBHE4QTVH1')" style="background:#0A1628;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:11px;font-weight:700;cursor:pointer;width:100%">💬 Quiero sumarme a SGM</button>
+          <button onclick="showLead(()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1'),'whatsapp')" style="background:#0A1628;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:11px;font-weight:700;cursor:pointer;width:100%">💬 Quiero sumarme a SGM</button>
         </div>
       </div>
     </div>
@@ -837,6 +866,28 @@ function initGoogleMap(){
     <button class="bnav" onclick="go('mapa')" id="bn-mapa"><span class="bnav-i">📍</span><span class="bnav-l">Mapa</span></button>
     <button class="bnav" onclick="go('stats')" id="bn-stats"><span class="bnav-i">📊</span><span class="bnav-l">Stats</span></button>
   </nav>
+</div>
+
+<!-- LEAD CAPTURE MODAL -->
+<div class="lead-modal hide" id="lead-modal">
+  <div class="lead-sheet" style="position:relative">
+    <button class="lead-close" onclick="closeLead()">✕</button>
+    <div style="font-size:28px;margin-bottom:10px">🏗️</div>
+    <div class="lead-title" id="lead-title">¡Tu presupuesto está listo!</div>
+    <div class="lead-sub" id="lead-sub">Dejanos tus datos para enviarte el presupuesto completo y que un especialista te contacte.</div>
+    <div class="lead-form">
+      <input class="lead-input" type="text" id="lead-nombre" placeholder="Tu nombre completo" autocomplete="name">
+      <input class="lead-input" type="tel" id="lead-tel" placeholder="WhatsApp / Teléfono" autocomplete="tel">
+      <input class="lead-input" type="email" id="lead-email" placeholder="Email (opcional)" autocomplete="email">
+      <button class="btn btnp" onclick="submitLead()" id="btn-lead" style="margin-top:4px">
+        💬 Quiero que me contacten
+      </button>
+      <button class="btn btns" onclick="skipLead()" style="padding:10px">
+        Continuar sin registrarme
+      </button>
+    </div>
+    <div class="lead-note">Tu información es confidencial y no será compartida con terceros.</div>
+  </div>
 </div>
 
 <div class="overlay hide" id="ov">
@@ -1386,10 +1437,18 @@ async function generar(){
     document.querySelector('.aidot').style.animation='none';
   }catch(e){document.getElementById('aitxt').textContent=lang==='es'?`Presupuesto calculado correctamente. Chat IA: ${e.message}`:`Budget calculated. AI error: ${e.message}`;}
   document.getElementById('ov').classList.add('hide');
+  // Show lead capture after first cotization
+  if(!window._leadCaptured){
+    setTimeout(()=>showLead(null,'cotizacion'), 600);
+  }
 }
 
 // ── PDF GENERATION
 async function generarPDF(tipo_pdf){
+  if(!window._leadCaptured){
+    showLead(()=>generarPDF(tipo_pdf),'pdf');
+    return;
+  }
   if(!cotD){alert(lang==='es'?'Primero generá una cotización':'First generate a quote');return;}
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
@@ -1847,6 +1906,92 @@ function cotizarModelo(modelId,m2,cal){
   },200);
 }
 
+// ── LEAD CAPTURE
+let leadCallback = null;
+const leads = [];
+
+function showLead(callback, context='cotizacion'){
+  // Don't show if already captured in this session
+  if(window._leadCaptured){
+    if(callback) callback();
+    return;
+  }
+  leadCallback = callback;
+  const modal = document.getElementById('lead-modal');
+  const title = document.getElementById('lead-title');
+  const sub = document.getElementById('lead-sub');
+  if(context === 'whatsapp'){
+    title.textContent = '¡Antes de continuar!';
+    sub.textContent = 'Dejanos tus datos para que nuestro equipo pueda darte la mejor atención personalizada.';
+  } else if(context === 'pdf'){
+    title.textContent = '¡Tu presupuesto está listo!';
+    sub.textContent = 'Registrá tus datos para descargar el PDF y recibir asesoramiento personalizado.';
+  } else {
+    title.textContent = '¡Tu cotización está lista!';
+    sub.textContent = 'Dejanos tus datos y te enviamos el presupuesto detallado con un especialista Steel Frame.';
+  }
+  modal.classList.remove('hide');
+  setTimeout(()=>document.getElementById('lead-nombre').focus(), 300);
+}
+
+function closeLead(){
+  document.getElementById('lead-modal').classList.add('hide');
+}
+
+function skipLead(){
+  closeLead();
+  if(leadCallback){ leadCallback(); leadCallback=null; }
+}
+
+function submitLead(){
+  const nombre = document.getElementById('lead-nombre').value.trim();
+  const tel = document.getElementById('lead-tel').value.trim();
+  const email = document.getElementById('lead-email').value.trim();
+  if(!nombre){ document.getElementById('lead-nombre').focus(); document.getElementById('lead-nombre').style.borderColor='var(--r1)'; return; }
+  if(!tel){ document.getElementById('lead-tel').focus(); document.getElementById('lead-tel').style.borderColor='var(--r1)'; return; }
+  
+  const lead = {
+    nombre, tel, email,
+    fecha: new Date().toLocaleDateString('es-AR'),
+    hora: new Date().toLocaleTimeString('es-AR'),
+    cotizacion: cotD ? `${cotD.tipo} ${cotD.mts}m² ${cotD.cal} USD ${cotD.totalBase.toLocaleString()}` : '—',
+    origen: window.location.href
+  };
+  leads.push(lead);
+  window._leadCaptured = true;
+  
+  // Update stats
+  statsData.leads = (statsData.leads||0) + 1;
+  updateStats();
+
+  // Send to WhatsApp as message
+  const msg = encodeURIComponent(
+    `*Nuevo lead SGM Construcción*
+
+` +
+    `👤 Nombre: ${nombre}
+` +
+    `📱 Teléfono: ${tel}
+` +
+    `📧 Email: ${email||'No proporcionado'}
+` +
+    `🏗️ Cotización: ${lead.cotizacion}
+` +
+    `📅 Fecha: ${lead.fecha} ${lead.hora}`
+  );
+  
+  const btn = document.getElementById('btn-lead');
+  btn.textContent = '✅ ¡Registrado!';
+  btn.style.background = '#2E7D32';
+  
+  setTimeout(()=>{
+    closeLead();
+    if(leadCallback){ leadCallback(); leadCallback=null; }
+    // Open WhatsApp with lead data
+    window.open(`https://wa.me/message/HAVPMBHE4QTVH1?text=${msg}`, '_blank');
+  }, 800);
+}
+
 // ── ESTADÍSTICAS
 const statsData={cotizaciones:0,pipeline:0,m2Total:0,presupCount:0};
 function updateStats(){
@@ -1858,6 +2003,23 @@ function updateStats(){
   if(el3) el3.textContent=`USD ${statsData.pipeline.toLocaleString()}`;
   const el4=document.getElementById('stat-presup');
   if(el4) el4.textContent=statsData.presupCount;
+  const el5=document.getElementById('stat-leads');
+  if(el5) el5.textContent=statsData.leads||0;
+  const el6=document.getElementById('leads-count');
+  if(el6) el6.textContent=`${leads.length} lead${leads.length!==1?'s':''}`;
+  const list=document.getElementById('leads-list');
+  if(list && leads.length>0){
+    list.innerHTML=leads.slice().reverse().map(l=>`
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--t1)">${l.nombre}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">📱 ${l.tel} ${l.email?'· 📧 '+l.email:''}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:1px">🏗️ ${l.cotizacion}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:1px">${l.fecha} ${l.hora}</div>
+        </div>
+        <a href="https://wa.me/${l.tel.replace(/[^0-9]/g,'')}" target="_blank" style="background:#1A3A6B;color:#fff;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:600;text-decoration:none;flex-shrink:0;margin-left:8px">💬</a>
+      </div>`).join('');
+  }
 }
 function addObra(){
   const name=prompt('Nombre de la obra (ej: Casa García · 80m²):');
