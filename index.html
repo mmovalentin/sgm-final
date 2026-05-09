@@ -308,7 +308,160 @@ textarea.fi{resize:vertical;min-height:72px;line-height:1.5}
 .ovt{color:var(--white);font-size:16px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif}
 .ovs{color:rgba(255,255,255,.5);font-size:12px}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
+// Supabase init
+const SUPA_URL = 'https://wwaaoritqbfzoqnbtqvk.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3YWFvcml0cWJmem9xbmJ0cXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTA2NDYsImV4cCI6MjA5MzkyNjY0Nn0.3-1FnfLmxkRXEfZz-u3qIKDCrq--Rhg6U1YjUryNFDo';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// Auth state
+let currentUser = null;
+
+async function initAuth(){
+  const { data: { session } } = await supa.auth.getSession();
+  if(session) onLogin(session.user);
+  supa.auth.onAuthStateChange((_event, session)=>{
+    if(session) onLogin(session.user);
+    else onLogout();
+  });
+}
+
+async function loginGoogle(){
+  await supa.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin }
+  });
+}
+
+async function logout(){
+  await supa.auth.signOut();
+  onLogout();
+}
+
+async function onLogin(user){
+  currentUser = user;
+  // Create/update profile
+  await supa.from('perfiles').upsert({
+    id: user.id,
+    nombre: user.user_metadata?.full_name || user.email,
+    email: user.email,
+  }, { onConflict: 'id' });
+  updateAuthUI();
+  loadUserData();
+}
+
+function onLogout(){
+  currentUser = null;
+  updateAuthUI();
+}
+
+function updateAuthUI(){
+  const loginBtn = document.getElementById('auth-login-btn');
+  const userArea = document.getElementById('auth-user-area');
+  const userName = document.getElementById('auth-user-name');
+  if(!loginBtn) return;
+  if(currentUser){
+    loginBtn.style.display='none';
+    userArea.style.display='flex';
+    const name = currentUser.user_metadata?.full_name || currentUser.email || '';
+    userName.textContent = name.split(' ')[0];
+  } else {
+    loginBtn.style.display='flex';
+    userArea.style.display='none';
+  }
+}
+
+async function loadUserData(){
+  if(!currentUser) return;
+  // Load saved cotizaciones
+  const { data: cots } = await supa.from('cotizaciones')
+    .select('*').eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false }).limit(10);
+  if(cots && cots.length > 0) renderSavedCots(cots);
+  // Load leads
+  const { data: leadsDB } = await supa.from('leads')
+    .select('*').order('created_at', { ascending: false }).limit(50);
+  if(leadsDB) renderLeadsFromDB(leadsDB);
+}
+
+async function saveCotizacion(){
+  if(!currentUser || !cotD) return;
+  const { error } = await supa.from('cotizaciones').insert({
+    user_id: currentUser.id,
+    tipo: cotD.tipo,
+    sistema: cotD.sistema,
+    m2: cotD.mts,
+    calidad: cotD.cal,
+    zona: cotD.zona,
+    descripcion: cotD.desc,
+    total_usd: cotD.totalBase,
+    anticipo_usd: Math.round(cotD.totalBase * (cotD.sistema==='steel_frame'?0.6:0.5)),
+    tc_blue: tcBlue,
+    desglose: cotD.desglose
+  });
+  if(!error){
+    const badge = document.getElementById('save-cot-badge');
+    if(badge){ badge.textContent='✅ Guardada'; badge.style.color='#2E7D32'; }
+  }
+}
+
+async function saveLead(leadData){
+  await supa.from('leads').insert({
+    nombre: leadData.nombre,
+    telefono: leadData.tel,
+    email: leadData.email||null,
+    cotizacion_desc: leadData.cotizacion,
+    total_usd: cotD?.totalBase||null,
+    origen: 'sgm-app'
+  });
+}
+
+function renderSavedCots(cots){
+  const list = document.getElementById('saved-cots-list');
+  if(!list) return;
+  list.innerHTML = cots.map(c=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:500;color:var(--t1)">${c.tipo} ${c.m2}m² · ${c.calidad}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:1px">USD ${c.total_usd?.toLocaleString()} · ${new Date(c.created_at).toLocaleDateString('es-AR')}</div>
+      </div>
+      <button onclick="loadCotizacion('${c.id}')" style="background:var(--c1);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:10px;font-weight:600;cursor:pointer">Ver</button>
+    </div>`).join('');
+  const section = document.getElementById('saved-cots-section');
+  if(section) section.style.display='block';
+}
+
+function renderLeadsFromDB(leadsDB){
+  const list = document.getElementById('leads-list');
+  const count = document.getElementById('leads-count');
+  if(!list) return;
+  if(count) count.textContent = `${leadsDB.length} lead${leadsDB.length!==1?'s':''}`;
+  if(leadsDB.length===0) return;
+  list.innerHTML = leadsDB.map(l=>`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:500;color:var(--t1)">${l.nombre}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:2px">📱 ${l.telefono} ${l.email?'· '+l.email:''}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:1px">🏗️ ${l.cotizacion_desc||'—'}</div>
+        <div style="display:flex;gap:4px;margin-top:5px">
+          <select onchange="updateLeadEstado('${l.id}',this.value)" style="font-size:10px;border:0.5px solid var(--border2);border-radius:5px;padding:3px 6px;background:var(--off);color:var(--t1)">
+            <option ${l.estado==='nuevo'?'selected':''}>nuevo</option>
+            <option ${l.estado==='contactado'?'selected':''}>contactado</option>
+            <option ${l.estado==='en_negociacion'?'selected':''}>en_negociacion</option>
+            <option ${l.estado==='cerrado'?'selected':''}>cerrado</option>
+            <option ${l.estado==='perdido'?'selected':''}>perdido</option>
+          </select>
+        </div>
+      </div>
+      <a href="https://wa.me/${l.telefono?.replace(/[^0-9]/g,'')}" target="_blank" style="background:#1A3A6B;color:#fff;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:600;text-decoration:none;flex-shrink:0;margin-left:8px">💬</a>
+    </div>`).join('');
+}
+
+async function updateLeadEstado(id, estado){
+  await supa.from('leads').update({ estado }).eq('id', id);
+}
+
 function initGoogleMap(){
   if(window._mapInited) return;
   window._mapInited=true;
@@ -332,6 +485,14 @@ function initGoogleMap(){
     <div class="tr">
       <div class="tc-badge" id="tc-badge" onclick="fetchDolar(true)">USD —</div>
       <button class="lang-btn" onclick="toggleLang()">EN</button>
+      <button id="auth-login-btn" onclick="loginGoogle()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:9px;font-weight:600;padding:4px 8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:4px">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Entrar
+      </button>
+      <div id="auth-user-area" style="display:none;align-items:center;gap:5px">
+        <div style="background:rgba(255,255,255,.15);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff" id="auth-user-name">?</div>
+        <button onclick="logout()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:9px;cursor:pointer">salir</button>
+      </div>
       <button class="tact" id="tact" onclick="topAct()">💬</button>
     </div>
   </div>
@@ -591,6 +752,10 @@ function initGoogleMap(){
             </button>
           </div>
 
+          <div id="save-cot-section" style="display:none;background:var(--off);border:0.5px solid var(--border2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:12px;color:var(--t2)">¿Guardar esta cotización?</div>
+            <button onclick="saveCotizacion()" id="save-cot-badge" style="background:var(--c1);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer">💾 Guardar</button>
+          </div>
           <div class="brow">
             <button class="btn btns" onclick="cgo(1);resetC()" data-i18n="newQuote">🔄 Nueva cotización</button>
             <button class="btn btnp" onclick="go('chat');setTimeout(()=>{document.getElementById('cin').value=t('consultCot')+getRes();sendC()},150)" data-i18n="askAI">💬 Consultar IA</button>
@@ -708,6 +873,12 @@ function initGoogleMap(){
             <div style="font-size:24px;font-weight:700;color:#6A1B9A;margin-top:3px" id="stat-presup">0</div>
             <div style="font-size:10px;color:var(--t3);margin-top:1px">proveedores</div>
           </div>
+        </div>
+
+        <!-- Cotizaciones guardadas (solo si logueado) -->
+        <div id="saved-cots-section" style="display:none;background:var(--card);border-radius:10px;border:0.5px solid var(--border);overflow:hidden">
+          <div style="padding:12px 14px 0"><div style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px">💾 Mis cotizaciones guardadas</div></div>
+          <div style="padding:10px 14px 14px" id="saved-cots-list"></div>
         </div>
 
         <!-- Seguimiento de obra -->
@@ -1205,6 +1376,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   fetchDolar();
   document.getElementById('hdate').textContent=new Date().toLocaleDateString(lang==='es'?'es-AR':'en-US',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  initAuth();
   setInterval(fetchDolar, 300000);
 });
 
@@ -1437,6 +1609,11 @@ async function generar(){
     document.querySelector('.aidot').style.animation='none';
   }catch(e){document.getElementById('aitxt').textContent=lang==='es'?`Presupuesto calculado correctamente. Chat IA: ${e.message}`:`Budget calculated. AI error: ${e.message}`;}
   document.getElementById('ov').classList.add('hide');
+  // Show save button if logged in
+  if(currentUser){
+    const saveSection = document.getElementById('save-cot-section');
+    if(saveSection) saveSection.style.display='flex';
+  }
   // Show lead capture after first cotization
   if(!window._leadCaptured){
     setTimeout(()=>showLead(null,'cotizacion'), 600);
@@ -1959,6 +2136,9 @@ function submitLead(){
   };
   leads.push(lead);
   window._leadCaptured = true;
+  
+  // Save to Supabase
+  saveLead({nombre, tel, email, cotizacion: lead.cotizacion});
   
   // Update stats
   statsData.leads = (statsData.leads||0) + 1;
