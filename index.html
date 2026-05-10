@@ -2358,13 +2358,20 @@ async function procesarPresupuesto(){
   const isImg = ['jpg','jpeg','png'].includes(ext);
   const mediaType = ext==='pdf'?'application/pdf':(ext==='png'?'image/png':'image/jpeg');
   try {
-    const msgs = isImg ? [{role:'user',content:[
-      {type:'image',source:{type:'base64',media_type:mediaType,data:provFileData}},
-      {type:'text',text:`Este es un presupuesto de proveedor para el rubro ${rubro}. Extraé todos los ítems con sus precios en pesos argentinos. Respondé SOLO en JSON válido con este formato exacto: {"items":[{"nombre":"nombre del item","cantidad":"cantidad y unidad","precio_ars":numero_sin_puntos}],"proveedor":"${prov}","rubro":"${rubro}","total_ars":numero_total}. Sin texto extra, solo JSON.`}
-    ]} : [{role:'user',content:[
-      {type:'document',source:{type:'base64',media_type:'application/pdf',data:provFileData}},
-      {type:'text',text:`Este es un presupuesto de proveedor para el rubro ${rubro}. Extraé todos los ítems con sus precios en pesos argentinos. Respondé SOLO en JSON válido con este formato exacto: {"items":[{"nombre":"nombre del item","cantidad":"cantidad y unidad","precio_ars":numero_sin_puntos}],"proveedor":"${prov}","rubro":"${rubro}","total_ars":numero_total}. Sin texto extra, solo JSON.`}
-    ]}];
+    let msgs;
+    const sysPrompt = `Analizá este presupuesto de proveedor para el rubro ${rubro}. Extraé todos los ítems con sus precios en pesos argentinos. Respondé SOLO en JSON válido con este formato: {"items":[{"nombre":"item","cantidad":"cant y unidad","precio_ars":numero}],"proveedor":"${prov}","rubro":"${rubro}","total_ars":numero}. Sin texto extra, solo JSON.`;
+    if(isImg){
+      msgs = [{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:mediaType,data:provFileData}},
+        {type:'text',text:sysPrompt}
+      ]}];
+    } else {
+      msgs = [{role:'user',content:[
+        {type:'document',source:{type:'base64',media_type:'application/pdf',data:provFileData}},
+        {type:'text',text:sysPrompt}
+      ]}];
+    }
+
     const res = await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1500,messages:msgs})});
     const d = await res.json();
