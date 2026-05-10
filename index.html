@@ -287,6 +287,18 @@ textarea.fi{resize:vertical;min-height:72px;line-height:1.5}
 .stbl td:first-child{font-weight:600;color:var(--t2)}
 .stoggle{font-size:12px;color:var(--acc);cursor:pointer;font-weight:600;background:none;border:none;font-family:inherit;padding:4px 0;display:flex;align-items:center;gap:4px}
 
+/* MORE MENU */
+.more-menu{position:fixed;inset:0;z-index:997;display:flex;flex-direction:column;justify-content:flex-end;max-width:430px;margin:0 auto}
+.more-menu.hide{display:none}
+.more-overlay{position:absolute;inset:0;background:rgba(10,22,40,.7);backdrop-filter:blur(4px)}
+.more-sheet{background:var(--card);border-radius:20px 20px 0 0;padding:16px 16px 32px;position:relative;z-index:1}
+.more-title{font-size:13px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;font-family:'Plus Jakarta Sans',sans-serif}
+.more-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.more-btn{background:var(--off);border:0.5px solid var(--border2);border-radius:12px;padding:14px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s}
+.more-btn:active{transform:scale(.96);background:var(--blue-lt)}
+.more-i{font-size:22px}
+.more-l{font-size:11px;font-weight:500;color:var(--t1)}
+
 /* LEAD CAPTURE MODAL */
 .lead-modal{position:fixed;inset:0;background:rgba(10,22,40,.88);z-index:998;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);animation:fadeIn .2s ease}
 .lead-modal.hide{display:none}
@@ -493,7 +505,7 @@ function initGoogleMap(){
         <div style="background:rgba(255,255,255,.15);border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff" id="auth-user-name">?</div>
         <button onclick="logout()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:9px;cursor:pointer">salir</button>
       </div>
-      <button class="tact" id="tact" onclick="topAct()">💬</button>
+      <button class="tact" id="tact" onclick="go('chat')">💬</button>
     </div>
   </div>
 
@@ -771,7 +783,7 @@ function initGoogleMap(){
 
     <!-- CHAT -->
     <div class="scr" id="s-chat">
-      <div class="chatwrap" style="height:calc(100vh - 118px)">
+      <div class="chatwrap" style="height:calc(100vh - 116px)">
         <div class="chatmsgs" id="cmsgs">
           <div class="msg a" data-i18n="chatWelcome">¡Hola! Soy tu asistente de obra SGM. Puedo ayudarte a comparar precios, analizar proveedores y mucho más. ¿Qué necesitás?</div>
         </div>
@@ -1028,15 +1040,27 @@ function initGoogleMap(){
 
   <nav class="bnav-bar">
     <button class="bnav on" onclick="go('home')" id="bn-home"><span class="bnav-i">🏠</span><span class="bnav-l" data-i18n="home">Inicio</span></button>
-    <button class="bnav" onclick="go('rubros')" id="bn-rubros"><span class="bnav-i">📦</span><span class="bnav-l" data-i18n="rubros">Rubros</span></button>
+    <button class="bnav" onclick="go('modelos')" id="bn-modelos"><span class="bnav-i">🏘️</span><span class="bnav-l">Modelos</span></button>
     <button class="bnav" onclick="go('cot')" id="bn-cot"><span class="bnav-i">✨</span><span class="bnav-l" data-i18n="quote">Cotizar</span></button>
     <button class="bnav" onclick="go('chat')" id="bn-chat"><span class="bnav-i">🤖</span><span class="bnav-l" data-i18n="ia">IA</span></button>
-    <button class="bnav" onclick="go('agenda')" id="bn-agenda"><span class="bnav-i">📅</span><span class="bnav-l" data-i18n="agenda2">Agenda</span><div class="bnav-dot"></div></button>
-    <button class="bnav" onclick="go('presup')" id="bn-presup"><span class="bnav-i">📎</span><span class="bnav-l">Presup.</span></button>
-    <button class="bnav" onclick="go('modelos')" id="bn-modelos"><span class="bnav-i">🏘️</span><span class="bnav-l">Modelos</span></button>
-    <button class="bnav" onclick="go('mapa')" id="bn-mapa"><span class="bnav-i">📍</span><span class="bnav-l">Mapa</span></button>
-    <button class="bnav" onclick="go('stats')" id="bn-stats"><span class="bnav-i">📊</span><span class="bnav-l">Stats</span></button>
+    <button class="bnav" onclick="openMore()" id="bn-more"><span class="bnav-i">☰</span><span class="bnav-l">Más</span></button>
   </nav>
+
+  <!-- MORE MENU -->
+  <div class="more-menu hide" id="more-menu">
+    <div class="more-overlay" onclick="closeMore()"></div>
+    <div class="more-sheet">
+      <div class="more-title">Más opciones</div>
+      <div class="more-grid">
+        <button class="more-btn" onclick="goMore('rubros')"><span class="more-i">📦</span><span class="more-l">Rubros</span></button>
+        <button class="more-btn" onclick="goMore('mapa')"><span class="more-i">📍</span><span class="more-l">Mapa</span></button>
+        <button class="more-btn" onclick="goMore('agenda')"><span class="more-i">📅</span><span class="more-l">Agenda</span></button>
+        <button class="more-btn" onclick="goMore('presup')"><span class="more-i">📎</span><span class="more-l">Presup.</span></button>
+        <button class="more-btn" onclick="goMore('stats')"><span class="more-i">📊</span><span class="more-l">Stats</span></button>
+        <button class="more-btn" onclick="toggleLang();closeMore()"><span class="more-i">🌐</span><span class="more-l" id="more-lang">English</span></button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- LEAD CAPTURE MODAL -->
@@ -1206,6 +1230,8 @@ function applyLang(){
 function toggleLang(){
   lang = lang==='es'?'en':'es';
   applyLang();
+  const ml = document.getElementById('more-lang');
+  if(ml) ml.textContent = lang==='es'?'English':'Español';
 }
 
 // ── DÓLAR
@@ -1385,8 +1411,11 @@ function go(n){
   cur=n;
   document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('on'));
-  document.getElementById('s-'+n).classList.add('on');
+  const scr = document.getElementById('s-'+n);
+  if(scr) scr.classList.add('on');
   document.getElementById('bn-'+n)?.classList.add('on');
+  // Close more menu if open
+  document.getElementById('more-menu')?.classList.add('hide');
   document.getElementById('tsub').textContent = {
     home:t('subtitle'),rubros:t('materials'),cot:t('cotTitle'),chat:t('assistant'),agenda:t('agenda'),presup:'Presupuestos proveedores',modelos:'Modelos de vivienda',mapa:'Constructores verificados',stats:'Panel empresa'
   }[n]||t('subtitle');
@@ -2082,6 +2111,23 @@ function cotizarModelo(modelId,m2,cal){
     cgo(3);
   },200);
 }
+
+// ── MORE MENU
+function openMore(){
+  document.getElementById('more-menu').classList.remove('hide');
+  document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('on'));
+  document.getElementById('bn-more').classList.add('on');
+}
+function closeMore(){
+  document.getElementById('more-menu').classList.add('hide');
+}
+function goMore(screen){
+  closeMore();
+  go(screen);
+}
+
+// Override go() to handle more button nav highlight
+const _origGo = go;
 
 // ── LEAD CAPTURE
 let leadCallback = null;
