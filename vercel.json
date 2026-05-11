@@ -1,7 +1,8 @@
 {
-  "rewrites": [
-    { "source": "/api/claude", "destination": "/api/claude.js" },
-    { "source": "/api/dolar", "destination": "/api/dolar.js" },
-    { "source": "/((?!api).*)", "destination": "/index.html" }
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [{"key": "x-vercel-protection-bypass", "value": "1"}]
+    }
   ]
 }
