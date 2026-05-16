@@ -61,6 +61,31 @@ Devuelve SOLO este JSON (los pct deben sumar 100, adapta rubros al sistema ${sis
     result.anticipo_usd = anticipo_usd;
     if (!result.tiempo_meses) result.tiempo_meses = tiempo_meses;
 
+    // Guardar cotización en Supabase si las env vars están configuradas
+    const sbUrl = process.env.SUPABASE_URL;
+    const sbKey = process.env.SUPABASE_ANON_KEY;
+    if (sbUrl && sbKey) {
+      try {
+        const sbRes = await fetch(`${sbUrl}/rest/v1/presupuestos`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': sbKey,
+            'Authorization': `Bearer ${sbKey}`,
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            archivo_nombre: `${tipo} ${superficie}m2 ${cal}`,
+            total_usd: result.total_usd,
+            fecha: new Date().toISOString().split('T')[0],
+          }),
+        });
+        result.saved_to_db = sbRes.ok;
+      } catch (_) {
+        result.saved_to_db = false;
+      }
+    }
+
     return res.status(200).json(result);
   } catch (e) {
     return res.status(500).json({ error: e.message });

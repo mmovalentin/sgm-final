@@ -27,9 +27,23 @@ html,body{height:100%;width:100%;overflow:hidden;background:#07111F}
 <div id="root"></div>
 <script type="text/babel">const { useState, useEffect, useRef } = React;
 const SGM_VERSION = '2.4';
-const SUPA_URL='https://wwaaoritqbfzoqnbtqvk.supabase.co';
-const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3YWFvcml0cWJmem9xbmJ0cXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTA2NDYsImV4cCI6MjA5MzkyNjY0Nn0.3-1FnfLmxkRXEfZz-u3qIKDCrq--Rhg6U1YjUryNFDo';
-const supa=window.supabase?.createClient(SUPA_URL,SUPA_KEY);
+// Cliente Supabase: se inicializa desde /api/config (env vars de Vercel).
+// Fallback a valores hardcodeados si el endpoint no está disponible.
+let supa = null;
+(async () => {
+  try {
+    const r = await fetch('/api/config');
+    const { supabaseUrl, supabaseAnonKey } = await r.json();
+    if (supabaseUrl && supabaseAnonKey && window.supabase) {
+      supa = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+      return;
+    }
+  } catch(_) {}
+  supa = window.supabase?.createClient(
+    'https://wwaaoritqbfzoqnbtqvk.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3YWFvcml0cWJmem9xbmJ0cXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTA2NDYsImV4cCI6MjA5MzkyNjY0Nn0.3-1FnfLmxkRXEfZz-u3qIKDCrq--Rhg6U1YjUryNFDo'
+  );
+})();
 
 const C = {
   navy:"#0A1628",acc:"#4A9FFF",acc2:"#64FFDA",
