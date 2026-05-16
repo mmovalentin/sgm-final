@@ -908,16 +908,56 @@ function AgendaScreen({t}) {
 function PresupScreen({t,dolar=1415}) {
   const [loading,setLoading]=useState(false);
   const [result,setResult]=useState(null);
+  const [mapStatus,setMapStatus]=useState(null);
+  const [rubrosStatus,setRubrosStatus]=useState(null);
   const fileRef=useRef(null);
+
+  async function agregarAlMapa(){
+    if(!supa||!result?.data) return;
+    setMapStatus('loading');
+    try{
+      const p=result.data.proveedor;
+      const nombre=typeof p==='object'?p.nombre:(p||result.name);
+      const rubro=typeof p==='object'?p.especialidad||'':'';
+      const contacto=typeof p==='object'?[p.telefono,p.email,p.direccion].filter(Boolean).join(' | '):'';
+      const {error}=await supa.from('proveedores').upsert({nombre,rubro,contacto,lat:-31.4135,lng:-64.1811},{onConflict:'nombre'});
+      setMapStatus(error?'error':'ok');
+    }catch(e){setMapStatus('error');}
+  }
+
+  async function agregarARubros(){
+    if(!supa||!result?.data?.items?.length) return;
+    setRubrosStatus('loading');
+    try{
+      const p=result.data.proveedor;
+      const nombre=typeof p==='object'?p.nombre:(p||result.name);
+      let provId;
+      const {data:ex}=await supa.from('proveedores').select('id').ilike('nombre',nombre).limit(1);
+      if(ex?.length>0){provId=ex[0].id;}
+      else{
+        const rubro=typeof p==='object'?p.especialidad||'':'';
+        const {data:np}=await supa.from('proveedores').insert({nombre,rubro,lat:-31.4135,lng:-64.1811}).select('id').single();
+        provId=np?.id;
+      }
+      if(!provId) throw new Error('Sin proveedor');
+      const rows=result.data.items.map(it=>({proveedor_id:provId,rubro:it.rubro||'',item:it.item||'',precio_pesos:it.precio_pesos||0,precio_usd:it.precio_usd||0}));
+      const {error}=await supa.from('materiales').insert(rows);
+      setRubrosStatus(error?'error':'ok');
+    }catch(e){setRubrosStatus('error');}
+  }
+
   async function saveToSupabase(aiData,fileName){
     if(!supa) return {ok:false,msg:'Sin conexión Supabase'};
     try{
-      const provName=(aiData.proveedor||fileName).trim();
+      const p=aiData.proveedor;
+      const provName=(typeof p==='object'?p.nombre:(p||'')).trim()||fileName;
+      const provRubro=typeof p==='object'?p.especialidad||'':aiData.items?.[0]?.rubro||'';
+      const provContacto=typeof p==='object'?[p.telefono,p.email,p.direccion].filter(Boolean).join(' | '):'';
       let provId;
       const {data:ex}=await supa.from('proveedores').select('id').ilike('nombre',provName).limit(1);
       if(ex?.length>0){provId=ex[0].id;}
       else{
-        const {data:np,error:e1}=await supa.from('proveedores').insert({nombre:provName,rubro:aiData.items?.[0]?.rubro||'',lat:-31.4135,lng:-64.1811}).select('id').single();
+        const {data:np,error:e1}=await supa.from('proveedores').insert({nombre:provName,rubro:provRubro,contacto:provContacto,lat:-31.4135,lng:-64.1811}).select('id').single();
         if(e1) throw e1;
         provId=np.id;
       }
@@ -967,18 +1007,32 @@ function PresupScreen({t,dolar=1415}) {
         {result&&!result.error&&(
           <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,overflow:'hidden'}}>
             <div style={{background:C.navy,padding:'11px 13px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <div><div style={{color:'#fff',fontSize:13,fontWeight:700}}>{result.data.proveedor||result.name}</div><div style={{color:'rgba(255,255,255,.4)',fontSize:10}}>{new Date().toLocaleDateString('es-AR')}</div></div>
+              <div>
+                <div style={{color:'#fff',fontSize:13,fontWeight:700}}>{(()=>{const p=result.data.proveedor;return typeof p==='object'?p?.nombre||result.name:p||result.name;})()} </div>
+                {typeof result.data.proveedor==='object'&&result.data.proveedor.especialidad&&(
+                  <div style={{color:'rgba(255,255,255,.55)',fontSize:10,marginTop:1}}>{result.data.proveedor.especialidad}</div>
+                )}
+                <div style={{color:'rgba(255,255,255,.35)',fontSize:9,marginTop:1}}>{new Date().toLocaleDateString('es-AR')}</div>
+              </div>
               <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2}}>
                 <div style={{color:'#64FFDA',fontSize:14,fontWeight:800}}>USD {(result.data.total_usd||0).toLocaleString()}</div>
                 <div style={{fontSize:9,color:result.saved?'#64FFDA':'#EF9A9A',fontWeight:600}}>{result.saved?'✓ Guardado':result.savedMsg?'⚠ '+result.savedMsg:''}</div>
               </div>
             </div>
-            {(result.data.items||[]).slice(0,8).map((it,i)=>(
+            {(result.data.items||[]).map((it,i)=>(
               <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 13px',borderBottom:`.5px solid ${C.border}`}}>
                 <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600}}>{it.item}</div><div style={{fontSize:10,color:C.t3,marginTop:1}}>{it.rubro}</div></div>
                 <div style={{textAlign:'right'}}><div style={{fontSize:12,fontWeight:700,color:C.acc}}>USD {(it.precio_usd||0).toLocaleString()}</div><div style={{fontSize:9,color:C.t3}}>${(it.precio_pesos||0).toLocaleString()}</div></div>
               </div>
             ))}
+            <div style={{display:'flex',gap:8,padding:'12px 13px',borderTop:`.5px solid ${C.border}`}}>
+              <button onClick={agregarAlMapa} disabled={mapStatus==='loading'||mapStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:mapStatus==='ok'?C.green:mapStatus==='error'?C.red:C.navy,color:'#fff',opacity:mapStatus==='loading'?0.6:1}}>
+                {mapStatus==='loading'?'⏳ Guardando...':mapStatus==='ok'?'✓ En el mapa':mapStatus==='error'?'⚠ Error':'📍 Agregar al mapa'}
+              </button>
+              <button onClick={agregarARubros} disabled={rubrosStatus==='loading'||rubrosStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:rubrosStatus==='ok'?C.green:rubrosStatus==='error'?C.red:C.acc,color:'#fff',opacity:rubrosStatus==='loading'?0.6:1}}>
+                {rubrosStatus==='loading'?'⏳ Guardando...':rubrosStatus==='ok'?'✓ En rubros':rubrosStatus==='error'?'⚠ Error':'📦 Agregar a rubros'}
+              </button>
+            </div>
           </div>
         )}
         {result?.error&&<div style={{background:'#FFF3F3',borderRadius:12,padding:16,textAlign:'center'}}><div style={{fontSize:13,fontWeight:700,color:C.red}}>{t.no_analizar}</div></div>}

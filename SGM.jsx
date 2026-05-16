@@ -981,7 +981,7 @@ function PresupScreen({t,dolar=1415}) {
           <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,overflow:'hidden'}}>
             <div style={{background:C.navy,padding:'11px 13px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <div>
-                <div style={{color:'#fff',fontSize:13,fontWeight:700}}>{typeof result.data.proveedor==='object'?result.data.proveedor.nombre:(result.data.proveedor||result.name)}</div>
+                <div style={{color:'#fff',fontSize:13,fontWeight:700}}>{(()=>{const p=result.data.proveedor;return typeof p==='object'?p?.nombre||result.name:p||result.name;})()} </div>
                 {typeof result.data.proveedor==='object'&&result.data.proveedor.especialidad&&(
                   <div style={{color:'rgba(255,255,255,.55)',fontSize:10,marginTop:1}}>{result.data.proveedor.especialidad}</div>
                 )}
@@ -998,14 +998,14 @@ function PresupScreen({t,dolar=1415}) {
                 <div style={{textAlign:'right'}}><div style={{fontSize:12,fontWeight:700,color:C.acc}}>USD {(it.precio_usd||0).toLocaleString()}</div><div style={{fontSize:9,color:C.t3}}>${(it.precio_pesos||0).toLocaleString()}</div></div>
               </div>
             ))}
-          </div>
-          <div style={{display:'flex',gap:8,padding:'12px 13px',borderTop:`.5px solid ${C.border}`}}>
-            <button onClick={agregarAlMapa} disabled={mapStatus==='loading'||mapStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:mapStatus==='ok'?C.green:mapStatus==='error'?C.red:C.navy,color:'#fff',opacity:mapStatus==='loading'?0.6:1}}>
-              {mapStatus==='loading'?'⏳ Guardando...':mapStatus==='ok'?'✓ En el mapa':mapStatus==='error'?'⚠ Error':'📍 Agregar al mapa'}
-            </button>
-            <button onClick={agregarARubros} disabled={rubrosStatus==='loading'||rubrosStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:rubrosStatus==='ok'?C.green:rubrosStatus==='error'?C.red:C.acc,color:'#fff',opacity:rubrosStatus==='loading'?0.6:1}}>
-              {rubrosStatus==='loading'?'⏳ Guardando...':rubrosStatus==='ok'?'✓ En rubros':rubrosStatus==='error'?'⚠ Error':'📦 Agregar a rubros'}
-            </button>
+            <div style={{display:'flex',gap:8,padding:'12px 13px',borderTop:`.5px solid ${C.border}`}}>
+              <button onClick={agregarAlMapa} disabled={mapStatus==='loading'||mapStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:mapStatus==='ok'?C.green:mapStatus==='error'?C.red:C.navy,color:'#fff',opacity:mapStatus==='loading'?0.6:1}}>
+                {mapStatus==='loading'?'⏳ Guardando...':mapStatus==='ok'?'✓ En el mapa':mapStatus==='error'?'⚠ Error':'📍 Agregar al mapa'}
+              </button>
+              <button onClick={agregarARubros} disabled={rubrosStatus==='loading'||rubrosStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:rubrosStatus==='ok'?C.green:rubrosStatus==='error'?C.red:C.acc,color:'#fff',opacity:rubrosStatus==='loading'?0.6:1}}>
+                {rubrosStatus==='loading'?'⏳ Guardando...':rubrosStatus==='ok'?'✓ En rubros':rubrosStatus==='error'?'⚠ Error':'📦 Agregar a rubros'}
+              </button>
+            </div>
           </div>
         )}
         {result?.error&&<div style={{background:'#FFF3F3',borderRadius:12,padding:16,textAlign:'center'}}><div style={{fontSize:13,fontWeight:700,color:C.red}}>{t.no_analizar}</div></div>}
