@@ -81,6 +81,20 @@ const T = {
     subir_pdf:"Subir PDF o imagen",analizando_pdf:"Analizando con IA...",
     no_analizar:"No se pudo analizar",cargados:"Cargados",
     prov_lbl:"proveedor",fecha_lbl:"fecha",items_lbl:"items",
+    tipo_casa:"Casa habitacion",tipo_amp:"Ampliacion",tipo_galp:"Galpon",
+    sis_sf:"Steel Frame",sis_mamp:"Mamposteria",
+    cal_eco:"Economico",cal_std:"Standard",cal_prem:"Premium",
+    cron_titulo:"Cronograma estimado de obra",
+    etapas:[
+      ["Proyecto y Representación Técnica","Planos, documentación y gestión municipal"],
+      ["Fundaciones con Ingeniería","Replanteo, excavación y hormigón de fundaciones"],
+      ["Estructura Steel Frame + Techado","Montaje de estructura metálica y cubierta"],
+      ["Instalaciones completas","Eléctrica, sanitaria, gas y climatización"],
+      ["Terminaciones gruesas","Revoques, contrapisos y paredes interiores"],
+      ["Terminaciones finas","Pintura, cerámicos, carpinterías y sanitarios"],
+      ["Revisión técnica y documentación","Inspección final, planos conforme a obra"],
+      ["Cierre y garantía pos-obra","Entrega formal y período de garantía activa"],
+    ],
   },
   en:{
     inicio:"Home",modelos:"Models",cotizar:"Quote",ia:"AI",mas:"More",
@@ -122,6 +136,20 @@ const T = {
     subir_pdf:"Upload PDF or image",analizando_pdf:"Analyzing with AI...",
     no_analizar:"Could not analyze",cargados:"Loaded",
     prov_lbl:"supplier",fecha_lbl:"date",items_lbl:"items",
+    tipo_casa:"House",tipo_amp:"Extension",tipo_galp:"Warehouse",
+    sis_sf:"Steel Frame",sis_mamp:"Masonry",
+    cal_eco:"Economy",cal_std:"Standard",cal_prem:"Premium",
+    cron_titulo:"Estimated construction schedule",
+    etapas:[
+      ["Project & Technical Representation","Plans, documentation and municipal permits"],
+      ["Foundations with Engineering","Layout, excavation and foundation concrete"],
+      ["Steel Frame Structure + Roofing","Metal structure assembly and roofing"],
+      ["Full Installations","Electrical, plumbing, gas and HVAC"],
+      ["Rough Finishes","Plastering, slabs and interior walls"],
+      ["Fine Finishes","Paint, tiles, carpentry and fixtures"],
+      ["Technical Review & Documentation","Final inspection and as-built drawings"],
+      ["Handover & Post-construction Warranty","Formal delivery and active warranty period"],
+    ],
   }
 };
 
@@ -325,16 +353,8 @@ function ModelosScreen({onNav,t}) {
 }
 
 // ── COTIZADOR
-const ETAPAS_BASE=[
-  {nombre:'Proyecto y Representación Técnica',desc:'Planos, documentación y gestión municipal',base:3},
-  {nombre:'Fundaciones con Ingeniería',desc:'Replanteo, excavación y hormigón de fundaciones',base:4},
-  {nombre:'Estructura Steel Frame + Techado',desc:'Montaje de estructura metálica y cubierta',base:5},
-  {nombre:'Instalaciones completas',desc:'Eléctrica, sanitaria, gas y climatización',base:4},
-  {nombre:'Terminaciones gruesas',desc:'Revoques, contrapisos y paredes interiores',base:5},
-  {nombre:'Terminaciones finas',desc:'Pintura, cerámicos, carpinterías y sanitarios',base:6},
-  {nombre:'Revisión técnica y documentación',desc:'Inspección final, planos conforme a obra',base:2},
-  {nombre:'Cierre y garantía pos-obra',desc:'Entrega formal y período de garantía activa',base:1},
-];
+const ETAPAS_BASE=[3,4,5,4,5,6,2,1];
+
 const ETAPAS_PCT=[7,6,26,17,17,15,6,6];
 function CotizadorScreen({t,initParams,lang='es'}) {
   const [tipo,setTipo]=useState('Casa habitacion');
@@ -384,13 +404,13 @@ function CotizadorScreen({t,initParams,lang='es'}) {
   }
 
   const cv=CAL[cal];
-  const calLabels={economico:t.calidad+' Economico',standard:t.calidad+' Standard',premium:t.calidad+' Premium'};
+  const calLabels={economico:t.cal_eco,standard:t.cal_std,premium:t.cal_prem};
   const sup=parseInt(m2)||80;
   const factorCron=sup<50?0.6:sup<80?0.75:sup<=120?1:1.3;
   const excPct=excluidas.reduce((s,i)=>s+ETAPAS_PCT[i],0);
   const totalAdj=Math.round((result?.total_usd||0)*(1-excPct/100));
   const anticipoAdj=Math.round(totalAdj*0.6);
-  const semsExcl=excluidas.reduce((s,i)=>s+Math.max(1,Math.round(ETAPAS_BASE[i].base*factorCron)),0);
+  const semsExcl=excluidas.reduce((s,i)=>s+Math.max(1,Math.round(ETAPAS_BASE[i]*factorCron)),0);
   const tiempoAdj=Math.max(1,(result?.tiempo_meses||4)-Math.round(semsExcl/4));
   return (
     <div>
@@ -402,9 +422,9 @@ function CotizadorScreen({t,initParams,lang='es'}) {
         <div>
           <label style={{display:'block',fontSize:11,fontWeight:600,color:C.t2,marginBottom:5,textTransform:'uppercase'}}>{t.tipo}</label>
           <select value={tipo} onChange={e=>setTipo(e.target.value)} style={{width:'100%',border:`.5px solid ${C.border2}`,borderRadius:10,padding:'10px 12px',fontSize:13,background:C.off}}>
-            <option>{lang==='en'?'House':'Casa habitacion'}</option>
-            <option>{lang==='en'?'Extension':'Ampliacion'}</option>
-            <option>{lang==='en'?'Warehouse':'Galpon'}</option>
+            <option value="Casa habitacion">{t.tipo_casa}</option>
+            <option value="Ampliacion">{t.tipo_amp}</option>
+            <option value="Galpon">{t.tipo_galp}</option>
           </select>
         </div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
@@ -415,8 +435,8 @@ function CotizadorScreen({t,initParams,lang='es'}) {
           <div>
             <label style={{display:'block',fontSize:11,fontWeight:600,color:C.t2,marginBottom:5,textTransform:'uppercase'}}>{t.sistema}</label>
             <select value={sistema} onChange={e=>setSistema(e.target.value)} style={{width:'100%',border:`.5px solid ${C.border2}`,borderRadius:10,padding:'10px 12px',fontSize:13,background:C.off}}>
-              <option>Steel Frame</option>
-              <option>Mamposteria</option>
+              <option value="Steel Frame">{t.sis_sf}</option>
+              <option value="Mamposteria">{t.sis_mamp}</option>
             </select>
           </div>
         </div>
@@ -426,7 +446,7 @@ function CotizadorScreen({t,initParams,lang='es'}) {
             {Object.entries(CAL).map(([k,v])=>(
               <div key={k} onClick={()=>setCal(k)} style={{border:`2px solid ${cal===k?v.color:C.border2}`,borderRadius:10,padding:'10px 6px',textAlign:'center',cursor:'pointer',background:cal===k?v.color:C.off,color:cal===k?'#fff':C.t1,transition:'all .2s'}}>
                 <div style={{fontSize:18}}>{v.icon}</div>
-                <div style={{fontSize:11,fontWeight:700,marginTop:3}}>{k.charAt(0).toUpperCase()+k.slice(1)}</div>
+                <div style={{fontSize:11,fontWeight:700,marginTop:3}}>{{economico:t.cal_eco,standard:t.cal_std,premium:t.cal_prem}[k]}</div>
                 <div style={{fontSize:9,opacity:.7,marginTop:1}}>USD {v.m2}/m²</div>
               </div>
             ))}
@@ -487,9 +507,9 @@ function CotizadorScreen({t,initParams,lang='es'}) {
               let semAcum=0;
               return(
                 <div style={{borderTop:'1px solid rgba(255,255,255,.08)',padding:'12px 14px'}}>
-                  <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Cronograma estimado de obra</div>
-                  {ETAPAS_BASE.map((e,i)=>{
-                    const sem=Math.max(1,Math.round(e.base*factorCron));
+                  <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>{t.cron_titulo}</div>
+                  {ETAPAS_BASE.map((base,i)=>{
+                    const sem=Math.max(1,Math.round(base*factorCron));
                     semAcum+=sem;
                     const mes=Math.ceil(semAcum/4);
                     const excl=excluidas.includes(i);
@@ -500,8 +520,8 @@ function CotizadorScreen({t,initParams,lang='es'}) {
                           <div style={{display:'flex',alignItems:'center',gap:7,flex:1,minWidth:0}}>
                             <div style={{width:20,height:20,borderRadius:'50%',background:excl?'#555':cv.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:'#fff',flexShrink:0}}>{i+1}</div>
                             <div style={{flex:1,minWidth:0}}>
-                              <div style={{color:'#fff',fontSize:11,fontWeight:700,lineHeight:1.2,textDecoration:excl?'line-through':'none'}}>{e.nombre}</div>
-                              <div style={{color:'rgba(255,255,255,.4)',fontSize:9,marginTop:1}}>{e.desc}</div>
+                              <div style={{color:'#fff',fontSize:11,fontWeight:700,lineHeight:1.2,textDecoration:excl?'line-through':'none'}}>{t.etapas[i][0]}</div>
+                              <div style={{color:'rgba(255,255,255,.4)',fontSize:9,marginTop:1}}>{t.etapas[i][1]}</div>
                             </div>
                           </div>
                           <div style={{display:'flex',alignItems:'center',gap:5,flexShrink:0,marginLeft:6}}>
