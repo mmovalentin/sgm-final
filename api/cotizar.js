@@ -1,4 +1,4 @@
-module.exports = async (req, res) => {
+﻿module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -37,7 +37,7 @@ Devuelve SOLO este JSON (los pct deben sumar 100, adapta rubros al sistema ${sis
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 600,
         system: 'Sos experto en construccion en Cordoba Argentina. Responde SIEMPRE en JSON valido puro, sin markdown, sin explicaciones.',
         messages: [{ role: 'user', content: prompt }],

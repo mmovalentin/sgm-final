@@ -724,7 +724,7 @@ function ChatScreen({t}) {
     const q=txt||input.trim();if(!q)return;
     setInput('');setMsgs(m=>[...m,{role:'user',text:q}]);setLoading(true);
     try{
-      const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,system:'Sos el asistente IA de SGM Construccion, especializado en Steel Frame y construccion en Cordoba. Responde en espanol, conciso y practico.',messages:[{role:'user',content:q}]})});
+      const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,system:'Sos el asistente IA de SGM Construccion, especializado en Steel Frame y construccion en Cordoba. Responde en espanol, conciso y practico.',messages:[{role:'user',content:q}]})});
       const d=await r.json();
       setMsgs(m=>[...m,{role:'ai',text:d.content?.[0]?.text||'Sin respuesta.'}]);
     }catch(e){setMsgs(m=>[...m,{role:'ai',text:'Error de conexion.'}]);}

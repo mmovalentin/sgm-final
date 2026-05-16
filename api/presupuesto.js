@@ -1,4 +1,4 @@
-module.exports = async (req, res) => {
+﻿module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -45,7 +45,7 @@ module.exports = async (req, res) => {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 2000,
         system: 'Sos un asistente experto en presupuestos de construcción en Argentina. Respondés SIEMPRE en JSON válido puro, sin markdown, sin explicaciones.',
         messages: [{ role: 'user', content }],
