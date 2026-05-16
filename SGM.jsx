@@ -890,7 +890,7 @@ function PresupScreen({t,dolar=1415}) {
       const {data:ex}=await supa.from('proveedores').select('id').ilike('nombre',provName).limit(1);
       if(ex?.length>0){provId=ex[0].id;}
       else{
-        const {data:np,error:e1}=await supa.from('proveedores').insert({nombre:provName,rubro:aiData.items?.[0]?.rubro||''}).select('id').single();
+        const {data:np,error:e1}=await supa.from('proveedores').insert({nombre:provName,rubro:aiData.items?.[0]?.rubro||'',lat:-31.4135,lng:-64.1811}).select('id').single();
         if(e1) throw e1;
         provId=np.id;
       }
