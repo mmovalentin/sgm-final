@@ -660,7 +660,9 @@ function updateAuthUI() {
   if(currentUser) {
     btn.style.display='none'; usr.style.display='flex';
     const n = currentUser.user_metadata?.full_name||currentUser.email||'';
-    av.textContent = n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const pic = currentUser.user_metadata?.avatar_url;
+    if(pic) { av.innerHTML=`<img src="${pic}" style="width:24px;height:24px;border-radius:50%;object-fit:cover" alt="">`; }
+    else { av.textContent = n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
   } else {
     btn.style.display='flex'; usr.style.display='none';
   }
