@@ -6,10 +6,27 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'API key not configured' });
 
-  const { tipo, m2, sistema, cal, priceM2, total, anticipo } = req.body;
+  const { tipo, m2, sistema, cal } = req.body;
   if (!tipo || !m2 || !sistema || !cal) return res.status(400).json({ error: 'Faltan campos requeridos' });
 
-  const prompt = `Genera presupuesto de construccion: tipo=${tipo}, superficie=${m2}m2, sistema=${sistema}, calidad=${cal}, precio_base=USD ${priceM2}/m2. Responde este JSON exacto: {"total_usd":${total},"anticipo_usd":${anticipo},"tiempo_meses":4,"rubros":[{"nombre":"Fundaciones","pct":15},{"nombre":"Estructura SF","pct":25},{"nombre":"Terminaciones","pct":35},{"nombre":"Instalaciones","pct":25}],"analisis":"descripcion breve del proyecto en 2 oraciones"}`;
+  const PRICES = { economico: 850, standard: 1100, premium: 1500 };
+  const priceM2 = parseInt(req.body.priceM2) || PRICES[cal] || 1000;
+  const superficie = parseInt(m2);
+  const total_usd = superficie * priceM2;
+  const anticipo_usd = Math.round(total_usd * 0.6);
+  const tiempo_meses = Math.min(24, Math.max(3, Math.round(superficie / 15)));
+
+  const prompt = `Proyecto de construccion en Cordoba Argentina:
+- Tipo: ${tipo}
+- Superficie: ${superficie}m2
+- Sistema constructivo: ${sistema}
+- Calidad: ${cal}
+- Precio base: USD ${priceM2}/m2
+- Total: USD ${total_usd}
+- Tiempo estimado: ${tiempo_meses} meses
+
+Devuelve SOLO este JSON (los pct deben sumar 100, adapta rubros al sistema ${sistema}):
+{"total_usd":${total_usd},"anticipo_usd":${anticipo_usd},"tiempo_meses":${tiempo_meses},"rubros":[{"nombre":"Fundaciones","pct":15},{"nombre":"Estructura ${sistema}","pct":30},{"nombre":"Terminaciones","pct":30},{"nombre":"Instalaciones","pct":20},{"nombre":"Exterior","pct":5}],"analisis":"descripcion breve del proyecto en 2 oraciones"}`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -38,6 +55,11 @@ module.exports = async (req, res) => {
       if (match) result = JSON.parse(match[0]);
       else return res.status(500).json({ error: 'Respuesta IA inválida', raw: txt.slice(0, 300) });
     }
+
+    // Garantizar valores correctos independientemente de lo que devuelva la IA
+    result.total_usd = total_usd;
+    result.anticipo_usd = anticipo_usd;
+    if (!result.tiempo_meses) result.tiempo_meses = tiempo_meses;
 
     return res.status(200).json(result);
   } catch (e) {
