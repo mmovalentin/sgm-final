@@ -883,6 +883,8 @@ function PresupScreen({t,dolar=1415}) {
   const [result,setResult]=useState(null);
   const [mapStatus,setMapStatus]=useState(null);
   const [rubrosStatus,setRubrosStatus]=useState(null);
+  const [showRubroModal,setShowRubroModal]=useState(false);
+  const [rubroGlobal,setRubroGlobal]=useState(null);
   const fileRef=useRef(null);
 
   async function agregarAlMapa(){
@@ -890,33 +892,55 @@ function PresupScreen({t,dolar=1415}) {
     setMapStatus('loading');
     try{
       const p=result.data.proveedor;
-      const nombre=typeof p==='object'?p.nombre:(p||result.name);
+      const nombre=(typeof p==='object'?p.nombre:(p||result.name)).trim();
       const rubro=typeof p==='object'?p.especialidad||'':'';
       const contacto=typeof p==='object'?[p.telefono,p.email,p.direccion].filter(Boolean).join(' | '):'';
-      const {error}=await supa.from('proveedores').upsert({nombre,rubro,contacto,lat:-31.4135,lng:-64.1811},{onConflict:'nombre'});
-      setMapStatus(error?'error':'ok');
-    }catch(e){setMapStatus('error');}
+      const {data:ex}=await supa.from('proveedores').select('id').ilike('nombre',nombre).limit(1);
+      let err;
+      if(ex?.length>0){
+        const r=await supa.from('proveedores').update({rubro,contacto,lat:-31.4135,lng:-64.1811}).eq('id',ex[0].id);
+        err=r.error;
+      } else {
+        const r=await supa.from('proveedores').insert({nombre,rubro,contacto,lat:-31.4135,lng:-64.1811});
+        err=r.error;
+      }
+      setMapStatus(err?'err:'+err.message.slice(0,40):'ok');
+    }catch(e){setMapStatus('err:'+e.message.slice(0,40));}
   }
 
-  async function agregarARubros(){
-    if(!supa||!result?.data?.items?.length) return;
+  function agregarARubros(){
+    if(!result?.data?.items?.length) return;
+    setRubroGlobal(null);
+    setShowRubroModal(true);
+  }
+
+  async function confirmarRubros(){
+    setShowRubroModal(false);
     setRubrosStatus('loading');
     try{
       const p=result.data.proveedor;
-      const nombre=typeof p==='object'?p.nombre:(p||result.name);
+      const nombre=(typeof p==='object'?p.nombre:(p||result.name)).trim();
       let provId;
       const {data:ex}=await supa.from('proveedores').select('id').ilike('nombre',nombre).limit(1);
       if(ex?.length>0){provId=ex[0].id;}
       else{
         const rubro=typeof p==='object'?p.especialidad||'':'';
-        const {data:np}=await supa.from('proveedores').insert({nombre,rubro,lat:-31.4135,lng:-64.1811}).select('id').single();
+        const {data:np,error:e1}=await supa.from('proveedores').insert({nombre,rubro,lat:-31.4135,lng:-64.1811}).select('id').single();
+        if(e1) throw e1;
         provId=np?.id;
       }
-      if(!provId) throw new Error('Sin proveedor');
-      const rows=result.data.items.map(it=>({proveedor_id:provId,rubro:it.rubro||'',item:it.item||'',precio_pesos:it.precio_pesos||0,precio_usd:it.precio_usd||0}));
+      if(!provId) throw new Error('Sin proveedor ID');
+      const rows=result.data.items.map(it=>({
+        proveedor_id:provId,
+        rubro:rubroGlobal!==null?rubroGlobal:(it.rubro||'Sin rubro'),
+        item:it.item||'',
+        precio_pesos:it.precio_pesos||0,
+        precio_usd:it.precio_usd||0
+      }));
       const {error}=await supa.from('materiales').insert(rows);
-      setRubrosStatus(error?'error':'ok');
-    }catch(e){setRubrosStatus('error');}
+      if(error) throw error;
+      setRubrosStatus('ok');
+    }catch(e){setRubrosStatus('err:'+e.message.slice(0,50));}
   }
 
   async function saveToSupabase(aiData,fileName){
@@ -999,17 +1023,41 @@ function PresupScreen({t,dolar=1415}) {
               </div>
             ))}
             <div style={{display:'flex',gap:8,padding:'12px 13px',borderTop:`.5px solid ${C.border}`}}>
-              <button onClick={agregarAlMapa} disabled={mapStatus==='loading'||mapStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:mapStatus==='ok'?C.green:mapStatus==='error'?C.red:C.navy,color:'#fff',opacity:mapStatus==='loading'?0.6:1}}>
-                {mapStatus==='loading'?'⏳ Guardando...':mapStatus==='ok'?'✓ En el mapa':mapStatus==='error'?'⚠ Error':'📍 Agregar al mapa'}
+              <button onClick={agregarAlMapa} disabled={mapStatus==='loading'||mapStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:mapStatus==='ok'?C.green:mapStatus?.startsWith('err')?C.red:C.navy,color:'#fff',opacity:mapStatus==='loading'?0.6:1}}>
+                {mapStatus==='loading'?'⏳ Guardando...':mapStatus==='ok'?'✓ En el mapa':mapStatus?.startsWith('err')?'⚠ Error':'📍 Agregar al mapa'}
               </button>
-              <button onClick={agregarARubros} disabled={rubrosStatus==='loading'||rubrosStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:rubrosStatus==='ok'?C.green:rubrosStatus==='error'?C.red:C.acc,color:'#fff',opacity:rubrosStatus==='loading'?0.6:1}}>
-                {rubrosStatus==='loading'?'⏳ Guardando...':rubrosStatus==='ok'?'✓ En rubros':rubrosStatus==='error'?'⚠ Error':'📦 Agregar a rubros'}
+              <button onClick={agregarARubros} disabled={rubrosStatus==='loading'||rubrosStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:rubrosStatus==='ok'?C.green:rubrosStatus?.startsWith('err')?C.red:C.acc,color:'#fff',opacity:rubrosStatus==='loading'?0.6:1}}>
+                {rubrosStatus==='loading'?'⏳ Guardando...':rubrosStatus==='ok'?'✓ En rubros':rubrosStatus?.startsWith('err')?'⚠ Error':'📦 Agregar a rubros'}
               </button>
             </div>
           </div>
         )}
         {result?.error&&<div style={{background:'#FFF3F3',borderRadius:12,padding:16,textAlign:'center'}}><div style={{fontSize:13,fontWeight:700,color:C.red}}>{t.no_analizar}</div></div>}
       </div>
+      {showRubroModal&&(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:200,display:'flex',alignItems:'flex-end'}} onClick={()=>setShowRubroModal(false)}>
+          <div style={{background:C.card,borderRadius:'16px 16px 0 0',width:'100%',maxHeight:'75vh',overflow:'auto',padding:16}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:14,fontWeight:700,color:C.t1,marginBottom:4}}>Asignar rubro a los materiales</div>
+            <div style={{fontSize:11,color:C.t3,marginBottom:12}}>Elegí un rubro global o usá el de cada ítem detectado por IA</div>
+            <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:14}}>
+              <div onClick={()=>setRubroGlobal(null)} style={{padding:'10px 12px',borderRadius:9,border:`1.5px solid ${rubroGlobal===null?C.acc:C.border}`,cursor:'pointer',background:rubroGlobal===null?'rgba(74,159,255,.08)':'transparent'}}>
+                <div style={{fontSize:12,fontWeight:700,color:rubroGlobal===null?C.acc:C.t1}}>🏷 Usar rubro de cada ítem</div>
+                <div style={{fontSize:10,color:C.t3,marginTop:1}}>Mantiene el rubro extraído por la IA para cada material</div>
+              </div>
+              {RUBROS.map(r=>(
+                <div key={r.name} onClick={()=>setRubroGlobal(r.name)} style={{padding:'10px 12px',borderRadius:9,border:`1.5px solid ${rubroGlobal===r.name?r.color:C.border}`,cursor:'pointer',display:'flex',alignItems:'center',gap:10,background:rubroGlobal===r.name?r.color+'18':'transparent'}}>
+                  <span style={{fontSize:18,flexShrink:0}}>{r.icon}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:rubroGlobal===r.name?r.color:C.t1}}>{r.name}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>setShowRubroModal(false)} style={{flex:1,padding:12,borderRadius:9,border:`.5px solid ${C.border}`,background:'none',cursor:'pointer',fontSize:12,fontWeight:700,color:C.t2}}>Cancelar</button>
+              <button onClick={confirmarRubros} style={{flex:1,padding:12,borderRadius:9,border:'none',background:C.navy,color:'#fff',cursor:'pointer',fontSize:12,fontWeight:700}}>✓ Confirmar inserción</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
