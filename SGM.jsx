@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
+const SGM_VERSION = '2.4';
 
 const C = {
   navy:"#0A1628",acc:"#4A9FFF",acc2:"#64FFDA",
