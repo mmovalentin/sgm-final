@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 
 const C = {
   navy:"#0A1628",acc:"#4A9FFF",acc2:"#64FFDA",
@@ -361,7 +361,7 @@ function CotizadorScreen({t,initParams,lang='es'}) {
     const total=parseInt(m2||80)*priceM2;
     const anticipo=Math.round(total*0.6);
     try{
-      const r=await fetch('https://api.anthropic.com/v1/messages',{
+      const r=await fetch('/api/cotizar',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
@@ -506,7 +506,7 @@ function ChatScreen({t}) {
     const q=txt||input.trim();if(!q)return;
     setInput('');setMsgs(m=>[...m,{role:'user',text:q}]);setLoading(true);
     try{
-      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,system:'Sos el asistente IA de SGM Construccion, especializado en Steel Frame y construccion en Cordoba. Responde en espanol, conciso y practico.',messages:[{role:'user',content:q}]})});
+      const r=await fetch('/api/cotizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,system:'Sos el asistente IA de SGM Construccion, especializado en Steel Frame y construccion en Cordoba. Responde en espanol, conciso y practico.',messages:[{role:'user',content:q}]})});
       const d=await r.json();
       setMsgs(m=>[...m,{role:'ai',text:d.content?.[0]?.text||'Sin respuesta.'}]);
     }catch(e){setMsgs(m=>[...m,{role:'ai',text:'Error de conexion.'}]);}
@@ -672,7 +672,7 @@ function PresupScreen({t}) {
       const b64=ev.target.result.split(',')[1];
       try{
         const content=[...(file.type.startsWith('image/')?[{type:'image',source:{type:'base64',media_type:file.type,data:b64}}]:[]),{type:'text',text:'Analiza este presupuesto. SOLO JSON: {"proveedor":"nombre","items":[{"rubro":"rubro","item":"desc","precio_pesos":0,"precio_usd":0}],"total_pesos":0,"total_usd":0}. TC: 1390.'}];
-        const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content}]})});
+        const r=await fetch('/api/cotizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content}]})});
         const d=await r.json();
         const txt=d.content?.[0]?.text||'{}';
         setResult({data:JSON.parse(txt.replace(/[`]/g,'').trim()),name:file.name});

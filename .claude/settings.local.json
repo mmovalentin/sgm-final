@@ -6,7 +6,11 @@
       "Bash(git push *)",
       "Bash(git config *)",
       "PowerShell(Copy-Item *)",
-      "Bash(dir C:\\\\Users\\\\Usuario\\\\sgm-final *)"
+      "Bash(dir C:\\\\Users\\\\Usuario\\\\sgm-final *)",
+      "Bash(dir C:\\\\Users\\\\Usuario\\\\sgm-final\\\\api *)",
+      "Bash(sed -n '360,380p' SGM.jsx)",
+      "Bash(sed -n '505,520p' SGM.jsx)",
+      "Bash(sed -n '670,685p' SGM.jsx)"
     ]
   }
 }
