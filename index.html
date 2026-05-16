@@ -596,14 +596,30 @@ const MAPA_MARKERS=[
   {lat:-31.3989,lng:-64.2634,nombre:'Constructora Norte SF',tipo:'constructor',desc:'Steel Frame y mampostería'},
   {lat:-31.4567,lng:-64.1823,nombre:'BuildSF Sur',tipo:'constructor',desc:'Construcción industrializada'},
   {lat:-31.4412,lng:-64.2567,nombre:'Constructora Oeste',tipo:'constructor',desc:'Proyectos residenciales SF'},
+  {lat:-31.4301,lng:-64.1923,nombre:'Arq. Matías Romero',tipo:'profesional',desc:'Arquitecto proyectista Steel Frame'},
+  {lat:-31.3812,lng:-64.2145,nombre:'Ing. Laura Pérez',tipo:'profesional',desc:'Ingeniería estructural y cálculo'},
+  {lat:-31.4678,lng:-64.2389,nombre:'Est. García & Asoc.',tipo:'profesional',desc:'Dirección técnica de obras'},
   {lat:-31.3756,lng:-64.2012,nombre:'Materiales SGM',tipo:'proveedor',desc:'Perfiles y placas Steel Frame'},
   {lat:-31.4234,lng:-64.1456,nombre:'Perfiles Córdoba',tipo:'proveedor',desc:'Steel Frame y Durlock'},
   {lat:-31.4089,lng:-64.2334,nombre:'Ferrería del Oeste',tipo:'proveedor',desc:'Materiales de construcción'},
   {lat:-31.3645,lng:-64.1734,nombre:'Suministros SF',tipo:'proveedor',desc:'Insumos Steel Frame'},
 ];
+const MAPA_TIPO={
+  constructor:{bg:'#4A9FFF',em:'🏗️',label:'Constructor'},
+  profesional:{bg:'#2E7D32',em:'👷',label:'Profesional'},
+  proveedor:{bg:'#E65100',em:'🏪',label:'Proveedor'},
+};
+const MAPA_CHIPS=[
+  {id:'constructor',label:'Constructores',color:'#4A9FFF'},
+  {id:'profesional',label:'Profesionales',color:'#2E7D32'},
+  {id:'proveedor',label:'Proveedores',color:'#E65100'},
+];
 function MapaScreen({t}) {
   const mapRef=useRef(null);
   const mapInst=useRef(null);
+  const markersRef=useRef([]);
+  const [filtro,setFiltro]=useState('constructor');
+
   useEffect(()=>{
     if(!window.L||mapInst.current) return;
     const map=window.L.map(mapRef.current,{zoomControl:true}).setView([-31.4135,-64.1811],12);
@@ -611,33 +627,66 @@ function MapaScreen({t}) {
     window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
       attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:19
     }).addTo(map);
+    const stored=[];
     MAPA_MARKERS.forEach(m=>{
-      const bg=m.tipo==='constructor'?'#4A9FFF':'#64FFDA';
-      const em=m.tipo==='constructor'?'🏗️':'🏪';
+      const cfg=MAPA_TIPO[m.tipo]||MAPA_TIPO.constructor;
       const ico=window.L.divIcon({
-        html:`<div style="background:${bg};width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)">${em}</div>`,
+        html:`<div style="background:${cfg.bg};width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)">${cfg.em}</div>`,
         className:'',iconSize:[34,34],iconAnchor:[17,17]
       });
-      window.L.marker([m.lat,m.lng],{icon:ico}).addTo(map)
+      const marker=window.L.marker([m.lat,m.lng],{icon:ico})
         .bindPopup(`<b style="font-size:13px">${m.nombre}</b><br/><span style="font-size:11px;color:#555">${m.desc}</span>`);
+      stored.push({marker,tipo:m.tipo});
     });
-    return()=>{map.remove();mapInst.current=null;};
+    markersRef.current=stored;
+    return()=>{map.remove();mapInst.current=null;markersRef.current=[];};
   },[]);
+
+  useEffect(()=>{
+    if(!mapInst.current) return;
+    markersRef.current.forEach(({marker,tipo})=>{
+      if(tipo===filtro) mapInst.current.addLayer(marker);
+      else mapInst.current.removeLayer(marker);
+    });
+  },[filtro]);
+
+  const visibles=MAPA_MARKERS.filter(m=>m.tipo===filtro);
+
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <div style={{background:C.navy,padding:'12px 14px',flexShrink:0}}>
         <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>SGM</div>
         <div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:2}}>Mapa SGM</div>
-        <div style={{display:'flex',gap:12,marginTop:6}}>
-          <div style={{display:'flex',alignItems:'center',gap:5,fontSize:10,color:'rgba(255,255,255,.7)'}}>
-            <div style={{width:10,height:10,borderRadius:'50%',background:'#4A9FFF'}}/>{'  '}Constructores
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:5,fontSize:10,color:'rgba(255,255,255,.7)'}}>
-            <div style={{width:10,height:10,borderRadius:'50%',background:'#64FFDA'}}/>{'  '}Proveedores
-          </div>
+      </div>
+      <div ref={mapRef} style={{height:240,flexShrink:0}}/>
+      <div style={{background:C.card,padding:'10px 14px',flexShrink:0,borderBottom:`.5px solid ${C.border}`}}>
+        <div style={{display:'flex',gap:8}}>
+          {MAPA_CHIPS.map(ch=>(
+            <button key={ch.id} onClick={()=>setFiltro(ch.id)} style={{
+              padding:'5px 13px',borderRadius:20,fontSize:11,fontWeight:700,cursor:'pointer',
+              border:`1.5px solid ${ch.color}`,
+              background:filtro===ch.id?ch.color:'transparent',
+              color:filtro===ch.id?'#fff':ch.color,
+              transition:'all .15s'
+            }}>{ch.label}</button>
+          ))}
         </div>
       </div>
-      <div ref={mapRef} style={{flex:1,minHeight:0}}/>
+      <div style={{flex:1,overflowY:'auto'}}>
+        {visibles.map((m,i)=>{
+          const cfg=MAPA_TIPO[m.tipo];
+          return(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderBottom:`.5px solid ${C.border}`}}>
+              <div style={{width:36,height:36,borderRadius:'50%',background:cfg.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{cfg.em}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{color:C.t1,fontSize:13,fontWeight:700}}>{m.nombre}</div>
+                <div style={{color:C.t3,fontSize:11,marginTop:2}}>{m.desc}</div>
+              </div>
+              <div style={{fontSize:9,fontWeight:700,color:cfg.bg,border:`1px solid ${cfg.bg}`,borderRadius:10,padding:'2px 7px',flexShrink:0}}>{cfg.label}</div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
