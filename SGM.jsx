@@ -1,5 +1,8 @@
 ﻿import { useState, useEffect, useRef } from "react";
 const SGM_VERSION = '2.4';
+const SUPA_URL='https://wwaaoritqbfzoqnbtqvk.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3YWFvcml0cWJmem9xbmJ0cXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTA2NDYsImV4cCI6MjA5MzkyNjY0Nn0.3-1FnfLmxkRXEfZz-u3qIKDCrq--Rhg6U1YjUryNFDo';
+const supa=window.supabase?.createClient(SUPA_URL,SUPA_KEY);
 
 const C = {
   navy:"#0A1628",acc:"#4A9FFF",acc2:"#64FFDA",
@@ -846,6 +849,32 @@ function PresupScreen({t}) {
   const [loading,setLoading]=useState(false);
   const [result,setResult]=useState(null);
   const fileRef=useRef(null);
+  async function saveToSupabase(aiData,fileName){
+    if(!supa) return {ok:false,msg:'Sin conexión Supabase'};
+    try{
+      const provName=(aiData.proveedor||fileName).trim();
+      let provId;
+      const {data:ex}=await supa.from('proveedores').select('id').ilike('nombre',provName).limit(1);
+      if(ex?.length>0){provId=ex[0].id;}
+      else{
+        const {data:np,error:e1}=await supa.from('proveedores').insert({nombre:provName,rubro:aiData.items?.[0]?.rubro||''}).select('id').single();
+        if(e1) throw e1;
+        provId=np.id;
+      }
+      const {data:presup,error:e2}=await supa.from('presupuestos').insert({proveedor_id:provId,archivo_nombre:fileName,total_usd:aiData.total_usd||0,fecha:new Date().toISOString().split('T')[0]}).select('id').single();
+      if(e2) throw e2;
+      for(const it of (aiData.items||[])){
+        const {data:em}=await supa.from('materiales').select('id,precio_usd').eq('proveedor_id',provId).ilike('item',it.item||'').limit(1);
+        if(em?.length>0){
+          await supa.from('materiales').update({precio_anterior_usd:em[0].precio_usd,precio_usd:it.precio_usd||0,precio_pesos:it.precio_pesos||0,presupuesto_id:presup.id}).eq('id',em[0].id);
+        }else{
+          await supa.from('materiales').insert({proveedor_id:provId,presupuesto_id:presup.id,rubro:it.rubro||'',item:it.item||'',precio_pesos:it.precio_pesos||0,precio_usd:it.precio_usd||0});
+        }
+      }
+      return {ok:true};
+    }catch(e){return {ok:false,msg:e.message};}
+  }
+
   async function handleFile(e){
     const file=e.target.files[0];if(!file)return;
     setLoading(true);
@@ -857,7 +886,9 @@ function PresupScreen({t}) {
         const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content}]})});
         const d=await r.json();
         const txt=d.content?.[0]?.text||'{}';
-        setResult({data:JSON.parse(txt.replace(/[`]/g,'').trim()),name:file.name});
+        const parsed=JSON.parse(txt.replace(/[`]/g,'').trim());
+        const sbRes=await saveToSupabase(parsed,file.name);
+        setResult({data:parsed,name:file.name,saved:sbRes.ok,savedMsg:sbRes.msg});
       }catch(err){setResult({error:true,name:file.name});}
       setLoading(false);
     };
@@ -879,7 +910,10 @@ function PresupScreen({t}) {
           <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,overflow:'hidden'}}>
             <div style={{background:C.navy,padding:'11px 13px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <div><div style={{color:'#fff',fontSize:13,fontWeight:700}}>{result.data.proveedor||result.name}</div><div style={{color:'rgba(255,255,255,.4)',fontSize:10}}>{new Date().toLocaleDateString('es-AR')}</div></div>
-              <div style={{color:'#64FFDA',fontSize:14,fontWeight:800}}>USD {(result.data.total_usd||0).toLocaleString()}</div>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2}}>
+                <div style={{color:'#64FFDA',fontSize:14,fontWeight:800}}>USD {(result.data.total_usd||0).toLocaleString()}</div>
+                <div style={{fontSize:9,color:result.saved?'#64FFDA':'#EF9A9A',fontWeight:600}}>{result.saved?'✓ Guardado':result.savedMsg?'⚠ '+result.savedMsg:''}</div>
+              </div>
             </div>
             {(result.data.items||[]).slice(0,8).map((it,i)=>(
               <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 13px',borderBottom:`.5px solid ${C.border}`}}>
