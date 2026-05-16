@@ -896,11 +896,9 @@ function PresupScreen({t}) {
     reader.onload=async(ev)=>{
       const b64=ev.target.result.split(',')[1];
       try{
-        const content=[...(file.type.startsWith('image/')?[{type:'image',source:{type:'base64',media_type:file.type,data:b64}}]:[]),{type:'text',text:'Analiza este presupuesto. SOLO JSON: {"proveedor":"nombre","items":[{"rubro":"rubro","item":"desc","precio_pesos":0,"precio_usd":0}],"total_pesos":0,"total_usd":0}. TC: 1390.'}];
-        const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content}]})});
-        const d=await r.json();
-        const txt=d.content?.[0]?.text||'{}';
-        const parsed=JSON.parse(txt.replace(/[`]/g,'').trim());
+        const r=await fetch('/api/presupuesto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64,mime_type:file.type,file_name:file.name})});
+        const parsed=await r.json();
+        if(parsed.error) throw new Error(parsed.error);
         const sbRes=await saveToSupabase(parsed,file.name);
         setResult({data:parsed,name:file.name,saved:sbRes.ok,savedMsg:sbRes.msg});
       }catch(err){setResult({error:true,name:file.name});}
