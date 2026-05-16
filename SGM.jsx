@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const C = {
   navy:"#0A1628",acc:"#4A9FFF",acc2:"#64FFDA",
@@ -325,17 +325,6 @@ function ModelosScreen({onNav,t}) {
 }
 
 // ── COTIZADOR
-const ETAPAS_BASE=[
-  {nombre:'Proyecto y Representación Técnica',desc:'Planos, documentación y gestión municipal',base:3},
-  {nombre:'Fundaciones con Ingeniería',desc:'Replanteo, excavación y hormigón de fundaciones',base:4},
-  {nombre:'Estructura Steel Frame + Techado',desc:'Montaje de estructura metálica y cubierta',base:5},
-  {nombre:'Instalaciones completas',desc:'Eléctrica, sanitaria, gas y climatización',base:4},
-  {nombre:'Terminaciones gruesas',desc:'Revoques, contrapisos y paredes interiores',base:5},
-  {nombre:'Terminaciones finas',desc:'Pintura, cerámicos, carpinterías y sanitarios',base:6},
-  {nombre:'Revisión técnica y documentación',desc:'Inspección final, planos conforme a obra',base:2},
-  {nombre:'Cierre y garantía pos-obra',desc:'Entrega formal y período de garantía activa',base:1},
-];
-const ETAPAS_PCT=[7,6,26,17,17,15,6,6];
 function CotizadorScreen({t,initParams,lang='es'}) {
   const [tipo,setTipo]=useState('Casa habitacion');
   const [m2,setM2]=useState('80');
@@ -343,7 +332,6 @@ function CotizadorScreen({t,initParams,lang='es'}) {
   const [cal,setCal]=useState('economico');
   const [loading,setLoading]=useState(false);
   const [result,setResult]=useState(null);
-  const [excluidas,setExcluidas]=useState([]);
 
   // Cuando llega desde "Cotizar este modelo" aplicar los params
   useEffect(()=>{
@@ -373,14 +361,21 @@ function CotizadorScreen({t,initParams,lang='es'}) {
     const total=parseInt(m2||80)*priceM2;
     const anticipo=Math.round(total*0.6);
     try{
-      const r=await fetch('/api/cotizar',{
+      const r=await fetch('https://api.anthropic.com/v1/messages',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({tipo,m2:parseInt(m2||80),sistema,cal,priceM2,total,anticipo})
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:600,
+          system:'Sos experto en construccion en Cordoba Argentina. Responde SIEMPRE en JSON valido puro, sin markdown, sin explicaciones.',
+          messages:[{role:'user',content:'Genera presupuesto de construccion: tipo='+tipo+', superficie='+m2+'m2, sistema='+sistema+', calidad='+cal+', precio_base=USD '+priceM2+'/m2. Responde este JSON exacto: {"total_usd":'+total+',"anticipo_usd":'+anticipo+',"tiempo_meses":4,"rubros":[{"nombre":"Fundaciones","pct":15},{"nombre":"Estructura SF","pct":25},{"nombre":"Terminaciones","pct":35},{"nombre":"Instalaciones","pct":25}],"analisis":"descripcion breve del proyecto en 2 oraciones"}'}]
+        })
       });
-      const data=await r.json();
-      if(data.error) setResult({error:true,msg:data.error,raw:data.raw});
-      else { setExcluidas([]); setResult(data); }
+      const d=await r.json();
+      const txt=d.content?.[0]?.text||'{}';
+      const data=parseJSON(txt);
+      if(data) setResult(data);
+      else setResult({error:true,raw:txt.slice(0,200)});
     }catch(e){
       setResult({error:true,msg:e.message});
     }
@@ -389,13 +384,6 @@ function CotizadorScreen({t,initParams,lang='es'}) {
 
   const cv=CAL[cal];
   const calLabels={economico:t.calidad+' Economico',standard:t.calidad+' Standard',premium:t.calidad+' Premium'};
-  const sup=parseInt(m2)||80;
-  const factorCron=sup<50?0.6:sup<80?0.75:sup<=120?1:1.3;
-  const excPct=excluidas.reduce((s,i)=>s+ETAPAS_PCT[i],0);
-  const totalAdj=Math.round((result?.total_usd||0)*(1-excPct/100));
-  const anticipoAdj=Math.round(totalAdj*0.6);
-  const semsExcl=excluidas.reduce((s,i)=>s+Math.max(1,Math.round(ETAPAS_BASE[i].base*factorCron)),0);
-  const tiempoAdj=Math.max(1,(result?.tiempo_meses||4)-Math.round(semsExcl/4));
   return (
     <div>
       <div style={{background:C.navy,padding:'13px 14px'}}>
@@ -452,15 +440,15 @@ function CotizadorScreen({t,initParams,lang='es'}) {
           <div style={{background:C.navy,borderRadius:12,overflow:'hidden'}}>
             <div style={{padding:14,borderBottom:'1px solid rgba(255,255,255,.08)'}}>
               <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{tipo} · {m2}m² · {cal}</div>
-              <div style={{color:'#fff',fontSize:22,fontWeight:800,marginTop:4}}>USD {totalAdj.toLocaleString()}</div>
+              <div style={{color:'#fff',fontSize:22,fontWeight:800,marginTop:4}}>USD {(result.total_usd||0).toLocaleString()}</div>
               <div style={{display:'flex',gap:12,marginTop:6}}>
                 <div style={{background:'rgba(255,255,255,.08)',borderRadius:8,padding:'6px 10px'}}>
                   <div style={{color:'rgba(255,255,255,.4)',fontSize:9}}>{t.anticipo||'Anticipo'}</div>
-                  <div style={{color:'#64FFDA',fontSize:13,fontWeight:700}}>USD {anticipoAdj.toLocaleString()}</div>
+                  <div style={{color:'#64FFDA',fontSize:13,fontWeight:700}}>USD {(result.anticipo_usd||0).toLocaleString()}</div>
                 </div>
                 <div style={{background:'rgba(255,255,255,.08)',borderRadius:8,padding:'6px 10px'}}>
                   <div style={{color:'rgba(255,255,255,.4)',fontSize:9}}>{t.tiempo||'Tiempo'}</div>
-                  <div style={{color:'#64FFDA',fontSize:13,fontWeight:700}}>{tiempoAdj} meses</div>
+                  <div style={{color:'#64FFDA',fontSize:13,fontWeight:700}}>{result.tiempo_meses||4} meses</div>
                 </div>
                 <div style={{background:'rgba(255,255,255,.08)',borderRadius:8,padding:'6px 10px'}}>
                   <div style={{color:'rgba(255,255,255,.4)',fontSize:9}}>USD/m²</div>
@@ -487,46 +475,6 @@ function CotizadorScreen({t,initParams,lang='es'}) {
                 <div style={{color:'rgba(255,255,255,.8)',fontSize:12,lineHeight:1.6}}>{result.analisis}</div>
               </div>
             )}
-            {(()=>{
-              let semAcum=0;
-              return(
-                <div style={{borderTop:'1px solid rgba(255,255,255,.08)',padding:'12px 14px'}}>
-                  <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Cronograma estimado de obra</div>
-                  {ETAPAS_BASE.map((e,i)=>{
-                    const sem=Math.max(1,Math.round(e.base*factorCron));
-                    semAcum+=sem;
-                    const mes=Math.ceil(semAcum/4);
-                    const excl=excluidas.includes(i);
-                    const toggle=()=>setExcluidas(ex=>ex.includes(i)?ex.filter(x=>x!==i):[...ex,i]);
-                    return(
-                      <div key={i} style={{marginBottom:10,opacity:excl?0.4:1,transition:'opacity .2s'}}>
-                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:3}}>
-                          <div style={{display:'flex',alignItems:'center',gap:7,flex:1,minWidth:0}}>
-                            <div style={{width:20,height:20,borderRadius:'50%',background:excl?'#555':cv.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:'#fff',flexShrink:0}}>{i+1}</div>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{color:'#fff',fontSize:11,fontWeight:700,lineHeight:1.2,textDecoration:excl?'line-through':'none'}}>{e.nombre}</div>
-                              <div style={{color:'rgba(255,255,255,.4)',fontSize:9,marginTop:1}}>{e.desc}</div>
-                            </div>
-                          </div>
-                          <div style={{display:'flex',alignItems:'center',gap:5,flexShrink:0,marginLeft:6}}>
-                            <div style={{textAlign:'right'}}>
-                              <div style={{color:excl?'#666':cv.color,fontSize:9,fontWeight:700}}>Mes {mes}</div>
-                              <div style={{color:'rgba(255,255,255,.3)',fontSize:8}}>{sem} sem</div>
-                            </div>
-                            <button onClick={toggle} style={{background:excl?'rgba(198,40,40,.25)':'rgba(46,125,50,.25)',border:`1px solid ${excl?'#C62828':'#2E7D32'}`,borderRadius:5,padding:'3px 6px',fontSize:9,fontWeight:700,color:excl?'#EF9A9A':'#A5D6A7',cursor:'pointer',whiteSpace:'nowrap',lineHeight:1.4}}>
-                              {excl?'✗ Exc':'✓ Inc'}
-                            </button>
-                          </div>
-                        </div>
-                        <div style={{background:'rgba(255,255,255,.07)',height:4,borderRadius:2,marginLeft:27}}>
-                          <div style={{width:0,height:'100%',borderRadius:2,background:excl?'#555':cv.color}}/>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
             <div style={{padding:'12px 14px',display:'flex',gap:8}}>
               <button onClick={()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1')} style={{flex:1,background:'#25D366',color:'#fff',border:'none',borderRadius:8,padding:11,fontSize:12,fontWeight:700,cursor:'pointer'}}>💬 {t.consultar}</button>
               <button onClick={()=>setResult(null)} style={{flex:1,background:'rgba(255,255,255,.1)',color:'#fff',border:'none',borderRadius:8,padding:11,fontSize:12,fontWeight:700,cursor:'pointer'}}>{t.nueva_cot}</button>
@@ -558,7 +506,7 @@ function ChatScreen({t}) {
     const q=txt||input.trim();if(!q)return;
     setInput('');setMsgs(m=>[...m,{role:'user',text:q}]);setLoading(true);
     try{
-      const r=await fetch('/api/cotizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,system:'Sos el asistente IA de SGM Construccion, especializado en Steel Frame y construccion en Cordoba. Responde en espanol, conciso y practico.',messages:[{role:'user',content:q}]})});
+      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,system:'Sos el asistente IA de SGM Construccion, especializado en Steel Frame y construccion en Cordoba. Responde en espanol, conciso y practico.',messages:[{role:'user',content:q}]})});
       const d=await r.json();
       setMsgs(m=>[...m,{role:'ai',text:d.content?.[0]?.text||'Sin respuesta.'}]);
     }catch(e){setMsgs(m=>[...m,{role:'ai',text:'Error de conexion.'}]);}
@@ -724,7 +672,7 @@ function PresupScreen({t}) {
       const b64=ev.target.result.split(',')[1];
       try{
         const content=[...(file.type.startsWith('image/')?[{type:'image',source:{type:'base64',media_type:file.type,data:b64}}]:[]),{type:'text',text:'Analiza este presupuesto. SOLO JSON: {"proveedor":"nombre","items":[{"rubro":"rubro","item":"desc","precio_pesos":0,"precio_usd":0}],"total_pesos":0,"total_usd":0}. TC: 1390.'}];
-        const r=await fetch('/api/cotizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content}]})});
+        const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content}]})});
         const d=await r.json();
         const txt=d.content?.[0]?.text||'{}';
         setResult({data:JSON.parse(txt.replace(/[`]/g,'').trim()),name:file.name});
