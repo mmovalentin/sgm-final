@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/presupuesto.js": { "maxDuration": 60 },
+    "api/cotizar.js":     { "maxDuration": 30 },
+    "api/claude.js":      { "maxDuration": 30 }
+  },
   "headers": [
     {
       "source": "/(.*)",
