@@ -6,19 +6,28 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'API key not configured' });
 
-  const { b64, mime_type, file_name } = req.body;
+  const { b64, mime_type, file_name, tc } = req.body;
   if (!b64) return res.status(400).json({ error: 'Falta el archivo en base64' });
 
+  const TC = parseInt(tc) || 1415;
   const isImage = mime_type && mime_type.startsWith('image/');
-  const prompt = 'Este es un presupuesto de construccion en Argentina con precios en PESOS argentinos. ' +
-    'Extrae cada item con su precio en pesos. Usa TC 1415 para convertir a USD. ' +
-    'Responde SOLO en JSON: {"proveedor":"string","items":[{"rubro":"string","item":"string","precio_pesos":0,"precio_usd":0}],"total_pesos":0,"total_usd":0}. ' +
-    'El total_usd debe ser suma de todos los precio_usd.';
+  const isPdf = mime_type === 'application/pdf' || (file_name || '').toLowerCase().endsWith('.pdf');
 
-  const content = [
-    ...(isImage ? [{ type: 'image', source: { type: 'base64', media_type: mime_type, data: b64 } }] : []),
-    { type: 'text', text: prompt },
-  ];
+  console.log(`[presupuesto] file=${file_name} mime=${mime_type} isImage=${isImage} isPdf=${isPdf} TC=${TC}`);
+
+  const prompt =
+    `Este es un presupuesto de construccion en Argentina con precios en PESOS argentinos. ` +
+    `Extrae cada item con su precio en pesos. Usa TC ${TC} para convertir a USD. ` +
+    `Responde SOLO en JSON: {"proveedor":"string","items":[{"rubro":"string","item":"string","precio_pesos":0,"precio_usd":0}],"total_pesos":0,"total_usd":0}. ` +
+    `El total_usd debe ser suma de todos los precio_usd.`;
+
+  const content = [];
+  if (isImage) {
+    content.push({ type: 'image', source: { type: 'base64', media_type: mime_type, data: b64 } });
+  } else if (isPdf) {
+    content.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } });
+  }
+  content.push({ type: 'text', text: prompt });
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -37,24 +46,38 @@ module.exports = async (req, res) => {
     });
 
     const raw = await response.json();
+    console.log(`[presupuesto] Claude status=${response.status} stop=${raw.stop_reason}`);
+
     const txt = raw.content?.[0]?.text || '{}';
+    console.log(`[presupuesto] Claude raw text: ${txt.slice(0, 600)}`);
 
     let result;
     try {
       result = JSON.parse(txt.replace(/`/g, '').replace(/^json\s*/i, '').trim());
     } catch (_) {
       const match = txt.match(/\{[\s\S]*\}/);
-      if (match) result = JSON.parse(match[0]);
-      else return res.status(500).json({ error: 'Respuesta IA inválida', raw: txt.slice(0, 300) });
+      if (match) {
+        result = JSON.parse(match[0]);
+      } else {
+        console.error('[presupuesto] No se pudo parsear JSON:', txt.slice(0, 300));
+        return res.status(500).json({ error: 'Respuesta IA inválida', raw: txt.slice(0, 300) });
+      }
     }
 
-    // Recalcular total_usd como suma de items para mayor precisión
-    if (result.items?.length > 0) {
-      result.total_usd = Math.round(result.items.reduce((s, it) => s + (it.precio_usd || 0), 0) * 100) / 100;
+    // Recalcular precio_usd de cada item con el TC real
+    if (Array.isArray(result.items)) {
+      result.items = result.items.map(it => ({
+        ...it,
+        precio_usd: Math.round((it.precio_pesos || 0) / TC * 100) / 100,
+      }));
+      result.total_pesos = result.items.reduce((s, it) => s + (it.precio_pesos || 0), 0);
+      result.total_usd   = Math.round(result.items.reduce((s, it) => s + it.precio_usd, 0) * 100) / 100;
     }
 
+    console.log(`[presupuesto] OK proveedor="${result.proveedor}" items=${result.items?.length} total_usd=${result.total_usd}`);
     return res.status(200).json(result);
   } catch (e) {
+    console.error('[presupuesto] Error:', e.message);
     return res.status(500).json({ error: e.message });
   }
 };

@@ -631,7 +631,7 @@ const MAPA_CHIPS=[
   {id:'profesional',label:'Profesionales',color:'#2E7D32'},
   {id:'proveedor',label:'Proveedores',color:'#E65100'},
 ];
-function MapaScreen({t}) {
+function MapaScreen({t,perfil,onLogin}) {
   const mapRef=useRef(null);
   const mapInst=useRef(null);
   const markersRef=useRef([]);
@@ -716,6 +716,25 @@ function MapaScreen({t}) {
           );
         })}
       </div>
+      {perfil&&(
+        <div style={{flexShrink:0,padding:'12px 14px',borderTop:`.5px solid ${C.border}`,background:C.card}}>
+          {(perfil==='constructor'||perfil==='profesional')&&(
+            <button onClick={()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1')} style={{width:'100%',background:'#25D366',color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              🏗️ Quiero sumarme como constructor
+            </button>
+          )}
+          {perfil==='proveedor'&&(
+            <button onClick={()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1')} style={{width:'100%',background:'#25D366',color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              🏪 Quiero sumarme como proveedor
+            </button>
+          )}
+          {perfil==='cliente'&&(
+            <button onClick={onLogin} style={{width:'100%',background:C.navy,color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              🔐 Login para guardar mis cotizaciones
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -886,7 +905,7 @@ function AgendaScreen({t}) {
   );
 }
 
-function PresupScreen({t}) {
+function PresupScreen({t,dolar=1415}) {
   const [loading,setLoading]=useState(false);
   const [result,setResult]=useState(null);
   const fileRef=useRef(null);
@@ -923,7 +942,7 @@ function PresupScreen({t}) {
     reader.onload=async(ev)=>{
       const b64=ev.target.result.split(',')[1];
       try{
-        const r=await fetch('/api/presupuesto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64,mime_type:file.type,file_name:file.name})});
+        const r=await fetch('/api/presupuesto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64,mime_type:file.type,file_name:file.name,tc:dolar})});
         const parsed=await r.json();
         if(parsed.error) throw new Error(parsed.error);
         const sbRes=await saveToSupabase(parsed,file.name);
@@ -1106,9 +1125,9 @@ function SGMApp() {
     rubros:<RubrosScreen perfil={perfil} t={t}/>,
     faq:<FAQScreen t={t}/>,
     stats:<StatsScreen t={t}/>,
-    presup:<PresupScreen t={t}/>,
+    presup:<PresupScreen t={t} dolar={dolar}/>,
     agenda:<AgendaScreen t={t}/>,
-    mapa:<MapaScreen t={t}/>,
+    mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)}/>,
   };
 
   return (
