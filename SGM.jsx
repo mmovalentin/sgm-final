@@ -1,8 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
-
-const SUPA_URL = 'https://wwaaoritqbfzoqnbtqvk.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3YWFvcml0cWJmem9xbmJ0cXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTA2NDYsImV4cCI6MjA5MzkyNjY0Nn0.3-1FnfLmxkRXEfZz-u3qIKDCrq--Rhg6U1YjUryNFDo';
-const supa = window.supabase?.createClient(SUPA_URL, SUPA_KEY);
+import { useState, useEffect, useRef } from "react";
 
 const C = {
   navy:"#0A1628",acc:"#4A9FFF",acc2:"#64FFDA",
@@ -158,7 +154,7 @@ const FAQS = [
 ];
 
 // ── TOPBAR
-function Topbar({screen,perfil,dolar,onAyuda,onLogin,onLogout,user,t,onSound,soundOn}) {
+function Topbar({screen,perfil,dolar,onAyuda,onLogin,loggedIn,t,onSound,soundOn}) {
   const labels={cliente:'🏠 Cliente',constructor:'🏗️ Constructor',proveedor:'🏪 Proveedor'};
   const scrNames={home:'Sistema de Gestion',modelos:t.galeria,cot:'Cotizador IA',chat:t.chat_title,mapa:'Mapa SGM',rubros:t.rubros_title,stats:t.stats_title,faq:t.faq_title,agenda:t.agenda_title,presup:t.presup_title};
   return (
@@ -174,13 +170,9 @@ function Topbar({screen,perfil,dolar,onAyuda,onLogin,onLogout,user,t,onSound,sou
         <div style={{background:'rgba(100,255,218,.1)',border:'1px solid rgba(100,255,218,.2)',borderRadius:6,padding:'3px 7px',fontSize:10,fontWeight:700,color:'#64FFDA'}}>
           ${dolar.toLocaleString('es-AR')} Blue
         </div>
-        {!user
+        {!loggedIn
           ? <button onClick={onLogin} style={{background:'rgba(255,255,255,.1)',border:'1px solid rgba(255,255,255,.2)',color:'#fff',fontSize:10,fontWeight:600,padding:'4px 9px',borderRadius:7,cursor:'pointer'}}>G {t.entrar}</button>
-          : <button onClick={onLogout} title={user.email} style={{width:26,height:26,borderRadius:'50%',background:'none',border:'none',padding:0,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              {user.user_metadata?.avatar_url
-                ? <img src={user.user_metadata.avatar_url} style={{width:26,height:26,borderRadius:'50%',objectFit:'cover'}} alt=""/>
-                : <div style={{width:26,height:26,borderRadius:'50%',background:C.acc,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:C.navy}}>{(user.email||'?')[0].toUpperCase()}</div>}
-            </button>
+          : <div style={{width:26,height:26,borderRadius:'50%',background:C.acc,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:C.navy}}>VM</div>
         }
         <button onClick={onSound} style={{width:28,height:28,borderRadius:'50%',background:'rgba(255,255,255,.08)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>{soundOn?'🔊':'🔇'}</button>
         <button onClick={onAyuda} style={{width:28,height:28,borderRadius:'50%',background:'rgba(255,255,255,.08)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>❓</button>
@@ -814,29 +806,13 @@ export default function SGMApp() {
   const [showMore,setShowMore]=useState(false);
   const [showAyuda,setShowAyuda]=useState(false);
   const [dolar,setDolar]=useState(1390);
-  const [user,setUser]=useState(null);
+  const [loggedIn,setLoggedIn]=useState(false);
   const [lang,setLang]=useState('es');
   const [soundOn,setSoundOn]=useState(true);
   const t=T[lang];
 
   useEffect(()=>{const timer=setTimeout(()=>setPhase('onboarding'),2000);return()=>clearTimeout(timer);},[]);
   useEffect(()=>{fetch('https://dolarapi.com/v1/dolares/blue').then(r=>r.json()).then(d=>setDolar(d.venta||1390)).catch(()=>{});},[]);
-
-  useEffect(()=>{
-    if(!supa) return;
-    supa.auth.getSession().then(({data:{session}})=>setUser(session?.user||null));
-    const {data:{subscription}}=supa.auth.onAuthStateChange((_,session)=>setUser(session?.user||null));
-    return()=>subscription.unsubscribe();
-  },[]);
-
-  async function handleLogin(){
-    if(!supa) return;
-    await supa.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}});
-  }
-  async function handleLogout(){
-    if(!supa) return;
-    await supa.auth.signOut();
-  }
 
   function handleNav(id,params) {
     if(id==='more'){setShowMore(true);return;}
@@ -883,7 +859,7 @@ export default function SGMApp() {
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100vh',background:C.card,position:'relative',overflow:'hidden',borderRadius:20,fontFamily:"system-ui,sans-serif"}}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,button{font-family:inherit}`}</style>
-      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>setShowAyuda(true)} onLogin={handleLogin} onLogout={handleLogout} user={user} t={t} onSound={()=>{setSoundOn(s=>!s);playTap();}} soundOn={soundOn}/>
+      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>setShowAyuda(true)} onLogin={()=>setLoggedIn(true)} loggedIn={loggedIn} t={t} onSound={()=>{setSoundOn(s=>!s);playTap();}} soundOn={soundOn}/>
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap}>
         {screens[screen]||screens.home}
       </div>
@@ -893,4 +869,3 @@ export default function SGMApp() {
     </div>
   );
 }
-
