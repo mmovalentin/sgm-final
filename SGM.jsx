@@ -325,6 +325,16 @@ function ModelosScreen({onNav,t}) {
 }
 
 // ── COTIZADOR
+const ETAPAS_BASE=[
+  {nombre:'Proyecto y Representación Técnica',desc:'Planos, documentación y gestión municipal',base:3},
+  {nombre:'Fundaciones con Ingeniería',desc:'Replanteo, excavación y hormigón de fundaciones',base:4},
+  {nombre:'Estructura Steel Frame + Techado',desc:'Montaje de estructura metálica y cubierta',base:5},
+  {nombre:'Instalaciones completas',desc:'Eléctrica, sanitaria, gas y climatización',base:4},
+  {nombre:'Terminaciones gruesas',desc:'Revoques, contrapisos y paredes interiores',base:5},
+  {nombre:'Terminaciones finas',desc:'Pintura, cerámicos, carpinterías y sanitarios',base:6},
+  {nombre:'Revisión técnica y documentación',desc:'Inspección final, planos conforme a obra',base:2},
+  {nombre:'Cierre y garantía pos-obra',desc:'Entrega formal y período de garantía activa',base:1},
+];
 function CotizadorScreen({t,initParams,lang='es'}) {
   const [tipo,setTipo]=useState('Casa habitacion');
   const [m2,setM2]=useState('80');
@@ -468,6 +478,42 @@ function CotizadorScreen({t,initParams,lang='es'}) {
                 <div style={{color:'rgba(255,255,255,.8)',fontSize:12,lineHeight:1.6}}>{result.analisis}</div>
               </div>
             )}
+            {(()=>{
+              const sup=parseInt(m2)||80;
+              const factor=sup<50?0.6:sup<80?0.75:sup<=120?1:1.3;
+              let semAcum=0;
+              return(
+                <div style={{borderTop:'1px solid rgba(255,255,255,.08)',padding:'12px 14px'}}>
+                  <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Cronograma estimado de obra</div>
+                  {ETAPAS_BASE.map((e,i)=>{
+                    const sem=Math.max(1,Math.round(e.base*factor));
+                    const inicio=semAcum+1;
+                    semAcum+=sem;
+                    const mes=Math.ceil(semAcum/4);
+                    return(
+                      <div key={i} style={{marginBottom:10}}>
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:3}}>
+                          <div style={{display:'flex',alignItems:'center',gap:7}}>
+                            <div style={{width:20,height:20,borderRadius:'50%',background:cv.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:'#fff',flexShrink:0}}>{i+1}</div>
+                            <div>
+                              <div style={{color:'#fff',fontSize:11,fontWeight:700,lineHeight:1.2}}>{e.nombre}</div>
+                              <div style={{color:'rgba(255,255,255,.4)',fontSize:9,marginTop:1}}>{e.desc}</div>
+                            </div>
+                          </div>
+                          <div style={{textAlign:'right',flexShrink:0,marginLeft:8}}>
+                            <div style={{color:cv.color,fontSize:9,fontWeight:700}}>Mes {mes}</div>
+                            <div style={{color:'rgba(255,255,255,.3)',fontSize:8}}>{sem} sem</div>
+                          </div>
+                        </div>
+                        <div style={{background:'rgba(255,255,255,.07)',height:4,borderRadius:2,marginLeft:27}}>
+                          <div style={{width:0,height:'100%',borderRadius:2,background:cv.color}}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
             <div style={{padding:'12px 14px',display:'flex',gap:8}}>
               <button onClick={()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1')} style={{flex:1,background:'#25D366',color:'#fff',border:'none',borderRadius:8,padding:11,fontSize:12,fontWeight:700,cursor:'pointer'}}>💬 {t.consultar}</button>
               <button onClick={()=>setResult(null)} style={{flex:1,background:'rgba(255,255,255,.1)',color:'#fff',border:'none',borderRadius:8,padding:11,fontSize:12,fontWeight:700,cursor:'pointer'}}>{t.nueva_cot}</button>
