@@ -200,7 +200,7 @@ const T = {
 
 const RUBROS = [
   { name:"Fundaciones",icon:"🏗",color:"#0D47A1",pct:85,mats:{economico:["Hormigon H21","Malla Q188","Cemento Portland","Arena gruesa","Hierro 10mm","Ladrillos comunes","Cal hidraulica","Membrana imp.","Piedra partida","Cano PVC 110"],standard:["Hormigon H25","Malla Q257","Cemento ARS 40kg","Arena clasificada","Hierro 12mm","Ladrillo ceramico","Hidrofugo","Membrana 4mm","Piedra basaltica","Cano PVC 160"],premium:["Hormigon H30","Malla Q335 doble","Cemento especial","Arena lavada","Hierro 16mm","Ladrillo portante","Drenaje perimetral","Membrana 6mm","Piedra sel.","Caneria PP doble"]}},
-  { name:"Steel Frame",icon:"🔩",color:"#1B5E20",pct:60,mats:{economico:["Perfil C 90x43","Perfil U 90x43","Tornillos 4x16","Cinta hidrofuga","Barrera vapor","OSB 11mm","Esquineros","Anclajes platea","Planchuelas 50x4","Tirantes"],standard:["Perfil C 90 galv.","Perfil U 90 galv.","Tornillos 6x25","Cinta reforzada","Barrera 200mic","OSB 18mm","Esquineros 2mm","Anclajes quimicos","Planchuelas 60x5","Tensores"],premium:["Perfil C 100x50","Perfil U 100x50","Tornillos clase 3","Cinta butilica","Membrana EPDM","OSB 18+aislante","Esquineros 3mm","Anclajes cert.","Planchuelas 80x6","Sistema calc."]}},
+  { name:"Steel Frame",icon:"🔩",color:"#1B5E20",pct:60,mats:{economico:["Perfil C 70x43","Perfil U 70x43","Tornillos 4x16","Cinta hidrofuga","Barrera vapor","OSB 11mm","Esquineros","Anclajes platea","Planchuelas 50x4","Tirantes"],standard:["Perfil C 100 galv.","Perfil U 100 galv.","Tornillos 6x25","Cinta reforzada","Barrera 200mic","OSB 18mm","Esquineros 2mm","Anclajes quimicos","Planchuelas 60x5","Tensores"],premium:["Perfil C 100x50","Perfil U 100x50","Tornillos clase 3","Cinta butilica","Membrana EPDM","OSB 18+aislante","Esquineros 3mm","Anclajes cert.","Planchuelas 80x6","Sistema calc."]}},
   { name:"Electrica",icon:"⚡",color:"#E65100",pct:90,mats:{economico:["Cable 2.5mm","Cable 4mm","Cano corrugado","Tablero 12c","Diferencial 25A","Termica 10A","Caja 4x2","Llave simple","Tomacorriente","Cinta aisladora"],standard:["Cable 2.5mm LH","Cable 4mm LH","Cano rigido","Tablero 18c","Diferencial 40A","Termomagnetica","Caja 4x4","Cambre 6001","Toma USB","Sensor"],premium:["Cable 4mm LH","Cable 6mm LH","Cano metalico","Tablero inteligente","Diferencial 63A","Automatico dif.","Sistema domotico","Carga inalambrica","Solar","Central"]}},
   { name:"Sanitaria",icon:"🚿",color:"#0277BD",pct:75,mats:{economico:["Cano PVC 110","Cano PP 25","Llave paso","Termotanque 60L","Trampa P","Codo 90","Pegamento PVC","Teflon","Rejilla","Flexible"],standard:["Cano PVC 160","Cano PP multicapa","Llave esfera","Termotanque 80L","Trampa doble","Ramal 45","Pegamento prem.","Kit selladores","Rejilla embutir","Griferia media"],premium:["Cano CPVC","Cano PERT-Al","Llave termostatica","Calefon 12L","Hidrojet","Prensolado","Kit profesional","Selladores cert.","Rejilla oculta","Griferia diseno"]}},
   { name:"Drywall",icon:"🧱",color:"#4A148C",pct:40,mats:{economico:["Placa 12.5mm","Perfil PAR 70","Perfil PGC 70","Tornillos","Cinta papel","Masilla secado","Lana vidrio 50mm","Perfil omega","Cantoneras","Sellador"],standard:["Placa RH 15mm","PAR 70 ref.","PGC 70 galv.","Tornillos TR","Cinta malla","Masilla elast.","Lana roca 70mm","Omega galv.","Cantoneras metal.","Masilla liso"],premium:["Placa RH+RF 15mm","PAR 100 galv.","PGC 100 galv.","Tornillos cert.","Juntas flotantes","Masilla polim.","Lana roca 100mm","Perfil acabado","Esq. invisible","Term. 0"]}},
@@ -636,6 +636,16 @@ function MapaScreen({t,perfil,onLogin}) {
   const mapInst=useRef(null);
   const markersRef=useRef([]);
   const [activos,setActivos]=useState(new Set(['constructor','profesional','proveedor']));
+  const [dbProveedores,setDbProveedores]=useState([]);
+
+  useEffect(()=>{
+    if(!supa) return;
+    supa.from('proveedores').select('id,nombre,rubro,lat,lng,contacto').not('lat','is',null).then(({data})=>{
+      if(data) setDbProveedores(data.filter(p=>p.lat&&p.lng));
+    });
+  },[]);
+
+  const allMarkers=[...MAPA_MARKERS,...dbProveedores.map(p=>({lat:p.lat,lng:p.lng,nombre:p.nombre,desc:p.rubro||'Proveedor',tipo:'proveedor',fromDb:true}))];
 
   useEffect(()=>{
     if(!window.L||mapInst.current) return;
@@ -645,7 +655,7 @@ function MapaScreen({t,perfil,onLogin}) {
       attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:19
     }).addTo(map);
     const stored=[];
-    MAPA_MARKERS.forEach(m=>{
+    allMarkers.forEach(m=>{
       const cfg=MAPA_TIPO[m.tipo]||MAPA_TIPO.constructor;
       const ico=window.L.divIcon({
         html:`<div style="background:${cfg.bg};width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)">${cfg.em}</div>`,
@@ -657,7 +667,7 @@ function MapaScreen({t,perfil,onLogin}) {
     });
     markersRef.current=stored;
     return()=>{map.remove();mapInst.current=null;markersRef.current=[];};
-  },[]);
+  },[dbProveedores]);
 
   useEffect(()=>{
     if(!mapInst.current) return;
@@ -673,7 +683,7 @@ function MapaScreen({t,perfil,onLogin}) {
     return next;
   });
 
-  const visibles=MAPA_MARKERS.filter(m=>activos.has(m.tipo));
+  const visibles=allMarkers.filter(m=>activos.has(m.tipo));
 
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
@@ -789,7 +799,14 @@ function RubrosScreen({perfil,t}) {
   const [q,setQ]=useState('');
   const [sel,setSel]=useState(null);
   const [calR,setCalR]=useState('economico');
+  const [dbMats,setDbMats]=useState([]);
   const filtered=RUBROS.filter(r=>r.name.toLowerCase().includes(q.toLowerCase()));
+
+  useEffect(()=>{
+    if(sel===null||!supa) return;
+    const rubroName=RUBROS[sel]?.name||'';
+    supa.from('materiales').select('item,rubro,precio_pesos,precio_usd,proveedores(nombre)').eq('rubro',rubroName).order('created_at',{ascending:false}).limit(50).then(({data})=>setDbMats(data||[]));
+  },[sel]);
 
   if(sel!==null){
     const r=RUBROS[sel];
@@ -818,6 +835,24 @@ function RubrosScreen({perfil,t}) {
               <div style={{fontSize:9,padding:'2px 7px',borderRadius:8,background:`${r.color}18`,color:r.color,fontWeight:700}}>{t.incluir}</div>
             </div>
           ))}
+          {dbMats.length>0&&(
+            <div style={{marginTop:14}}>
+              <div style={{fontSize:9,textTransform:'uppercase',letterSpacing:1,color:C.t3,fontWeight:700,marginBottom:8}}>📦 Desde presupuestos cargados</div>
+              {dbMats.map((m,i)=>(
+                <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',borderBottom:`.5px solid ${C.border}`}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:12,fontWeight:600,color:C.t1}}>{m.item}</div>
+                    <div style={{fontSize:10,color:C.t3,marginTop:1}}>{m.proveedores?.nombre||''}
+                    </div>
+                  </div>
+                  <div style={{textAlign:'right',flexShrink:0}}>
+                    <div style={{fontSize:11,fontWeight:700,color:r.color}}>USD {(m.precio_usd||0).toLocaleString()}</div>
+                    <div style={{fontSize:9,color:C.t3}}>${(m.precio_pesos||0).toLocaleString()}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
