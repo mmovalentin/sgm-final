@@ -6,8 +6,13 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'API key not configured' });
 
+  // Guard: si Vercel no parsea el body devolvemos 400 con detalle
+  if (!req.body || typeof req.body !== 'object') {
+    return res.status(400).json({ error: 'Body no recibido o no es JSON', bodyType: typeof req.body });
+  }
+
   const { b64, mime_type, file_name, tc } = req.body;
-  if (!b64) return res.status(400).json({ error: 'Falta el archivo en base64' });
+  if (!b64) return res.status(400).json({ error: 'Falta el archivo en base64', received: Object.keys(req.body) });
 
   const TC = parseInt(tc) || 1415;
   const isImage = mime_type && mime_type.startsWith('image/');
