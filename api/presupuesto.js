@@ -21,22 +21,15 @@ module.exports = async (req, res) => {
     `Responde SOLO en JSON: {"proveedor":"string","items":[{"rubro":"string","item":"string","precio_pesos":0,"precio_usd":0}],"total_pesos":0,"total_usd":0}. ` +
     `El total_usd debe ser suma de todos los precio_usd.`;
 
+  // Claude Sonnet soporta PDFs nativamente via type:"document" (sin dependencias externas).
+  // Imágenes via type:"image". El prompt de extracción va siempre como último bloque de texto.
   const content = [];
   if (isImage) {
     content.push({ type: 'image', source: { type: 'base64', media_type: mime_type, data: b64 } });
-    content.push({ type: 'text', text: prompt });
   } else if (isPdf) {
-    // Claude no puede procesar PDFs como imagen; generamos presupuesto de ejemplo realista
-    content.push({ type: 'text', text:
-      `El usuario subio un PDF llamado "${file_name}". Como no puedo leer PDFs directamente, ` +
-      `genera un presupuesto de ejemplo realista para construccion en Argentina con 8 items comunes ` +
-      `(hierros, cemento, arena, bloques, ceramicos, pintura, electricidad, sanitaria) ` +
-      `con precios en pesos argentinos actuales 2026. Usa TC ${TC} para USD. ` +
-      `Responde SOLO en JSON: {"proveedor":"${file_name}","items":[{"rubro":"string","item":"string","precio_pesos":0,"precio_usd":0}],"total_pesos":0,"total_usd":0}.`
-    });
-  } else {
-    content.push({ type: 'text', text: prompt });
+    content.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } });
   }
+  content.push({ type: 'text', text: prompt });
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
