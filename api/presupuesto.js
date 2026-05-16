@@ -49,6 +49,14 @@ module.exports = async (req, res) => {
 
     const raw = await response.json();
     console.log(`[presupuesto] Claude status=${response.status} stop=${raw.stop_reason}`);
+    console.log(`[presupuesto] raw keys=${Object.keys(raw).join(',')}`);
+
+    // Detectar error de Claude (API key inválida, overload, etc.)
+    if (raw.error || (!raw.content && response.status !== 200)) {
+      const errMsg = raw.error?.message || JSON.stringify(raw);
+      console.error(`[presupuesto] Claude API error: ${errMsg}`);
+      return res.status(502).json({ error: `Claude API error: ${errMsg}` });
+    }
 
     const txt = raw.content?.[0]?.text || '{}';
     console.log(`[presupuesto] Claude raw text: ${txt.slice(0, 600)}`);
@@ -64,6 +72,10 @@ module.exports = async (req, res) => {
         console.error('[presupuesto] No se pudo parsear JSON:', txt.slice(0, 300));
         return res.status(500).json({ error: 'Respuesta IA inválida', raw: txt.slice(0, 300) });
       }
+    }
+
+    if (!result || Object.keys(result).length === 0) {
+      return res.status(500).json({ error: 'Claude devolvio respuesta vacia', raw: txt.slice(0, 300) });
     }
 
     // Recalcular precio_usd de cada item con el TC real
