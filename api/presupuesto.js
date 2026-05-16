@@ -21,10 +21,14 @@
   console.log(`[presupuesto] file=${file_name} mime=${mime_type} isImage=${isImage} isPdf=${isPdf} TC=${TC}`);
 
   const prompt =
-    `Este es un presupuesto de construccion en Argentina con precios en PESOS argentinos. ` +
-    `Extrae cada item con su precio en pesos. Usa TC ${TC} para convertir a USD. ` +
-    `Responde SOLO en JSON: {"proveedor":"string","items":[{"rubro":"string","item":"string","precio_pesos":0,"precio_usd":0}],"total_pesos":0,"total_usd":0}. ` +
-    `El total_usd debe ser suma de todos los precio_usd.`;
+    `Analizá este presupuesto de construcción/servicio en Argentina con precios en PESOS argentinos.\n` +
+    `Extraé del encabezado del PDF el nombre completo, teléfono, email y dirección del proveedor. ` +
+    `Si no encontrás algún dato dejalo como string vacío.\n` +
+    `Extraé TODOS los ítems con su precio en pesos. Usa TC ${TC} para convertir a USD.\n` +
+    `El total_usd debe ser la suma exacta de todos los precio_usd.\n` +
+    `Retorná SOLO JSON válido sin texto adicional:\n` +
+    `{"proveedor":{"nombre":"","especialidad":"","telefono":"","email":"","direccion":""},` +
+    `"items":[{"rubro":"","item":"","precio_pesos":0,"precio_usd":0}],"total_pesos":0,"total_usd":0}`;
 
   // Claude Sonnet soporta PDFs nativamente via type:"document" (sin dependencias externas).
   // Imágenes via type:"image". El prompt de extracción va siempre como último bloque de texto.
@@ -46,7 +50,7 @@
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
+        max_tokens: 4000,
         system: 'Sos un asistente experto en presupuestos de construcción en Argentina. Respondés SIEMPRE en JSON válido puro, sin markdown, sin explicaciones.',
         messages: [{ role: 'user', content }],
       }),
@@ -81,6 +85,19 @@
 
     if (!result || Object.keys(result).length === 0) {
       return res.status(500).json({ error: 'Claude devolvio respuesta vacia', raw: txt.slice(0, 300) });
+    }
+
+    // Normalizar proveedor como objeto con todos los campos
+    if (typeof result.proveedor === 'string') {
+      result.proveedor = { nombre: result.proveedor, especialidad: '', telefono: '', email: '', direccion: '' };
+    } else if (typeof result.proveedor === 'object' && result.proveedor !== null) {
+      result.proveedor = {
+        nombre:      result.proveedor.nombre      || '',
+        especialidad:result.proveedor.especialidad|| '',
+        telefono:    result.proveedor.telefono    || '',
+        email:       result.proveedor.email       || '',
+        direccion:   result.proveedor.direccion   || '',
+      };
     }
 
     // Recalcular precio_usd de cada item con el TC real
