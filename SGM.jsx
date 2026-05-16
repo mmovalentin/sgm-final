@@ -591,7 +591,7 @@ function MapaScreen({t}) {
   const mapRef=useRef(null);
   const mapInst=useRef(null);
   const markersRef=useRef([]);
-  const [filtro,setFiltro]=useState('constructor');
+  const [activos,setActivos]=useState(new Set(['constructor','profesional','proveedor']));
 
   useEffect(()=>{
     if(!window.L||mapInst.current) return;
@@ -607,7 +607,7 @@ function MapaScreen({t}) {
         html:`<div style="background:${cfg.bg};width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)">${cfg.em}</div>`,
         className:'',iconSize:[34,34],iconAnchor:[17,17]
       });
-      const marker=window.L.marker([m.lat,m.lng],{icon:ico})
+      const marker=window.L.marker([m.lat,m.lng],{icon:ico}).addTo(map)
         .bindPopup(`<b style="font-size:13px">${m.nombre}</b><br/><span style="font-size:11px;color:#555">${m.desc}</span>`);
       stored.push({marker,tipo:m.tipo});
     });
@@ -618,12 +618,18 @@ function MapaScreen({t}) {
   useEffect(()=>{
     if(!mapInst.current) return;
     markersRef.current.forEach(({marker,tipo})=>{
-      if(tipo===filtro) mapInst.current.addLayer(marker);
+      if(activos.has(tipo)) mapInst.current.addLayer(marker);
       else mapInst.current.removeLayer(marker);
     });
-  },[filtro]);
+  },[activos]);
 
-  const visibles=MAPA_MARKERS.filter(m=>m.tipo===filtro);
+  const toggle=id=>setActivos(prev=>{
+    const next=new Set(prev);
+    next.has(id)?next.delete(id):next.add(id);
+    return next;
+  });
+
+  const visibles=MAPA_MARKERS.filter(m=>activos.has(m.tipo));
 
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
@@ -634,18 +640,24 @@ function MapaScreen({t}) {
       <div ref={mapRef} style={{height:240,flexShrink:0}}/>
       <div style={{background:C.card,padding:'10px 14px',flexShrink:0,borderBottom:`.5px solid ${C.border}`}}>
         <div style={{display:'flex',gap:8}}>
-          {MAPA_CHIPS.map(ch=>(
-            <button key={ch.id} onClick={()=>setFiltro(ch.id)} style={{
-              padding:'5px 13px',borderRadius:20,fontSize:11,fontWeight:700,cursor:'pointer',
-              border:`1.5px solid ${ch.color}`,
-              background:filtro===ch.id?ch.color:'transparent',
-              color:filtro===ch.id?'#fff':ch.color,
-              transition:'all .15s'
-            }}>{ch.label}</button>
-          ))}
+          {MAPA_CHIPS.map(ch=>{
+            const on=activos.has(ch.id);
+            return(
+              <button key={ch.id} onClick={()=>toggle(ch.id)} style={{
+                padding:'5px 13px',borderRadius:20,fontSize:11,fontWeight:700,cursor:'pointer',
+                border:`1.5px solid ${ch.color}`,
+                background:on?ch.color:'transparent',
+                color:on?'#fff':ch.color,
+                transition:'all .15s'
+              }}>{ch.label}</button>
+            );
+          })}
         </div>
       </div>
       <div style={{flex:1,overflowY:'auto'}}>
+        {visibles.length===0&&(
+          <div style={{textAlign:'center',padding:32,color:C.t3,fontSize:13}}>Sin resultados. Activá algún filtro.</div>
+        )}
         {visibles.map((m,i)=>{
           const cfg=MAPA_TIPO[m.tipo];
           return(
