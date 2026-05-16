@@ -926,7 +926,7 @@ export default function SGMApp() {
   };
 
   return (
-    <div style={{display:'flex',flexDirection:'column',height:'100vh',background:C.card,position:'relative',overflow:'hidden',borderRadius:20,fontFamily:"system-ui,sans-serif"}}>
+    <div style={{display:'flex',flexDirection:'column',height:'100vh',width:'100%',background:C.card,position:'relative',overflow:'hidden',fontFamily:"system-ui,sans-serif"}}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,button{font-family:inherit}`}</style>
       <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>setShowAyuda(true)} onLogin={()=>setLoggedIn(true)} loggedIn={loggedIn} t={t} onSound={()=>{setSoundOn(s=>!s);playTap();}} soundOn={soundOn}/>
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap}>
