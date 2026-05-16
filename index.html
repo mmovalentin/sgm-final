@@ -10,6 +10,8 @@
 <title>SGM Construcción</title>
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -588,6 +590,58 @@ function CotizadorScreen({t,initParams,lang='es'}) {
   );
 }
 
+// ── MAPA
+const MAPA_MARKERS=[
+  {lat:-31.4135,lng:-64.1811,nombre:'SGM Córdoba Centro',tipo:'constructor',desc:'Especialista en Steel Frame'},
+  {lat:-31.3989,lng:-64.2634,nombre:'Constructora Norte SF',tipo:'constructor',desc:'Steel Frame y mampostería'},
+  {lat:-31.4567,lng:-64.1823,nombre:'BuildSF Sur',tipo:'constructor',desc:'Construcción industrializada'},
+  {lat:-31.4412,lng:-64.2567,nombre:'Constructora Oeste',tipo:'constructor',desc:'Proyectos residenciales SF'},
+  {lat:-31.3756,lng:-64.2012,nombre:'Materiales SGM',tipo:'proveedor',desc:'Perfiles y placas Steel Frame'},
+  {lat:-31.4234,lng:-64.1456,nombre:'Perfiles Córdoba',tipo:'proveedor',desc:'Steel Frame y Durlock'},
+  {lat:-31.4089,lng:-64.2334,nombre:'Ferrería del Oeste',tipo:'proveedor',desc:'Materiales de construcción'},
+  {lat:-31.3645,lng:-64.1734,nombre:'Suministros SF',tipo:'proveedor',desc:'Insumos Steel Frame'},
+];
+function MapaScreen({t}) {
+  const mapRef=useRef(null);
+  const mapInst=useRef(null);
+  useEffect(()=>{
+    if(!window.L||mapInst.current) return;
+    const map=window.L.map(mapRef.current,{zoomControl:true}).setView([-31.4135,-64.1811],12);
+    mapInst.current=map;
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:19
+    }).addTo(map);
+    MAPA_MARKERS.forEach(m=>{
+      const bg=m.tipo==='constructor'?'#4A9FFF':'#64FFDA';
+      const em=m.tipo==='constructor'?'🏗️':'🏪';
+      const ico=window.L.divIcon({
+        html:`<div style="background:${bg};width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)">${em}</div>`,
+        className:'',iconSize:[34,34],iconAnchor:[17,17]
+      });
+      window.L.marker([m.lat,m.lng],{icon:ico}).addTo(map)
+        .bindPopup(`<b style="font-size:13px">${m.nombre}</b><br/><span style="font-size:11px;color:#555">${m.desc}</span>`);
+    });
+    return()=>{map.remove();mapInst.current=null;};
+  },[]);
+  return(
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div style={{background:C.navy,padding:'12px 14px',flexShrink:0}}>
+        <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>SGM</div>
+        <div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:2}}>Mapa SGM</div>
+        <div style={{display:'flex',gap:12,marginTop:6}}>
+          <div style={{display:'flex',alignItems:'center',gap:5,fontSize:10,color:'rgba(255,255,255,.7)'}}>
+            <div style={{width:10,height:10,borderRadius:'50%',background:'#4A9FFF'}}/>{'  '}Constructores
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:5,fontSize:10,color:'rgba(255,255,255,.7)'}}>
+            <div style={{width:10,height:10,borderRadius:'50%',background:'#64FFDA'}}/>{'  '}Proveedores
+          </div>
+        </div>
+      </div>
+      <div ref={mapRef} style={{flex:1,minHeight:0}}/>
+    </div>
+  );
+}
+
 // ── CHAT
 function ChatScreen({t}) {
   const [msgs,setMsgs]=useState([{role:'ai',text:'Hola! Soy el asistente de SGM. Preguntame sobre construccion, costos o Steel Frame en Cordoba.'}]);
@@ -947,7 +1001,7 @@ function SGMApp() {
     stats:<StatsScreen t={t}/>,
     presup:<PresupScreen t={t}/>,
     agenda:<AgendaScreen t={t}/>,
-    mapa:<div style={{padding:20,textAlign:'center',color:C.t3,paddingTop:80}}><div style={{fontSize:40}}>🗺️</div><div style={{fontSize:14,marginTop:12}}>{lang==='en'?'Map available in the full app':'Mapa SGM disponible en la app completa'}</div></div>,
+    mapa:<MapaScreen t={t}/>,
   };
 
   return (
