@@ -70,7 +70,7 @@ const T = {
     rubros_title:"Rubros de obra",materiales:"Materiales",buscar:"Buscar rubro...",
     faq_title:"Preguntas frecuentes",
     stats_title:"Estadisticas",agenda_title:"Agenda de obra",
-    presup_title:"Presupuestos",presup_sub:"La IA convierte a USD",subir:"Subir PDF o imagen",sel_archivo:"Seleccionar archivo",
+    presup_title:"Presupuestos",presup_sub:"La IA convierte a USD",subir:"Subir PDF, foto o imagen",sel_archivo:"Subir PDF, foto o imagen",
     ayuda_title:"Centro de Ayuda",
     cotizar_modelo:"Cotizar este modelo",
     mas_menu:"Mas opciones",traducir:"English",
@@ -125,7 +125,7 @@ const T = {
     rubros_title:"Construction items",materiales:"Materials",buscar:"Search...",
     faq_title:"FAQ",
     stats_title:"Statistics",agenda_title:"Project schedule",
-    presup_title:"Quotes",presup_sub:"AI converts to USD",subir:"Upload PDF or image",sel_archivo:"Select file",
+    presup_title:"Quotes",presup_sub:"AI converts to USD",subir:"Upload PDF, photo or image",sel_archivo:"Upload PDF, photo or image",
     ayuda_title:"Help Center",
     cotizar_modelo:"Get a quote",
     mas_menu:"More options",traducir:"Español",
@@ -916,7 +916,7 @@ function PresupScreen({t}) {
           <div style={{fontSize:32,marginBottom:8}}>📎</div>
           <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>{t.subir}</div>
           <div style={{fontSize:12,color:C.t3,marginBottom:12}}>{t.presup_sub}</div>
-          <input ref={fileRef} type="file" accept=".pdf,image/*" style={{display:'none'}} onChange={handleFile}/>
+          <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,image/*" style={{display:'none'}} onChange={handleFile}/>
           <button onClick={()=>fileRef.current?.click()} style={{width:'100%',background:C.navy,color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer'}}>📂 {t.sel_archivo}</button>
         </div>
         {loading&&<div style={{textAlign:'center',padding:20,fontSize:13,fontWeight:600,color:C.t2}}>⏳ {t.analizando}</div>}
