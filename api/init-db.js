@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS presupuestos (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   proveedor_id UUID REFERENCES proveedores(id) ON DELETE SET NULL,
   archivo_nombre TEXT, total_usd NUMERIC, fecha DATE DEFAULT CURRENT_DATE,
+  vigencia_dias INTEGER DEFAULT 30,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS materiales (

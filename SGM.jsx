@@ -1021,6 +1021,13 @@ function AgendaScreen({t}) {
   );
 }
 
+function vigenciaBadge(created_at,vigencia_dias=30){
+  const dias=Math.floor((Date.now()-new Date(created_at))/(1000*60*60*24));
+  if(dias<vigencia_dias) return{label:'Vigente',color:'#fff',bg:C.green,warn:false};
+  if(dias<vigencia_dias+15) return{label:'Por vencer',color:'#fff',bg:C.amber,warn:false};
+  return{label:'Desactualizado',color:'#fff',bg:C.red,warn:true};
+}
+
 function PresupScreen({t,dolar=1415}) {
   const [loading,setLoading]=useState(false);
   const [result,setResult]=useState(null);
@@ -1028,7 +1035,22 @@ function PresupScreen({t,dolar=1415}) {
   const [rubrosStatus,setRubrosStatus]=useState(null);
   const [showRubroModal,setShowRubroModal]=useState(false);
   const [rubroGlobal,setRubroGlobal]=useState(null);
+  const [savedList,setSavedList]=useState([]);
+  const [loadingSaved,setLoadingSaved]=useState(false);
   const fileRef=useRef(null);
+
+  async function fetchSaved(){
+    if(!supa) return;
+    setLoadingSaved(true);
+    const {data}=await supa.from('presupuestos')
+      .select('id,archivo_nombre,total_usd,created_at,vigencia_dias,proveedores(nombre)')
+      .order('created_at',{ascending:false})
+      .limit(30);
+    setSavedList(data||[]);
+    setLoadingSaved(false);
+  }
+
+  useEffect(()=>{fetchSaved();},[]);
 
   async function agregarAlMapa(){
     if(!supa||!result?.data) return;
@@ -1159,6 +1181,7 @@ function PresupScreen({t,dolar=1415}) {
         if(parsed.error) throw new Error(parsed.error);
         const sbRes=await saveToSupabase(parsed,file.name);
         setResult({data:parsed,name:file.name,saved:sbRes.ok,savedMsg:sbRes.msg});
+        if(sbRes.ok) fetchSaved();
       }catch(err){setResult({error:true,name:file.name});}
       setLoading(false);
     };
@@ -1208,6 +1231,30 @@ function PresupScreen({t,dolar=1415}) {
           </div>
         )}
         {result?.error&&<div style={{background:'#FFF3F3',borderRadius:12,padding:16,textAlign:'center'}}><div style={{fontSize:13,fontWeight:700,color:C.red}}>{t.no_analizar}</div></div>}
+
+        {/* Lista de presupuestos guardados */}
+        <div style={{marginTop:4}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Presupuestos guardados</div>
+          {loadingSaved&&<div style={{textAlign:'center',padding:12,fontSize:12,color:C.t3}}>⏳ Cargando...</div>}
+          {!loadingSaved&&savedList.length===0&&<div style={{textAlign:'center',padding:16,fontSize:12,color:C.t3}}>No hay presupuestos guardados aún.</div>}
+          {savedList.map(ps=>{
+            const badge=vigenciaBadge(ps.created_at,ps.vigencia_dias||30);
+            const nombre=ps.proveedores?.nombre||ps.archivo_nombre||'—';
+            const fecha=new Date(ps.created_at).toLocaleDateString('es-AR');
+            return(
+              <div key={ps.id} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'11px 13px',marginBottom:8}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:700,color:C.t1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{nombre}</div>
+                    <div style={{fontSize:10,color:C.t3,marginTop:2}}>{fecha} · USD {(ps.total_usd||0).toLocaleString()}</div>
+                  </div>
+                  <span style={{background:badge.bg,color:badge.color,fontSize:9,fontWeight:700,padding:'3px 8px',borderRadius:20,whiteSpace:'nowrap',flexShrink:0}}>{badge.label}</span>
+                </div>
+                {badge.warn&&<div style={{marginTop:6,fontSize:10,color:C.red,fontWeight:600}}>Solicitá nuevo presupuesto a este proveedor</div>}
+              </div>
+            );
+          })}
+        </div>
       </div>
       {showRubroModal&&(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:200,display:'flex',alignItems:'flex-end'}} onClick={()=>setShowRubroModal(false)}>
