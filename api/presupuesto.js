@@ -22,7 +22,14 @@
 
   const prompt =
     `Analizá este presupuesto de construcción/servicio en Argentina con precios en PESOS argentinos.\n` +
-    `Extraé del encabezado del PDF el nombre completo, teléfono, email y dirección del proveedor. ` +
+    `Del encabezado extraé:\n` +
+    `- nombre: nombre completo del proveedor o empresa\n` +
+    `- especialidad: rubro o tipo de servicio\n` +
+    `- telefono: número de teléfono o WhatsApp\n` +
+    `- email: dirección de correo electrónico\n` +
+    `- direccion: dirección COMPLETA incluyendo calle, número, ciudad y provincia ` +
+    `(ej: "Av. Colón 1234, Córdoba, Argentina"). Si no hay dirección explícita pero ` +
+    `hay mención de ciudad, barrio o zona, incluila igual. Si no hay nada, dejá string vacío.\n` +
     `Si no encontrás algún dato dejalo como string vacío.\n` +
     `Extraé TODOS los ítems con su precio en pesos. Usa TC ${TC} para convertir a USD.\n` +
     `El total_usd debe ser la suma exacta de todos los precio_usd.\n` +

@@ -1040,17 +1040,33 @@ function PresupScreen({t,dolar=1415}) {
       const direccion=typeof p==='object'?p.direccion||'':'';
       const contacto=typeof p==='object'?[p.telefono,p.email,p.direccion].filter(Boolean).join(' | '):'';
 
-      // Geocodificar dirección con Nominatim (gratuito, sin API key)
+      // Geocodificar con Nominatim — enriquecer y limpiar la dirección primero
       let lat=null,lng=null;
-      if(direccion.trim()){
-        try{
-          const q=encodeURIComponent(`${direccion}, Córdoba, Argentina`);
-          const geo=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
-            {headers:{'Accept-Language':'es','User-Agent':'SGM-Construccion/1.0'}});
-          const geoData=await geo.json();
-          if(geoData?.[0]){lat=parseFloat(geoData[0].lat);lng=parseFloat(geoData[0].lon);}
-        }catch(_){}
-      }
+      const geocode=async(addr)=>{
+        const q=encodeURIComponent(addr);
+        console.log('[mapa] Nominatim query:',addr);
+        const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=ar`,
+          {headers:{'Accept-Language':'es','User-Agent':'SGM-Construccion/1.0'}});
+        const d=await r.json();
+        console.log('[mapa] Nominatim result:',d?.[0]?.display_name||'sin resultado');
+        return d?.[0]?{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)}:null;
+      };
+      try{
+        let addr=direccion.trim();
+        if(addr){
+          // Agregar Argentina si no está
+          if(!addr.toLowerCase().includes('argentina')) addr=`${addr}, Argentina`;
+          let coords=await geocode(addr);
+          // Si falla, intentar solo ciudad extraída (primera parte antes de coma)
+          if(!coords){
+            const ciudad=addr.split(',')[0].trim();
+            if(ciudad&&ciudad!==addr.split(',')[0]) coords=await geocode(`${ciudad}, Córdoba, Argentina`);
+          }
+          if(coords){lat=coords.lat;lng=coords.lng;}
+        } else {
+          console.log('[mapa] Sin dirección — se guardará sin GPS');
+        }
+      }catch(geoErr){console.warn('[mapa] Geocoding error:',geoErr.message);}
 
       const fields={rubro,contacto,lat,lng};
       const {data:ex}=await supa.from('proveedores').select('id').ilike('nombre',nombre).limit(1);
