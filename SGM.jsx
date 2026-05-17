@@ -620,6 +620,8 @@ function MapaScreen({t,perfil,onLogin}) {
 
   const allMarkers=[...MAPA_MARKERS,...dbProveedores.map(p=>({lat:p.lat,lng:p.lng,nombre:p.nombre,desc:p.rubro||'Proveedor',tipo:'proveedor',fromDb:true}))];
 
+  const dbMarkersRef=useRef([]);
+
   useEffect(()=>{
     if(!window.L||mapInst.current) return;
     const map=window.L.map(mapRef.current,{zoomControl:true}).setView([-31.4135,-64.1811],12);
@@ -628,7 +630,7 @@ function MapaScreen({t,perfil,onLogin}) {
       attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:19
     }).addTo(map);
     const stored=[];
-    allMarkers.forEach(m=>{
+    MAPA_MARKERS.forEach(m=>{
       const cfg=MAPA_TIPO[m.tipo]||MAPA_TIPO.constructor;
       const ico=window.L.divIcon({
         html:`<div style="background:${cfg.bg};width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)">${cfg.em}</div>`,
@@ -636,10 +638,31 @@ function MapaScreen({t,perfil,onLogin}) {
       });
       const marker=window.L.marker([m.lat,m.lng],{icon:ico}).addTo(map)
         .bindPopup(`<b style="font-size:13px">${m.nombre}</b><br/><span style="font-size:11px;color:#555">${m.desc}</span>`);
-      stored.push({marker,tipo:m.tipo});
+      stored.push({marker,tipo:m.tipo,fromDb:false});
     });
     markersRef.current=stored;
-    return()=>{map.remove();mapInst.current=null;markersRef.current=[];};
+    return()=>{map.remove();mapInst.current=null;markersRef.current=[];dbMarkersRef.current=[];};
+  },[]);
+
+  useEffect(()=>{
+    if(!mapInst.current||!window.L) return;
+    dbMarkersRef.current.forEach(({marker})=>{try{mapInst.current.removeLayer(marker);}catch(_){}});
+    dbMarkersRef.current=[];
+    if(!dbProveedores.length) return;
+    const cfg=MAPA_TIPO.proveedor;
+    const newDb=dbProveedores.map(p=>{
+      const ico=window.L.divIcon({
+        html:`<div style="background:${cfg.bg};width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)">${cfg.em}</div>`,
+        className:'',iconSize:[34,34],iconAnchor:[17,17]
+      });
+      const marker=window.L.marker([p.lat,p.lng],{icon:ico}).addTo(mapInst.current)
+        .bindPopup(`<b style="font-size:13px">${p.nombre}</b><br/><span style="font-size:11px;color:#555">${p.rubro||'Proveedor'}</span>${p.contacto?`<br/><span style="font-size:10px;color:#777">${p.contacto.slice(0,40)}</span>`:''}`);
+      return{marker,tipo:'proveedor',fromDb:true};
+    });
+    dbMarkersRef.current=newDb;
+    markersRef.current=[...markersRef.current.filter(m=>!m.fromDb),...newDb];
+    const hasActive=activos.has('proveedor');
+    newDb.forEach(({marker})=>{if(!hasActive)mapInst.current.removeLayer(marker);});
   },[dbProveedores]);
 
   useEffect(()=>{
@@ -773,6 +796,9 @@ function RubrosScreen({perfil,t}) {
   const [sel,setSel]=useState(null);
   const [calR,setCalR]=useState('economico');
   const [dbMats,setDbMats]=useState([]);
+  const [showComparar,setShowComparar]=useState(false);
+  const [comparaData,setComparaData]=useState([]);
+  const [loadingCompara,setLoadingCompara]=useState(false);
   const filtered=RUBROS.filter(r=>r.name.toLowerCase().includes(q.toLowerCase()));
 
   useEffect(()=>{
@@ -780,6 +806,24 @@ function RubrosScreen({perfil,t}) {
     const rubroName=RUBROS[sel]?.name||'';
     supa.from('materiales').select('item,rubro,precio_pesos,precio_usd,proveedores(nombre)').eq('rubro',rubroName).order('created_at',{ascending:false}).limit(50).then(({data})=>setDbMats(data||[]));
   },[sel]);
+
+  async function abrirComparar(){
+    if(!supa) return;
+    setLoadingCompara(true);
+    setShowComparar(true);
+    const rubroName=RUBROS[sel]?.name||'';
+    const {data}=await supa.from('materiales').select('item,precio_pesos,precio_usd,proveedores(nombre,contacto)').eq('rubro',rubroName).order('item');
+    if(data){
+      const grouped={};
+      data.forEach(m=>{
+        const key=m.item||'Sin nombre';
+        if(!grouped[key]) grouped[key]=[];
+        grouped[key].push({nombre:m.proveedores?.nombre||'Sin proveedor',contacto:m.proveedores?.contacto||'',precio_usd:m.precio_usd||0,precio_pesos:m.precio_pesos||0});
+      });
+      setComparaData(Object.entries(grouped).map(([item,provs])=>({item,provs:provs.sort((a,b)=>a.precio_usd-b.precio_usd)})));
+    }
+    setLoadingCompara(false);
+  }
 
   if(sel!==null){
     const r=RUBROS[sel];
@@ -805,7 +849,7 @@ function RubrosScreen({perfil,t}) {
             <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',borderBottom:`.5px solid ${C.border}`}}>
               <div style={{width:26,height:26,borderRadius:6,background:`${r.color}18`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:r.color,flexShrink:0}}>{i+1}</div>
               <div style={{flex:1,fontSize:13,fontWeight:500,color:C.t1}}>{item}</div>
-              <div style={{fontSize:9,padding:'2px 7px',borderRadius:8,background:`${r.color}18`,color:r.color,fontWeight:700}}>{t.incluir}</div>
+              <div style={{fontSize:9,padding:'2px 7px',borderRadius:8,background:'#E8F5E9',color:'#2E7D32',fontWeight:700}}>✓ Incluido</div>
             </div>
           ))}
           {dbMats.length>0&&(
@@ -826,8 +870,47 @@ function RubrosScreen({perfil,t}) {
               ))}
             </div>
           )}
+          <button onClick={abrirComparar} style={{margin:'12px 14px',width:'calc(100% - 28px)',padding:11,borderRadius:9,border:'none',background:C.navy,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+            🔍 Comparar proveedores
+          </button>
         </div>
       </div>
+      {showComparar&&(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:200,display:'flex',alignItems:'flex-end'}} onClick={()=>setShowComparar(false)}>
+          <div style={{background:C.card,borderRadius:'16px 16px 0 0',width:'100%',maxHeight:'80vh',overflow:'auto',padding:16}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+              <div style={{fontSize:14,fontWeight:700,color:C.t1}}>🔍 Comparar proveedores — {RUBROS[sel]?.name}</div>
+              <button onClick={()=>setShowComparar(false)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:C.t3}}>✕</button>
+            </div>
+            {loadingCompara&&<div style={{textAlign:'center',padding:24,color:C.t3}}>⏳ Cargando...</div>}
+            {!loadingCompara&&comparaData.length===0&&<div style={{textAlign:'center',padding:24,color:C.t3,fontSize:13}}>Sin datos de proveedores para este rubro.<br/>Subí un presupuesto en la sección Presupuestos.</div>}
+            {comparaData.map(({item,provs})=>(
+              <div key={item} style={{marginBottom:14,background:C.off,borderRadius:10,overflow:'hidden',border:`.5px solid ${C.border}`}}>
+                <div style={{padding:'8px 12px',background:C.border,borderBottom:`.5px solid ${C.border2}`}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.t1}}>{item}</div>
+                </div>
+                {provs.map((pv,i)=>{
+                  const wa=pv.contacto.match(/(\+?[\d\s\-]{8,})/)?.[1]?.replace(/\s/g,'');
+                  return(
+                    <div key={i} style={{display:'flex',alignItems:'center',padding:'9px 12px',borderBottom:i<provs.length-1?`.5px solid ${C.border}`:'none',background:i===0?'#E8F5E9':'transparent'}}>
+                      {i===0&&<div style={{fontSize:9,fontWeight:700,color:'#2E7D32',marginRight:6}}>💰</div>}
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.t1}}>{pv.nombre}</div>
+                        {pv.contacto&&<div style={{fontSize:10,color:C.t3,marginTop:1}}>{pv.contacto.slice(0,50)}</div>}
+                      </div>
+                      <div style={{textAlign:'right',marginLeft:8,flexShrink:0}}>
+                        <div style={{fontSize:12,fontWeight:700,color:i===0?'#2E7D32':C.acc}}>USD {pv.precio_usd.toLocaleString()}</div>
+                        <div style={{fontSize:9,color:C.t3}}>${pv.precio_pesos.toLocaleString()}</div>
+                      </div>
+                      {wa&&<a href={`https://wa.me/${wa.replace('+','')}`} style={{marginLeft:8,background:'#25D366',color:'#fff',border:'none',borderRadius:6,padding:'4px 8px',fontSize:10,fontWeight:700,textDecoration:'none',flexShrink:0}}>WhatsApp</a>}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     );
   }
 
