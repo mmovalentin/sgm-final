@@ -1400,8 +1400,212 @@ function AyudaPanel({onClose,t}) {
 }
 
 // ── MORE MENU
+// ── CLIENTES PIPELINE
+const ETAPAS=[
+  {id:'Interesado',color:'#4A9FFF',icon:'👀'},
+  {id:'Cotizado',color:'#7B61FF',icon:'📄'},
+  {id:'En negociación',color:'#E65100',icon:'🤝'},
+  {id:'Cerrado',color:'#2E7D32',icon:'✅'},
+  {id:'Perdido',color:'#C62828',icon:'❌'},
+];
+
+function ClientesScreen() {
+  const [clientes,setClientes]=useState([]);
+  const [loading,setLoading]=useState(false);
+  const [etapaActiva,setEtapaActiva]=useState('Interesado');
+  const [selId,setSelId]=useState(null);
+  const [showForm,setShowForm]=useState(false);
+  const [form,setForm]=useState({nombre:'',telefono:'',email:'',modelo:'',etapa:'Interesado',nota:''});
+  const [savingForm,setSavingForm]=useState(false);
+  const [notaTexto,setNotaTexto]=useState('');
+  const [showNota,setShowNota]=useState(false);
+  const [showMover,setShowMover]=useState(false);
+  const [saving,setSaving]=useState(false);
+
+  const selCliente=clientes.find(c=>c.id===selId)||null;
+
+  async function fetchClientes(){
+    if(!supa) return;
+    setLoading(true);
+    const {data}=await supa.from('clientes').select('*').order('ultimo_contacto',{ascending:false});
+    setClientes(data||[]);
+    setLoading(false);
+  }
+  useEffect(()=>{fetchClientes();},[]);
+
+  async function agregarCliente(){
+    if(!form.nombre.trim()) return;
+    setSavingForm(true);
+    const notas=form.nota.trim()?[{fecha:new Date().toISOString(),texto:form.nota.trim()}]:[];
+    const {error}=await supa.from('clientes').insert({nombre:form.nombre.trim(),telefono:form.telefono.trim(),email:form.email.trim(),modelo:form.modelo.trim(),etapa:form.etapa,notas,ultimo_contacto:new Date().toISOString()});
+    if(!error){setShowForm(false);setForm({nombre:'',telefono:'',email:'',modelo:'',etapa:'Interesado',nota:''});fetchClientes();}
+    setSavingForm(false);
+  }
+
+  async function agregarNota(){
+    if(!notaTexto.trim()||!selCliente) return;
+    setSaving(true);
+    const notas=[...(selCliente.notas||[]),{fecha:new Date().toISOString(),texto:notaTexto.trim()}];
+    await supa.from('clientes').update({notas,ultimo_contacto:new Date().toISOString()}).eq('id',selCliente.id);
+    setNotaTexto('');setShowNota(false);
+    await fetchClientes();
+    setSaving(false);
+  }
+
+  async function moverEtapa(nuevaEtapa){
+    if(!selCliente) return;
+    setSaving(true);
+    await supa.from('clientes').update({etapa:nuevaEtapa}).eq('id',selCliente.id);
+    setShowMover(false);
+    await fetchClientes();
+    setSaving(false);
+  }
+
+  const colActiva=ETAPAS.find(e=>e.id===etapaActiva)||ETAPAS[0];
+  const itemsActivos=clientes.filter(c=>c.etapa===etapaActiva);
+
+  return(
+    <div style={{display:'flex',flexDirection:'column',height:'100%',position:'relative'}}>
+      <div style={{background:C.navy,padding:'13px 14px',flexShrink:0}}>
+        <div style={{color:'#fff',fontSize:15,fontWeight:700}}>Pipeline de Clientes</div>
+        <div style={{color:'rgba(255,255,255,.35)',fontSize:10,marginTop:2}}>{clientes.length} clientes en seguimiento</div>
+      </div>
+
+      {/* Tabs etapas */}
+      <div style={{display:'flex',overflowX:'auto',background:C.card,borderBottom:`.5px solid ${C.border}`,flexShrink:0,scrollbarWidth:'none',WebkitOverflowScrolling:'touch'}}>
+        {ETAPAS.map(e=>{
+          const count=clientes.filter(c=>c.etapa===e.id).length;
+          const active=etapaActiva===e.id;
+          return(
+            <button key={e.id} onClick={()=>setEtapaActiva(e.id)} style={{flexShrink:0,padding:'8px 14px',border:'none',background:'none',cursor:'pointer',borderBottom:`2px solid ${active?e.color:'transparent'}`,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+              <span style={{fontSize:14}}>{e.icon}</span>
+              <span style={{fontSize:10,fontWeight:700,color:active?e.color:C.t3,whiteSpace:'nowrap'}}>{e.id}</span>
+              {count>0&&<span style={{fontSize:9,background:e.color,color:'#fff',borderRadius:8,padding:'1px 5px',fontWeight:700}}>{count}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Cards */}
+      <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>
+        {loading&&<div style={{textAlign:'center',padding:24,color:C.t3,fontSize:13}}>⏳ Cargando...</div>}
+        {!loading&&itemsActivos.length===0&&(
+          <div style={{textAlign:'center',padding:32,color:C.t3,fontSize:13}}>
+            <div style={{fontSize:36,marginBottom:8}}>{colActiva.icon}</div>
+            Sin clientes en "{colActiva.id}".<br/>Tocá + para agregar uno.
+          </div>
+        )}
+        {itemsActivos.map(c=>(
+          <div key={c.id} onClick={()=>{setSelId(c.id);setShowNota(false);setShowMover(false);}} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'13px',cursor:'pointer',borderLeft:`3px solid ${colActiva.color}`}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+              <div style={{fontWeight:700,fontSize:13,color:C.t1}}>{c.nombre}</div>
+              {c.monto_usd>0&&<div style={{fontSize:11,fontWeight:700,color:colActiva.color}}>USD {(c.monto_usd||0).toLocaleString()}</div>}
+            </div>
+            {c.telefono&&<div style={{fontSize:11,color:C.t3,marginTop:3}}>📞 {c.telefono}</div>}
+            {c.modelo&&<div style={{fontSize:11,color:C.t2,marginTop:2}}>🏗️ {c.modelo}</div>}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:6}}>
+              <div style={{fontSize:9,color:C.t3}}>Último contacto: {new Date(c.ultimo_contacto).toLocaleDateString('es-AR')}</div>
+              {(c.notas||[]).length>0&&<div style={{fontSize:9,color:C.t3}}>💬 {c.notas.length} nota{c.notas.length!==1?'s':''}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* FAB + */}
+      <button onClick={()=>setShowForm(true)} style={{position:'absolute',bottom:16,right:16,width:52,height:52,borderRadius:26,background:C.acc,color:'#fff',border:'none',fontSize:26,cursor:'pointer',boxShadow:'0 4px 16px rgba(74,159,255,.5)',zIndex:10,display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>+</button>
+
+      {/* Panel detalle cliente */}
+      {selCliente&&(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:200,display:'flex',alignItems:'flex-end'}} onClick={()=>{setSelId(null);setShowNota(false);setShowMover(false);}}>
+          <div style={{background:C.card,borderRadius:'16px 16px 0 0',width:'100%',maxHeight:'88vh',overflow:'auto',padding:16}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
+              <div>
+                <div style={{fontSize:15,fontWeight:700,color:C.t1}}>{selCliente.nombre}</div>
+                <span style={{background:ETAPAS.find(e=>e.id===selCliente.etapa)?.color||C.acc,color:'#fff',padding:'2px 9px',borderRadius:10,fontWeight:700,fontSize:9,marginTop:4,display:'inline-block'}}>{selCliente.etapa}</span>
+              </div>
+              <button onClick={()=>{setSelId(null);setShowNota(false);setShowMover(false);}} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:C.t3}}>✕</button>
+            </div>
+
+            <div style={{background:C.off,borderRadius:10,padding:'10px 12px',marginBottom:12,display:'flex',flexDirection:'column',gap:5}}>
+              {selCliente.telefono&&<div style={{fontSize:12,color:C.t1}}>📞 {selCliente.telefono}</div>}
+              {selCliente.email&&<div style={{fontSize:12,color:C.t1}}>✉️ {selCliente.email}</div>}
+              {selCliente.modelo&&<div style={{fontSize:12,color:C.t1}}>🏗️ {selCliente.modelo}</div>}
+              {selCliente.monto_usd>0&&<div style={{fontSize:12,fontWeight:700,color:C.acc}}>💰 USD {selCliente.monto_usd.toLocaleString()}</div>}
+            </div>
+
+            <div style={{fontSize:11,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Historial de contactos</div>
+            {(selCliente.notas||[]).length===0&&<div style={{fontSize:12,color:C.t3,marginBottom:10}}>Sin notas aún.</div>}
+            <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:10}}>
+              {(selCliente.notas||[]).slice().reverse().map((n,i)=>(
+                <div key={i} style={{background:C.off,borderRadius:8,padding:'8px 10px',borderLeft:`3px solid ${C.acc}`}}>
+                  <div style={{fontSize:9,color:C.t3,marginBottom:2}}>{new Date(n.fecha).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                  <div style={{fontSize:12,color:C.t1}}>{n.texto}</div>
+                </div>
+              ))}
+            </div>
+
+            {showNota?(
+              <div style={{marginBottom:10}}>
+                <textarea value={notaTexto} onChange={e=>setNotaTexto(e.target.value)} placeholder="Escribí la nota del contacto..." rows={3} style={{width:'100%',borderRadius:8,border:`.5px solid ${C.border2}`,padding:'8px 10px',fontSize:12,resize:'none',outline:'none',fontFamily:'inherit'}}/>
+                <div style={{display:'flex',gap:6,marginTop:6}}>
+                  <button onClick={()=>setShowNota(false)} style={{flex:1,padding:10,borderRadius:8,border:`.5px solid ${C.border}`,background:'none',cursor:'pointer',fontSize:12,color:C.t2}}>Cancelar</button>
+                  <button onClick={agregarNota} disabled={saving||!notaTexto.trim()} style={{flex:2,padding:10,borderRadius:8,border:'none',background:C.acc,color:'#fff',cursor:'pointer',fontSize:12,fontWeight:700}}>{saving?'⏳ Guardando...':'✓ Guardar nota'}</button>
+                </div>
+              </div>
+            ):(
+              <button onClick={()=>setShowNota(true)} style={{width:'100%',padding:10,borderRadius:8,border:`1px dashed ${C.acc}`,background:'none',color:C.acc,cursor:'pointer',fontSize:12,fontWeight:700,marginBottom:8}}>+ Agregar nota</button>
+            )}
+
+            {showMover?(
+              <div style={{marginBottom:10}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.t2,marginBottom:8}}>Mover a etapa:</div>
+                <div style={{display:'flex',flexDirection:'column',gap:5}}>
+                  {ETAPAS.filter(e=>e.id!==selCliente.etapa).map(e=>(
+                    <button key={e.id} onClick={()=>moverEtapa(e.id)} disabled={saving} style={{padding:'10px 12px',borderRadius:8,border:`.5px solid ${e.color}`,background:'transparent',cursor:'pointer',fontSize:12,fontWeight:700,color:e.color,textAlign:'left',display:'flex',alignItems:'center',gap:8}}>
+                      <span>{e.icon}</span>{e.id}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={()=>setShowMover(false)} style={{width:'100%',marginTop:6,padding:10,borderRadius:8,border:`.5px solid ${C.border}`,background:'none',cursor:'pointer',fontSize:12,color:C.t2}}>Cancelar</button>
+              </div>
+            ):(
+              <button onClick={()=>setShowMover(true)} style={{width:'100%',padding:10,borderRadius:8,border:'none',background:C.navy,color:'#fff',cursor:'pointer',fontSize:12,fontWeight:700,marginBottom:8}}>↕ Mover etapa</button>
+            )}
+
+            {selCliente.telefono&&(()=>{const wa=selCliente.telefono.replace(/\D/g,'');return(
+              <a href={`https://wa.me/${wa.startsWith('54')?wa:'54'+wa}`} style={{display:'block',width:'100%',padding:10,borderRadius:8,background:'#25D366',color:'#fff',fontSize:12,fontWeight:700,textAlign:'center',textDecoration:'none'}}>
+                💬 WhatsApp
+              </a>
+            );})()}
+          </div>
+        </div>
+      )}
+
+      {/* Formulario nuevo cliente */}
+      {showForm&&(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:200,display:'flex',alignItems:'flex-end'}} onClick={()=>setShowForm(false)}>
+          <div style={{background:C.card,borderRadius:'16px 16px 0 0',width:'100%',maxHeight:'88vh',overflow:'auto',padding:16}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:14,fontWeight:700,color:C.t1,marginBottom:12}}>Nuevo cliente</div>
+            {[['nombre','Nombre *','text'],['telefono','Teléfono','tel'],['email','Email','email'],['modelo','Modelo de interés','text']].map(([k,lbl,type])=>(
+              <input key={k} type={type} value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} placeholder={lbl} style={{width:'100%',marginBottom:8,padding:'10px 12px',borderRadius:8,border:`.5px solid ${C.border2}`,fontSize:13,outline:'none',fontFamily:'inherit'}}/>
+            ))}
+            <select value={form.etapa} onChange={e=>setForm(f=>({...f,etapa:e.target.value}))} style={{width:'100%',marginBottom:8,padding:'10px 12px',borderRadius:8,border:`.5px solid ${C.border2}`,fontSize:13,background:'#fff',outline:'none',fontFamily:'inherit'}}>
+              {ETAPAS.map(e=><option key={e.id} value={e.id}>{e.icon} {e.id}</option>)}
+            </select>
+            <textarea value={form.nota} onChange={e=>setForm(f=>({...f,nota:e.target.value}))} placeholder="Nota inicial (opcional)" rows={2} style={{width:'100%',marginBottom:12,padding:'10px 12px',borderRadius:8,border:`.5px solid ${C.border2}`,fontSize:13,resize:'none',outline:'none',fontFamily:'inherit'}}/>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>setShowForm(false)} style={{flex:1,padding:12,borderRadius:9,border:`.5px solid ${C.border}`,background:'none',cursor:'pointer',fontSize:13,fontWeight:700,color:C.t2}}>Cancelar</button>
+              <button onClick={agregarCliente} disabled={savingForm||!form.nombre.trim()} style={{flex:2,padding:12,borderRadius:9,border:'none',background:C.navy,color:'#fff',cursor:'pointer',fontSize:13,fontWeight:700,opacity:savingForm?0.6:1}}>{savingForm?'⏳ Guardando...':'✓ Agregar cliente'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MoreMenu({onNav,onClose,t,lang,onLang}) {
-  const items=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq']];
+  const items=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['🧑‍💼','Clientes','clientes']];
   return (
     <div style={{position:'absolute',inset:0,zIndex:200,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
       <div onClick={onClose} style={{position:'absolute',inset:0,background:'rgba(10,22,40,.7)',backdropFilter:'blur(4px)'}}/>
@@ -1495,6 +1699,7 @@ export default function SGMApp() {
     presup:<PresupScreen t={t} dolar={dolar}/>,
     agenda:<AgendaScreen t={t}/>,
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)}/>,
+    clientes:<ClientesScreen/>,
   };
 
   return (
