@@ -1604,8 +1604,9 @@ function ClientesScreen() {
   );
 }
 
-function MoreMenu({onNav,onClose,t,lang,onLang}) {
-  const items=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['🧑‍💼','Clientes','clientes']];
+function MoreMenu({onNav,onClose,t,lang,onLang,perfil}) {
+  const base=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq']];
+  const items=perfil==='constructor'?[...base,['👥','Clientes','clientes']]:base;
   return (
     <div style={{position:'absolute',inset:0,zIndex:200,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
       <div onClick={onClose} style={{position:'absolute',inset:0,background:'rgba(10,22,40,.7)',backdropFilter:'blur(4px)'}}/>
@@ -1710,7 +1711,7 @@ export default function SGMApp() {
         {screens[screen]||screens.home}
       </div>
       <BottomNav screen={screen} onNav={handleNav} t={t}/>
-      {showMore&&<MoreMenu onNav={handleNav} onClose={()=>setShowMore(false)} t={t} lang={lang} onLang={()=>setLang(l=>l==='es'?'en':'es')}/>}
+      {showMore&&<MoreMenu onNav={handleNav} onClose={()=>setShowMore(false)} t={t} lang={lang} onLang={()=>setLang(l=>l==='es'?'en':'es')} perfil={perfil}/>}
       {showAyuda&&<AyudaPanel onClose={()=>setShowAyuda(false)} t={t}/>}
     </div>
   );
