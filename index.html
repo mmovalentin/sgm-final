@@ -1064,18 +1064,33 @@ function PresupScreen({t,dolar=1415}) {
       const p=result.data.proveedor;
       const nombre=(typeof p==='object'?p.nombre:(p||result.name)).trim();
       const rubro=typeof p==='object'?p.especialidad||'':'';
+      const direccion=typeof p==='object'?p.direccion||'':'';
       const contacto=typeof p==='object'?[p.telefono,p.email,p.direccion].filter(Boolean).join(' | '):'';
+
+      // Geocodificar dirección con Nominatim (gratuito, sin API key)
+      let lat=null,lng=null;
+      if(direccion.trim()){
+        try{
+          const q=encodeURIComponent(`${direccion}, Córdoba, Argentina`);
+          const geo=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
+            {headers:{'Accept-Language':'es','User-Agent':'SGM-Construccion/1.0'}});
+          const geoData=await geo.json();
+          if(geoData?.[0]){lat=parseFloat(geoData[0].lat);lng=parseFloat(geoData[0].lon);}
+        }catch(_){}
+      }
+
+      const fields={rubro,contacto,lat,lng};
       const {data:ex}=await supa.from('proveedores').select('id').ilike('nombre',nombre).limit(1);
       let err;
       if(ex?.length>0){
-        const r=await supa.from('proveedores').update({rubro,contacto,lat:-31.4135,lng:-64.1811}).eq('id',ex[0].id);
+        const r=await supa.from('proveedores').update(fields).eq('id',ex[0].id);
         err=r.error;
       } else {
-        const r=await supa.from('proveedores').insert({nombre,rubro,contacto,lat:-31.4135,lng:-64.1811});
+        const r=await supa.from('proveedores').insert({nombre,...fields});
         err=r.error;
       }
-      setMapStatus(err?'err:'+err.message.slice(0,40):'ok');
-      if(!err) window.dispatchEvent(new Event('sgm-mapa-refresh'));
+      if(err){setMapStatus('err:'+err.message.slice(0,40));}
+      else{setMapStatus(lat?'ok':'ok-nogps');window.dispatchEvent(new Event('sgm-mapa-refresh'));}
     }catch(e){setMapStatus('err:'+e.message.slice(0,40));}
   }
 
@@ -1194,8 +1209,8 @@ function PresupScreen({t,dolar=1415}) {
               </div>
             ))}
             <div style={{display:'flex',gap:8,padding:'12px 13px',borderTop:`.5px solid ${C.border}`}}>
-              <button onClick={agregarAlMapa} disabled={mapStatus==='loading'||mapStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:mapStatus==='ok'?C.green:mapStatus?.startsWith('err')?C.red:C.navy,color:'#fff',opacity:mapStatus==='loading'?0.6:1}}>
-                {mapStatus==='loading'?'⏳ Guardando...':mapStatus==='ok'?'✓ En el mapa':mapStatus?.startsWith('err')?'⚠ Error':'📍 Agregar al mapa'}
+              <button onClick={agregarAlMapa} disabled={mapStatus==='loading'||mapStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:mapStatus==='ok'?C.green:mapStatus==='ok-nogps'?C.amber:mapStatus?.startsWith('err')?C.red:C.navy,color:'#fff',opacity:mapStatus==='loading'?0.6:1}}>
+                {mapStatus==='loading'?'⏳ Geocodificando...':mapStatus==='ok'?'✓ En el mapa':mapStatus==='ok-nogps'?'✓ Sin GPS (lista lateral)':mapStatus?.startsWith('err')?'⚠ Error':'📍 Agregar al mapa'}
               </button>
               <button onClick={agregarARubros} disabled={rubrosStatus==='loading'||rubrosStatus==='ok'} style={{flex:1,padding:'10px 8px',borderRadius:9,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:rubrosStatus==='ok'?C.green:rubrosStatus?.startsWith('err')?C.red:C.acc,color:'#fff',opacity:rubrosStatus==='loading'?0.6:1}}>
                 {rubrosStatus==='loading'?'⏳ Guardando...':rubrosStatus==='ok'?'✓ En rubros':rubrosStatus?.startsWith('err')?'⚠ Error':'📦 Agregar a rubros'}
