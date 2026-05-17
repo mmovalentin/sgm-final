@@ -901,7 +901,6 @@ function RubrosScreen({perfil,t}) {
             🔍 Comparar proveedores
           </button>
         </div>
-      </div>
       {showComparar&&(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:200,display:'flex',alignItems:'flex-end'}} onClick={()=>setShowComparar(false)}>
           <div style={{background:C.card,borderRadius:'16px 16px 0 0',width:'100%',maxHeight:'80vh',overflow:'auto',padding:16}} onClick={e=>e.stopPropagation()}>
@@ -917,7 +916,7 @@ function RubrosScreen({perfil,t}) {
                   <div style={{fontSize:12,fontWeight:700,color:C.t1}}>{item}</div>
                 </div>
                 {provs.map((pv,i)=>{
-                  const wa=pv.contacto.match(/(\+?[\d\s\-]{8,})/)?.[1]?.replace(/\s/g,'');
+                  const wa=(pv.contacto||'').match(/(\+?[\d\s\-]{8,})/)?.[1]?.replace(/\s/g,'');
                   return(
                     <div key={i} style={{display:'flex',alignItems:'center',padding:'9px 12px',borderBottom:i<provs.length-1?`.5px solid ${C.border}`:'none',background:i===0?'#E8F5E9':'transparent'}}>
                       {i===0&&<div style={{fontSize:9,fontWeight:700,color:'#2E7D32',marginRight:6}}>💰</div>}
@@ -938,6 +937,7 @@ function RubrosScreen({perfil,t}) {
           </div>
         </div>
       )}
+      </div>
     );
   }
 
@@ -1292,6 +1292,20 @@ function MoreMenu({onNav,onClose,t,lang,onLang}) {
 }
 
 // ── APP PRINCIPAL
+class ErrorBoundary extends React.Component {
+  constructor(props){super(props);this.state={error:null};}
+  static getDerivedStateFromError(e){return{error:e};}
+  render(){
+    if(this.state.error){
+      return React.createElement('div',{style:{padding:20,background:'#B71C1C',color:'#fff',fontFamily:'monospace',fontSize:11,wordBreak:'break-word',position:'fixed',inset:0,zIndex:9999,overflow:'auto'}},
+        [React.createElement('b',{key:1},'React Error: '),
+         String(this.state.error.message||this.state.error),
+         React.createElement('pre',{key:2,style:{marginTop:8,fontSize:9,opacity:.8}},(this.state.error.stack||'').slice(0,1000))]
+      );
+    }
+    return this.props.children;
+  }
+}
 function SGMApp() {
   const [phase,setPhase]=useState('splash');
   const [perfil,setPerfil]=useState(null);
@@ -1364,7 +1378,7 @@ function SGMApp() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<SGMApp />);
+ReactDOM.createRoot(document.getElementById('root')).render(<ErrorBoundary><SGMApp /></ErrorBoundary>);
 </script>
 </body>
 </html>
