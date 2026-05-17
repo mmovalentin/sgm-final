@@ -824,7 +824,25 @@ function RubrosScreen({perfil,t}) {
   const [showComparar,setShowComparar]=useState(false);
   const [comparaData,setComparaData]=useState([]);
   const [loadingCompara,setLoadingCompara]=useState(false);
+  const [compraStatus,setCompraStatus]=useState({});
   const filtered=RUBROS.filter(r=>r.name.toLowerCase().includes(q.toLowerCase()));
+
+  async function registrarCompra(item,pv){
+    const key=`${item}|${pv.nombre}`;
+    setCompraStatus(s=>({...s,[key]:'loading'}));
+    try{
+      const {error}=await supa.from('compras').insert({
+        proveedor_id:pv.proveedor_id||null,
+        proveedor_nombre:pv.nombre,
+        material:item,
+        rubro:pv.rubro||RUBROS[sel]?.name||'',
+        precio_usd:pv.precio_usd,
+        precio_pesos:pv.precio_pesos
+      });
+      if(error) throw error;
+      setCompraStatus(s=>({...s,[key]:'ok'}));
+    }catch(e){setCompraStatus(s=>({...s,[key]:'err'}));}
+  }
 
   useEffect(()=>{
     if(sel===null||!supa) return;
@@ -836,14 +854,15 @@ function RubrosScreen({perfil,t}) {
     if(!supa) return;
     setLoadingCompara(true);
     setShowComparar(true);
+    setCompraStatus({});
     const rubroName=RUBROS[sel]?.name||'';
-    const {data}=await supa.from('materiales').select('item,precio_pesos,precio_usd,proveedores(nombre,contacto)').eq('rubro',rubroName).order('item');
+    const {data}=await supa.from('materiales').select('item,precio_pesos,precio_usd,rubro,proveedor_id,proveedores(nombre,contacto)').eq('rubro',rubroName).order('item');
     if(data){
       const grouped={};
       data.forEach(m=>{
         const key=m.item||'Sin nombre';
         if(!grouped[key]) grouped[key]=[];
-        grouped[key].push({nombre:m.proveedores?.nombre||'Sin proveedor',contacto:m.proveedores?.contacto||'',precio_usd:m.precio_usd||0,precio_pesos:m.precio_pesos||0});
+        grouped[key].push({nombre:m.proveedores?.nombre||'Sin proveedor',contacto:m.proveedores?.contacto||'',precio_usd:m.precio_usd||0,precio_pesos:m.precio_pesos||0,proveedor_id:m.proveedor_id||null,rubro:m.rubro||rubroName});
       });
       setComparaData(Object.entries(grouped).map(([item,provs])=>({item,provs:provs.sort((a,b)=>a.precio_usd-b.precio_usd)})));
     }
@@ -927,6 +946,11 @@ function RubrosScreen({perfil,t}) {
                         <div style={{fontSize:9,color:C.t3}}>${pv.precio_pesos.toLocaleString()}</div>
                       </div>
                       {wa&&<a href={`https://wa.me/${wa.replace('+','')}`} style={{marginLeft:8,background:'#25D366',color:'#fff',border:'none',borderRadius:6,padding:'4px 8px',fontSize:10,fontWeight:700,textDecoration:'none',flexShrink:0}}>WhatsApp</a>}
+                      {(()=>{const cs=compraStatus[`${item}|${pv.nombre}`];return(
+                        <button onClick={e=>{e.stopPropagation();registrarCompra(item,pv);}} disabled={cs==='loading'||cs==='ok'} style={{marginLeft:4,background:cs==='ok'?C.green:cs==='err'?C.red:C.acc,color:'#fff',border:'none',borderRadius:6,padding:'4px 8px',fontSize:10,fontWeight:700,cursor:'pointer',flexShrink:0,opacity:cs==='loading'?0.6:1}}>
+                          {cs==='loading'?'⏳':cs==='ok'?'✓ Registrado':cs==='err'?'⚠ Error':'Compré acá'}
+                        </button>
+                      );})()}
                     </div>
                   );
                 })}
@@ -1037,7 +1061,17 @@ function PresupScreen({t,dolar=1415}) {
   const [rubroGlobal,setRubroGlobal]=useState(null);
   const [savedList,setSavedList]=useState([]);
   const [loadingSaved,setLoadingSaved]=useState(false);
+  const [compras,setCompras]=useState([]);
+  const [loadingCompras,setLoadingCompras]=useState(false);
   const fileRef=useRef(null);
+
+  async function fetchCompras(){
+    if(!supa) return;
+    setLoadingCompras(true);
+    const {data}=await supa.from('compras').select('*').order('fecha',{ascending:false}).limit(20);
+    setCompras(data||[]);
+    setLoadingCompras(false);
+  }
 
   async function fetchSaved(){
     if(!supa) return;
@@ -1050,7 +1084,7 @@ function PresupScreen({t,dolar=1415}) {
     setLoadingSaved(false);
   }
 
-  useEffect(()=>{fetchSaved();},[]);
+  useEffect(()=>{fetchSaved();fetchCompras();},[]);
 
   async function agregarAlMapa(){
     if(!supa||!result?.data) return;
@@ -1254,6 +1288,28 @@ function PresupScreen({t,dolar=1415}) {
               </div>
             );
           })}
+        </div>
+
+        {/* Historial de compras */}
+        <div style={{marginTop:4}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>🛒 Historial de compras</div>
+          {loadingCompras&&<div style={{textAlign:'center',padding:12,fontSize:12,color:C.t3}}>⏳ Cargando...</div>}
+          {!loadingCompras&&compras.length===0&&<div style={{textAlign:'center',padding:16,fontSize:12,color:C.t3}}>No hay compras registradas aún.<br/>Usá "Compré acá" en la sección Rubros.</div>}
+          {compras.map(c=>(
+            <div key={c.id} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'11px 13px',marginBottom:8}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.t1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{c.material||'—'}</div>
+                  <div style={{fontSize:10,color:C.t3,marginTop:1}}>{c.proveedor_nombre||'—'} · {c.rubro||'—'}</div>
+                  <div style={{fontSize:9,color:C.t3,marginTop:1}}>{new Date(c.fecha).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                </div>
+                <div style={{textAlign:'right',flexShrink:0}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.acc}}>USD {(c.precio_usd||0).toLocaleString()}</div>
+                  <div style={{fontSize:9,color:C.t3}}>${(c.precio_pesos||0).toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
       {showRubroModal&&(

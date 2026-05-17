@@ -15,6 +15,13 @@ CREATE TABLE IF NOT EXISTS presupuestos (
   vigencia_dias INTEGER DEFAULT 30,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS compras (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  proveedor_id UUID REFERENCES proveedores(id) ON DELETE SET NULL,
+  proveedor_nombre TEXT, material TEXT, rubro TEXT,
+  precio_usd NUMERIC, precio_pesos NUMERIC,
+  fecha TIMESTAMPTZ DEFAULT NOW()
+);
 CREATE TABLE IF NOT EXISTS materiales (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   proveedor_id UUID REFERENCES proveedores(id) ON DELETE SET NULL,
@@ -25,6 +32,7 @@ CREATE TABLE IF NOT EXISTS materiales (
 GRANT ALL ON TABLE proveedores  TO anon, authenticated;
 GRANT ALL ON TABLE presupuestos TO anon, authenticated;
 GRANT ALL ON TABLE materiales   TO anon, authenticated;
+GRANT ALL ON TABLE compras      TO anon, authenticated;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
 `;
 
