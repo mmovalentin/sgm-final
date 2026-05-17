@@ -1605,8 +1605,9 @@ function ClientesScreen() {
 }
 
 function MoreMenu({onNav,onClose,t,lang,onLang,perfil}) {
+  const p=perfil||localStorage.getItem('sgm-perfil')||'';
   const base=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq']];
-  const items=perfil==='constructor'?[...base,['👥','Clientes','clientes']]:base;
+  const items=['constructor','profesional'].includes(p)?[...base,['👥','Clientes','clientes']]:base;
   return (
     <div style={{position:'absolute',inset:0,zIndex:200,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
       <div onClick={onClose} style={{position:'absolute',inset:0,background:'rgba(10,22,40,.7)',backdropFilter:'blur(4px)'}}/>
@@ -1646,7 +1647,7 @@ class ErrorBoundary extends React.Component {
 }
 export default function SGMApp() {
   const [phase,setPhase]=useState('splash');
-  const [perfil,setPerfil]=useState(null);
+  const [perfil,setPerfil]=useState(()=>localStorage.getItem('sgm-perfil'));
   const [screen,setScreen]=useState('home');
   const [screenParams,setScreenParams]=useState({});
   const [showMore,setShowMore]=useState(false);
@@ -1657,7 +1658,7 @@ export default function SGMApp() {
   const [soundOn,setSoundOn]=useState(true);
   const t=T[lang];
 
-  useEffect(()=>{const timer=setTimeout(()=>setPhase('onboarding'),2000);return()=>clearTimeout(timer);},[]);
+  useEffect(()=>{const saved=localStorage.getItem('sgm-perfil');const timer=setTimeout(()=>setPhase(saved?'app':'onboarding'),2000);return()=>clearTimeout(timer);},[]);
   useEffect(()=>{fetch('https://dolarapi.com/v1/dolares/blue').then(r=>r.json()).then(d=>setDolar(d.venta||1390)).catch(()=>{});},[]);
 
   function handleNav(id,params) {
@@ -1687,7 +1688,7 @@ export default function SGMApp() {
     </div>
   );
 
-  if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{setPerfil(p);setPhase('app');}}/></div>;
+  if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{localStorage.setItem('sgm-perfil',p);setPerfil(p);setPhase('app');}}/></div>;
 
   const screens={
     home:<HomeScreen onNav={handleNav} t={t}/>,
