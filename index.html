@@ -637,12 +637,22 @@ function MapaScreen({t,perfil,onLogin}) {
   const markersRef=useRef([]);
   const [activos,setActivos]=useState(new Set(['constructor','profesional','proveedor']));
   const [dbProveedores,setDbProveedores]=useState([]);
+  const [sinUbicacion,setSinUbicacion]=useState([]);
+  const [refreshTick,setRefreshTick]=useState(0);
 
   useEffect(()=>{
     if(!supa) return;
-    supa.from('proveedores').select('id,nombre,rubro,lat,lng,contacto').not('lat','is',null).then(({data})=>{
-      if(data) setDbProveedores(data.filter(p=>p.lat&&p.lng));
+    supa.from('proveedores').select('id,nombre,rubro,lat,lng,contacto').then(({data})=>{
+      if(!data) return;
+      setDbProveedores(data.filter(p=>p.lat&&p.lng));
+      setSinUbicacion(data.filter(p=>!p.lat||!p.lng));
     });
+  },[refreshTick]);
+
+  useEffect(()=>{
+    const handler=()=>setRefreshTick(t=>t+1);
+    window.addEventListener('sgm-mapa-refresh',handler);
+    return()=>window.removeEventListener('sgm-mapa-refresh',handler);
   },[]);
 
   const allMarkers=[...MAPA_MARKERS,...dbProveedores.map(p=>({lat:p.lat,lng:p.lng,nombre:p.nombre,desc:p.rubro||'Proveedor',tipo:'proveedor',fromDb:true}))];
@@ -732,7 +742,7 @@ function MapaScreen({t,perfil,onLogin}) {
         </div>
       </div>
       <div style={{flex:1,overflowY:'auto'}}>
-        {visibles.length===0&&(
+        {visibles.length===0&&sinUbicacion.length===0&&(
           <div style={{textAlign:'center',padding:32,color:C.t3,fontSize:13}}>Sin resultados. Activá algún filtro.</div>
         )}
         {visibles.map((m,i)=>{
@@ -749,6 +759,21 @@ function MapaScreen({t,perfil,onLogin}) {
           );
         })}
       </div>
+      {sinUbicacion.length>0&&(
+          <div style={{padding:'12px 14px',borderTop:`.5px solid ${C.border}`}}>
+            <div style={{fontSize:9,textTransform:'uppercase',letterSpacing:1,color:C.t3,fontWeight:700,marginBottom:8}}>📍 Sin ubicación cargada</div>
+            {sinUbicacion.map((p,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:i<sinUbicacion.length-1?`.5px solid ${C.border}`:'none'}}>
+                <div style={{width:32,height:32,borderRadius:'50%',background:'#E65100',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>🏪</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{color:C.t1,fontSize:12,fontWeight:700}}>{p.nombre}</div>
+                  <div style={{color:C.t3,fontSize:10,marginTop:1}}>{p.rubro||'Proveedor'}{p.contacto?' · '+p.contacto.slice(0,30):''}</div>
+                </div>
+                <div style={{fontSize:9,color:'#E65100',border:'1px solid #E65100',borderRadius:8,padding:'2px 6px',flexShrink:0}}>Sin GPS</div>
+              </div>
+            ))}
+          </div>
+        )}
       {perfil&&(
         <div style={{flexShrink:0,padding:'12px 14px',borderTop:`.5px solid ${C.border}`,background:C.card}}>
           {(perfil==='constructor'||perfil==='profesional')&&(
@@ -1050,6 +1075,7 @@ function PresupScreen({t,dolar=1415}) {
         err=r.error;
       }
       setMapStatus(err?'err:'+err.message.slice(0,40):'ok');
+      if(!err) window.dispatchEvent(new Event('sgm-mapa-refresh'));
     }catch(e){setMapStatus('err:'+e.message.slice(0,40));}
   }
 
