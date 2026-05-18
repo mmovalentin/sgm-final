@@ -200,15 +200,16 @@ const FAQS = [
 ];
 
 // ── TOPBAR
-function Topbar({screen,perfil,dolar,onAyuda,onLogin,loggedIn,t,onSound,soundOn}) {
+function Topbar({screen,perfil,dolar,onAyuda,onLogin,loggedIn,t,onSound,soundOn,user,onSignOut}) {
   const labels={cliente:'🏠 Cliente',constructor:'🏗️ Constructor',proveedor:'🏪 Proveedor'};
   const scrNames={home:'Sistema de Gestion',modelos:t.galeria,cot:'Cotizador IA',chat:t.chat_title,mapa:'Mapa SGM',rubros:t.rubros_title,stats:t.stats_title,faq:t.faq_title,agenda:t.agenda_title,presup:t.presup_title};
+  const displayName=user?.user_metadata?.full_name||user?.email?.split('@')[0]||'';
   return (
     <div style={{background:C.navy,padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
       <div style={{display:'flex',alignItems:'center',gap:9}}>
         <div style={{width:28,height:28,background:C.acc,borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:C.navy}}>SGM</div>
         <div>
-          <div style={{color:'#fff',fontSize:12,fontWeight:700}}>SGM</div>
+          <div style={{color:'#fff',fontSize:12,fontWeight:700}}>{displayName||'SGM'}</div>
           <div style={{color:'rgba(255,255,255,.4)',fontSize:10}}>{labels[perfil]||scrNames[screen]||'SGM'}</div>
         </div>
       </div>
@@ -216,9 +217,17 @@ function Topbar({screen,perfil,dolar,onAyuda,onLogin,loggedIn,t,onSound,soundOn}
         <div style={{background:'rgba(100,255,218,.1)',border:'1px solid rgba(100,255,218,.2)',borderRadius:6,padding:'3px 7px',fontSize:10,fontWeight:700,color:'#64FFDA'}}>
           ${dolar.toLocaleString('es-AR')} Blue
         </div>
-        {!loggedIn
-          ? <button onClick={onLogin} style={{background:'rgba(255,255,255,.1)',border:'1px solid rgba(255,255,255,.2)',color:'#fff',fontSize:10,fontWeight:600,padding:'4px 9px',borderRadius:7,cursor:'pointer'}}>G {t.entrar}</button>
-          : <div style={{width:26,height:26,borderRadius:'50%',background:C.acc,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:C.navy}}>VM</div>
+        {user
+          ? <div style={{display:'flex',alignItems:'center',gap:4}}>
+              {user.user_metadata?.avatar_url
+                ? <img src={user.user_metadata.avatar_url} referrerPolicy="no-referrer" style={{width:26,height:26,borderRadius:'50%',objectFit:'cover'}}/>
+                : <div style={{width:26,height:26,borderRadius:'50%',background:C.acc,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:C.navy}}>{displayName[0]?.toUpperCase()||'U'}</div>
+              }
+              <button onClick={onSignOut} style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.15)',color:'rgba(255,255,255,.7)',fontSize:9,padding:'3px 7px',borderRadius:6,cursor:'pointer',fontWeight:600}}>Salir</button>
+            </div>
+          : loggedIn
+            ? <div style={{width:26,height:26,borderRadius:'50%',background:C.acc,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:C.navy}}>VM</div>
+            : null
         }
         <button onClick={onSound} style={{width:28,height:28,borderRadius:'50%',background:'rgba(255,255,255,.08)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>{soundOn?'🔊':'🔇'}</button>
         <button onClick={onAyuda} style={{width:28,height:28,borderRadius:'50%',background:'rgba(255,255,255,.08)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>❓</button>
@@ -1755,12 +1764,68 @@ export default function SGMApp() {
   const [showAyuda,setShowAyuda]=useState(false);
   const [dolar,setDolar]=useState(1390);
   const [loggedIn,setLoggedIn]=useState(false);
+  const [user,setUser]=useState(null);
   const [lang,setLang]=useState('es');
   const [soundOn,setSoundOn]=useState(true);
   const t=T[lang];
 
-  useEffect(()=>{const saved=localStorage.getItem('sgm-perfil');const timer=setTimeout(()=>setPhase(saved?'app':'onboarding'),2000);return()=>clearTimeout(timer);},[]);
+  // Splash: detectar sesión activa → saltar onboarding/login
+  useEffect(()=>{
+    const timer=setTimeout(async()=>{
+      try{
+        if(!supa) throw new Error('supa not ready');
+        const {data:{session}}=await supa.auth.getSession();
+        if(session?.user){
+          setUser(session.user);
+          setLoggedIn(true);
+          const saved=localStorage.getItem('sgm-perfil');
+          if(saved) setPerfil(saved);
+          setPhase('app');
+        } else {
+          setPhase('login');
+        }
+      }catch(e){setPhase('login');}
+    },2000);
+    return()=>clearTimeout(timer);
+  },[]);
+
+  // Listener de cambios de sesión (captura redirect OAuth)
+  useEffect(()=>{
+    let unsub;
+    const setup=()=>{
+      if(!supa){setTimeout(setup,200);return;}
+      const {data}=supa.auth.onAuthStateChange((event,session)=>{
+        if(session?.user){
+          setUser(session.user);
+          setLoggedIn(true);
+          const saved=localStorage.getItem('sgm-perfil');
+          if(saved) setPerfil(saved);
+          setPhase('app');
+        } else if(event==='SIGNED_OUT'){
+          setUser(null);
+          setLoggedIn(false);
+        }
+      });
+      unsub=data.subscription;
+    };
+    setup();
+    return()=>{unsub?.unsubscribe();};
+  },[]);
+
   useEffect(()=>{fetch('https://dolarapi.com/v1/dolares/blue').then(r=>r.json()).then(d=>setDolar(d.venta||1390)).catch(()=>{});},[]);
+
+  async function loginWithGoogle(){
+    if(!supa) return;
+    await supa.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://sgm-final.vercel.app'}});
+  }
+
+  async function signOut(){
+    if(!supa) return;
+    await supa.auth.signOut();
+    setUser(null);
+    setLoggedIn(false);
+    setPhase('login');
+  }
 
   function handleNav(id,params) {
     if(id==='more'){setShowMore(true);return;}
@@ -1789,6 +1854,20 @@ export default function SGMApp() {
     </div>
   );
 
+  if(phase==='login') return (
+    <div style={{position:'absolute',inset:0,background:'#07111F',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:0,padding:32}}>
+      <div style={{fontSize:52,fontWeight:800,letterSpacing:8,color:'#4A9FFF',marginBottom:4}}>SGM</div>
+      <div style={{color:'rgba(255,255,255,.4)',fontSize:11,textAlign:'center',marginBottom:40}}>Sistema de Gestión · Córdoba</div>
+      <button onClick={loginWithGoogle} style={{width:'100%',maxWidth:300,background:'#fff',color:'#1f1f1f',border:'none',borderRadius:12,padding:'14px 20px',fontSize:14,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,marginBottom:12,boxShadow:'0 2px 12px rgba(0,0,0,.3)'}}>
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Continuar con Google
+      </button>
+      <button onClick={()=>setPhase(localStorage.getItem('sgm-perfil')?'app':'onboarding')} style={{background:'none',border:'none',color:'rgba(255,255,255,.35)',fontSize:11,cursor:'pointer',padding:'8px 0'}}>
+        Continuar sin cuenta →
+      </button>
+    </div>
+  );
+
   if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{localStorage.setItem('sgm-perfil',p);setPerfil(p);setPhase('app');}}/></div>;
 
   const screens={
@@ -1808,7 +1887,7 @@ export default function SGMApp() {
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100vh',width:'100%',background:C.card,position:'relative',overflow:'hidden',fontFamily:"system-ui,sans-serif"}}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,button{font-family:inherit}`}</style>
-      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>setShowAyuda(true)} onLogin={()=>setLoggedIn(true)} loggedIn={loggedIn} t={t} onSound={()=>{setSoundOn(s=>!s);playTap();}} soundOn={soundOn}/>
+      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>setShowAyuda(true)} onLogin={()=>setLoggedIn(true)} loggedIn={loggedIn} t={t} onSound={()=>{setSoundOn(s=>!s);playTap();}} soundOn={soundOn} user={user} onSignOut={signOut}/>
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap}>
         {screens[screen]||screens.home}
       </div>
