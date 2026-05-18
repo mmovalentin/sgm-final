@@ -1,5 +1,9 @@
 # SGM — Sistema de Gestión de Materiales
 
+> ⚠️ **La app en producción está en https://sgm-final.vercel.app**
+> GitHub Pages no está configurado para este proyecto.
+> El código fuente está aquí pero la app se despliega desde Vercel.
+
 Aplicación web mobile-first para gestión de obras, presupuestos y proveedores de construcción en Córdoba, Argentina. Orientada a constructores, profesionales y clientes que trabajan con Steel Frame.
 
 🌐 **Producción:** [sgm-final.vercel.app](https://sgm-final.vercel.app)
