@@ -771,6 +771,22 @@ function MapaScreen({t,perfil,onLogin}) {
 }
 
 // ── CHAT
+function renderMd(text){
+  const escaped=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lines=escaped.split('\n');
+  const html=lines.map(line=>{
+    if(/^###\s+/.test(line)) return `<div style="font-size:13px;font-weight:700;margin-top:6px;color:#0A1628">${line.replace(/^###\s+/,'')}</div>`;
+    if(/^##\s+/.test(line))  return `<div style="font-size:14px;font-weight:700;margin-top:8px;color:#0A1628">${line.replace(/^##\s+/,'')}</div>`;
+    if(/^#\s+/.test(line))   return `<div style="font-size:15px;font-weight:700;margin-top:8px;color:#0A1628">${line.replace(/^#\s+/,'')}</div>`;
+    if(/^[-*]\s+/.test(line)) return `<div style="padding-left:10px;margin:1px 0">• ${line.replace(/^[-*]\s+/,'')}</div>`;
+    if(line.trim()==='') return '<div style="height:6px"></div>';
+    return `<div>${line}</div>`;
+  }).join('');
+  return html
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*([^*]+?)\*/g,'<em>$1</em>');
+}
+
 function ChatScreen({t}) {
   const [msgs,setMsgs]=useState([{role:'ai',text:'Hola! Soy el asistente de SGM. Preguntame sobre construccion, costos o Steel Frame en Cordoba.'}]);
   const [input,setInput]=useState('');
@@ -844,10 +860,11 @@ function ChatScreen({t}) {
         <div ref={msgsRef} style={{flex:1,overflowY:'auto',padding:12,display:'flex',flexDirection:'column',gap:10}}>
           {msgs.map((m,i)=>(
             <div key={i} style={{alignSelf:m.role==='user'?'flex-end':'flex-start',maxWidth:'82%',display:'flex',flexDirection:'column',gap:4}}>
-              <div style={{padding:'10px 12px',borderRadius:m.role==='user'?'12px 12px 2px 12px':'2px 12px 12px 12px',background:m.role==='user'?C.navy:C.card,color:m.role==='user'?'#fff':C.t1,border:m.role==='ai'?`.5px solid ${C.border}`:'none',fontSize:13,lineHeight:1.5}}>
-                {m.text}
-              </div>
-              {m.role==='ai'&&supa&&(()=>{const cs=guardadoStatus[i];return(
+              {m.role==='user'
+                ? <div style={{padding:'10px 12px',borderRadius:'12px 12px 2px 12px',background:C.navy,color:'#fff',fontSize:13,lineHeight:1.5}}>{m.text}</div>
+                : <div style={{padding:'10px 12px',borderRadius:'2px 12px 12px 12px',background:C.card,color:C.t1,border:`.5px solid ${C.border}`,fontSize:13,lineHeight:1.5}} dangerouslySetInnerHTML={{__html:renderMd(m.text)}}/>
+              }
+              {m.role==='ai'&&(()=>{const cs=guardadoStatus[i];return(
                 <button onClick={()=>guardarRespuesta(i,m.question||'',m.text)} disabled={cs==='loading'||cs==='ok'} style={{alignSelf:'flex-start',background:'none',border:`1px solid ${cs==='ok'?C.green:C.border2}`,borderRadius:8,padding:'3px 9px',fontSize:10,cursor:'pointer',color:cs==='ok'?C.green:C.t3,fontWeight:cs==='ok'?700:400,opacity:cs==='loading'?0.6:1}}>
                   {cs==='loading'?'⏳ Guardando...':cs==='ok'?'✓ Guardado':cs==='err'?'⚠ Error':'📌 Guardar respuesta'}
                 </button>
@@ -890,7 +907,7 @@ function ChatScreen({t}) {
               </div>
               {expandedId===c.id&&(
                 <div style={{padding:'0 13px 12px',borderTop:`.5px solid ${C.border}`}}>
-                  <div style={{fontSize:12,color:C.t1,lineHeight:1.6,paddingTop:10,whiteSpace:'pre-wrap'}}>{c.respuesta}</div>
+                  <div style={{fontSize:12,color:C.t1,lineHeight:1.6,paddingTop:10}} dangerouslySetInnerHTML={{__html:renderMd(c.respuesta)}}></div>
                 </div>
               )}
             </div>
