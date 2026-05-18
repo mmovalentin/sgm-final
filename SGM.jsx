@@ -1605,9 +1605,7 @@ function ClientesScreen() {
 }
 
 function MoreMenu({onNav,onClose,t,lang,onLang,perfil}) {
-  const p=perfil||localStorage.getItem('sgm-perfil')||'';
-  const base=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq']];
-  const items=['constructor','profesional'].includes(p)?[...base,['👥','Clientes','clientes']]:base;
+  const items=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['👥','Clientes','clientes']];
   return (
     <div style={{position:'absolute',inset:0,zIndex:200,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
       <div onClick={onClose} style={{position:'absolute',inset:0,background:'rgba(10,22,40,.7)',backdropFilter:'blur(4px)'}}/>
