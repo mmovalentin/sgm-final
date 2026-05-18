@@ -1609,7 +1609,7 @@ function MoreMenu({onNav,onClose,t,lang,onLang,perfil}) {
   return (
     <div style={{position:'absolute',inset:0,zIndex:200,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
       <div onClick={onClose} style={{position:'absolute',inset:0,background:'rgba(10,22,40,.7)',backdropFilter:'blur(4px)'}}/>
-      <div style={{background:C.card,borderRadius:'20px 20px 0 0',padding:'16px 16px 28px',position:'relative',zIndex:1}}>
+      <div style={{background:C.card,borderRadius:'20px 20px 0 0',padding:'16px 16px 28px',position:'relative',zIndex:1,overflowY:'auto',maxHeight:'70vh'}}>
         <div style={{fontSize:11,fontWeight:700,color:C.t2,textTransform:'uppercase',letterSpacing:.5,marginBottom:12}}>{t.mas_menu}</div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
           {items.map(([ic,lbl,id])=>(
