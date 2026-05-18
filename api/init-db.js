@@ -15,6 +15,11 @@ CREATE TABLE IF NOT EXISTS presupuestos (
   vigencia_dias INTEGER DEFAULT 30,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS consultas_guardadas (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  pregunta TEXT NOT NULL, respuesta TEXT NOT NULL,
+  tags TEXT[] DEFAULT '{}', fecha TIMESTAMPTZ DEFAULT NOW()
+);
 CREATE TABLE IF NOT EXISTS clientes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nombre TEXT NOT NULL, telefono TEXT, email TEXT, modelo TEXT,
@@ -40,6 +45,7 @@ CREATE TABLE IF NOT EXISTS materiales (
 GRANT ALL ON TABLE proveedores  TO anon, authenticated;
 GRANT ALL ON TABLE presupuestos TO anon, authenticated;
 GRANT ALL ON TABLE materiales   TO anon, authenticated;
+GRANT ALL ON TABLE consultas_guardadas TO anon, authenticated;
 GRANT ALL ON TABLE clientes     TO anon, authenticated;
 GRANT ALL ON TABLE compras      TO anon, authenticated;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;

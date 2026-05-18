@@ -775,8 +775,39 @@ function ChatScreen({t}) {
   const [msgs,setMsgs]=useState([{role:'ai',text:'Hola! Soy el asistente de SGM. Preguntame sobre construccion, costos o Steel Frame en Cordoba.'}]);
   const [input,setInput]=useState('');
   const [loading,setLoading]=useState(false);
+  const [tab,setTab]=useState('chat');
+  const [biblioteca,setBiblioteca]=useState([]);
+  const [loadingBib,setLoadingBib]=useState(false);
+  const [busqueda,setBusqueda]=useState('');
+  const [expandedId,setExpandedId]=useState(null);
+  const [guardadoStatus,setGuardadoStatus]=useState({});
   const msgsRef=useRef(null);
   useEffect(()=>{if(msgsRef.current)msgsRef.current.scrollTop=msgsRef.current.scrollHeight;},[msgs]);
+
+  async function fetchBiblioteca(){
+    if(!supa) return;
+    setLoadingBib(true);
+    const {data}=await supa.from('consultas_guardadas').select('*').order('fecha',{ascending:false});
+    setBiblioteca(data||[]);
+    setLoadingBib(false);
+  }
+  useEffect(()=>{if(tab==='biblioteca') fetchBiblioteca();},[tab]);
+
+  async function guardarRespuesta(idx,pregunta,respuesta){
+    if(!supa) return;
+    setGuardadoStatus(s=>({...s,[idx]:'loading'}));
+    try{
+      const {error}=await supa.from('consultas_guardadas').insert({pregunta,respuesta,tags:[]});
+      if(error) throw error;
+      setGuardadoStatus(s=>({...s,[idx]:'ok'}));
+    }catch(e){setGuardadoStatus(s=>({...s,[idx]:'err'}));}
+  }
+
+  async function eliminarConsulta(id){
+    if(!supa) return;
+    await supa.from('consultas_guardadas').delete().eq('id',id);
+    setBiblioteca(b=>b.filter(c=>c.id!==id));
+  }
 
   async function send(txt) {
     const q=txt||input.trim();if(!q)return;
@@ -784,10 +815,12 @@ function ChatScreen({t}) {
     try{
       const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,system:'Sos el asistente IA de SGM Construccion, especializado en Steel Frame y construccion en Cordoba. Responde en espanol, conciso y practico.',messages:[{role:'user',content:q}]})});
       const d=await r.json();
-      setMsgs(m=>[...m,{role:'ai',text:d.content?.[0]?.text||'Sin respuesta.'}]);
+      setMsgs(m=>[...m,{role:'ai',text:d.content?.[0]?.text||'Sin respuesta.',question:q}]);
     }catch(e){setMsgs(m=>[...m,{role:'ai',text:'Error de conexion.'}]);}
     setLoading(false);
   }
+
+  const bibFiltrada=biblioteca.filter(c=>!busqueda||(c.pregunta+c.respuesta).toLowerCase().includes(busqueda.toLowerCase()));
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'calc(100vh - 110px)'}}>
@@ -796,21 +829,74 @@ function ChatScreen({t}) {
         <div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:1}}>{t.chat_title}</div>
         <div style={{color:'rgba(255,255,255,.3)',fontSize:10}}>Steel Frame · Cordoba</div>
       </div>
-      <div ref={msgsRef} style={{flex:1,overflowY:'auto',padding:12,display:'flex',flexDirection:'column',gap:10}}>
-        {msgs.map((m,i)=>(
-          <div key={i} style={{maxWidth:'82%',padding:'10px 12px',borderRadius:m.role==='user'?'12px 12px 2px 12px':'2px 12px 12px 12px',background:m.role==='user'?C.navy:C.card,color:m.role==='user'?'#fff':C.t1,border:m.role==='ai'?`.5px solid ${C.border}`:'none',alignSelf:m.role==='user'?'flex-end':'flex-start',fontSize:13,lineHeight:1.5}}>
-            {m.text}
-          </div>
+
+      {/* Tab switcher */}
+      <div style={{display:'flex',background:C.card,borderBottom:`.5px solid ${C.border}`,flexShrink:0}}>
+        {[['💬','Chat','chat'],['📚','Biblioteca','biblioteca']].map(([ic,lbl,id])=>(
+          <button key={id} onClick={()=>setTab(id)} style={{flex:1,padding:'9px 4px',border:'none',background:'none',cursor:'pointer',borderBottom:`2px solid ${tab===id?C.acc:'transparent'}`,fontSize:11,fontWeight:700,color:tab===id?C.acc:C.t3}}>
+            {ic} {lbl}{id==='biblioteca'&&biblioteca.length>0?` (${biblioteca.length})`:''}
+          </button>
         ))}
-        {loading&&<div style={{alignSelf:'flex-start',padding:'10px 12px',borderRadius:'2px 12px 12px 12px',background:C.card,border:`.5px solid ${C.border}`,fontSize:13,color:C.t3}}>{t.analizando}</div>}
       </div>
-      <div style={{display:'flex',gap:6,padding:'6px 12px',overflowX:'auto',flexShrink:0}}>
-        {[t.chip1||'Costo SF 100m2',t.chip2||'SF vs mamposteria',t.chip3||'Precio MO m2',t.chip4||'Checklist inicio'].map(c=><button key={c} onClick={()=>send(c)} style={{background:C.card,border:`.5px solid ${C.border2}`,borderRadius:14,padding:'6px 11px',fontSize:10,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',color:C.t1}}>{c}</button>)}
-      </div>
-      <div style={{display:'flex',gap:8,padding:'8px 12px 10px',borderTop:`.5px solid ${C.border}`,background:C.card,flexShrink:0}}>
-        <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder={t.chat_ph} style={{flex:1,border:`.5px solid ${C.border2}`,borderRadius:20,padding:'9px 14px',fontSize:13,background:C.off,outline:'none'}}/>
-        <button onClick={()=>send()} style={{background:C.navy,color:'#fff',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:14,flexShrink:0}}>↑</button>
-      </div>
+
+      {/* Vista Chat */}
+      {tab==='chat'&&<>
+        <div ref={msgsRef} style={{flex:1,overflowY:'auto',padding:12,display:'flex',flexDirection:'column',gap:10}}>
+          {msgs.map((m,i)=>(
+            <div key={i} style={{alignSelf:m.role==='user'?'flex-end':'flex-start',maxWidth:'82%',display:'flex',flexDirection:'column',gap:4}}>
+              <div style={{padding:'10px 12px',borderRadius:m.role==='user'?'12px 12px 2px 12px':'2px 12px 12px 12px',background:m.role==='user'?C.navy:C.card,color:m.role==='user'?'#fff':C.t1,border:m.role==='ai'?`.5px solid ${C.border}`:'none',fontSize:13,lineHeight:1.5}}>
+                {m.text}
+              </div>
+              {m.role==='ai'&&supa&&(()=>{const cs=guardadoStatus[i];return(
+                <button onClick={()=>guardarRespuesta(i,m.question||'',m.text)} disabled={cs==='loading'||cs==='ok'} style={{alignSelf:'flex-start',background:'none',border:`1px solid ${cs==='ok'?C.green:C.border2}`,borderRadius:8,padding:'3px 9px',fontSize:10,cursor:'pointer',color:cs==='ok'?C.green:C.t3,fontWeight:cs==='ok'?700:400,opacity:cs==='loading'?0.6:1}}>
+                  {cs==='loading'?'⏳ Guardando...':cs==='ok'?'✓ Guardado':cs==='err'?'⚠ Error':'📌 Guardar respuesta'}
+                </button>
+              );})()}
+            </div>
+          ))}
+          {loading&&<div style={{alignSelf:'flex-start',padding:'10px 12px',borderRadius:'2px 12px 12px 12px',background:C.card,border:`.5px solid ${C.border}`,fontSize:13,color:C.t3}}>{t.analizando}</div>}
+        </div>
+        <div style={{display:'flex',gap:6,padding:'6px 12px',overflowX:'auto',flexShrink:0}}>
+          {[t.chip1||'Costo SF 100m2',t.chip2||'SF vs mamposteria',t.chip3||'Precio MO m2',t.chip4||'Checklist inicio'].map(c=><button key={c} onClick={()=>send(c)} style={{background:C.card,border:`.5px solid ${C.border2}`,borderRadius:14,padding:'6px 11px',fontSize:10,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',color:C.t1}}>{c}</button>)}
+        </div>
+        <div style={{display:'flex',gap:8,padding:'8px 12px 10px',borderTop:`.5px solid ${C.border}`,background:C.card,flexShrink:0}}>
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder={t.chat_ph} style={{flex:1,border:`.5px solid ${C.border2}`,borderRadius:20,padding:'9px 14px',fontSize:13,background:C.off,outline:'none'}}/>
+          <button onClick={()=>send()} style={{background:C.navy,color:'#fff',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:14,flexShrink:0}}>↑</button>
+        </div>
+      </>}
+
+      {/* Vista Biblioteca */}
+      {tab==='biblioteca'&&(
+        <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
+          <input value={busqueda} onChange={e=>setBusqueda(e.target.value)} placeholder="🔍 Buscar en biblioteca..." style={{width:'100%',padding:'9px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,fontSize:12,outline:'none',fontFamily:'inherit'}}/>
+          {loadingBib&&<div style={{textAlign:'center',padding:20,color:C.t3,fontSize:13}}>⏳ Cargando...</div>}
+          {!loadingBib&&bibFiltrada.length===0&&(
+            <div style={{textAlign:'center',padding:32,color:C.t3,fontSize:13}}>
+              <div style={{fontSize:36,marginBottom:8}}>📚</div>
+              {busqueda?'Sin resultados para tu búsqueda.':'No hay consultas guardadas aún.\nUsá "📌 Guardar respuesta" en el chat.'}
+            </div>
+          )}
+          {bibFiltrada.map(c=>(
+            <div key={c.id} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,overflow:'hidden'}}>
+              <div onClick={()=>setExpandedId(expandedId===c.id?null:c.id)} style={{padding:'11px 13px',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.t1,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{c.pregunta}</div>
+                  <div style={{fontSize:9,color:C.t3,marginTop:3}}>{new Date(c.fecha).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:5,flexShrink:0}}>
+                  <button onClick={e=>{e.stopPropagation();eliminarConsulta(c.id);}} style={{background:'none',border:`1px solid ${C.border2}`,borderRadius:6,padding:'3px 7px',fontSize:11,cursor:'pointer',color:C.red}}>🗑️</button>
+                  <span style={{fontSize:12,color:C.t3}}>{expandedId===c.id?'▲':'▼'}</span>
+                </div>
+              </div>
+              {expandedId===c.id&&(
+                <div style={{padding:'0 13px 12px',borderTop:`.5px solid ${C.border}`}}>
+                  <div style={{fontSize:12,color:C.t1,lineHeight:1.6,paddingTop:10,whiteSpace:'pre-wrap'}}>{c.respuesta}</div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
