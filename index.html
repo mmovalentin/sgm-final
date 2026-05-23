@@ -1542,24 +1542,40 @@ function PresupScreen({t,dolar=1415}) {
 
 // ── ONBOARDING
 function Onboarding({onSelect}) {
-  const cards=[{id:'cliente',icon:'🏠',name:'Quiero construir mi casa',desc:'Cotiza, encuentra constructores y sigue tu obra'},{id:'constructor',icon:'🏗️',name:'Soy constructor o profesional',desc:'Gestiona obras, presupuestos y consigue clientes'},{id:'proveedor',icon:'🏪',name:'Soy proveedor de materiales',desc:'Aparece en el mapa y recibe consultas'}];
+  const [sel,setSel]=useState(null);
+  const cards=[
+    {id:'cliente',icon:'🏠',name:'Cliente',desc:'Quiero seguir el avance de mi obra'},
+    {id:'constructor',icon:'🔨',name:'Constructor / Profesional',desc:'Gestiono proyectos y proveedores'},
+    {id:'proveedor',icon:'🏢',name:'Empresa / Proveedor',desc:'Ofrezco materiales o servicios'},
+  ];
   return (
-    <div style={{position:'absolute',inset:0,background:'#07111F',display:'flex',flexDirection:'column',overflowY:'auto',zIndex:100}}>
+    <div style={{position:'absolute',inset:0,background:'#07111F',display:'flex',flexDirection:'column',alignItems:'center',overflowY:'auto',zIndex:100}}>
       <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(74,159,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(74,159,255,.03) 1px,transparent 1px)',backgroundSize:'32px 32px',pointerEvents:'none'}}/>
-      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 24px 16px',textAlign:'center',position:'relative',zIndex:1,minHeight:240}}>
-        <div style={{fontSize:52,fontWeight:800,letterSpacing:6,color:'#4A9FFF',textShadow:'0 0 40px rgba(74,159,255,.5)',marginBottom:4}}>SGM</div>
-        <div style={{fontSize:9,letterSpacing:3,textTransform:'uppercase',color:'rgba(74,159,255,.3)',marginBottom:26}}>Sistema de Gestion Modular</div>
-        <div style={{fontSize:20,fontWeight:700,color:'#F0F6FF',lineHeight:1.3,marginBottom:6}}>Con que perfil entras hoy?</div>
-        <div style={{fontSize:12,color:'#4a6a8a',lineHeight:1.6,maxWidth:260}}>La app se adapta a lo que necesitas segun tu rol en la construccion.</div>
-      </div>
-      <div style={{padding:'0 16px 40px',display:'flex',flexDirection:'column',gap:9,position:'relative',zIndex:1}}>
-        {cards.map(card=>(
-          <div key={card.id} onClick={()=>onSelect(card.id)} style={{display:'flex',alignItems:'center',gap:12,padding:'15px 16px',borderRadius:14,border:'1.5px solid rgba(74,159,255,.2)',background:'rgba(12,30,53,.85)',cursor:'pointer'}}>
-            <div style={{width:44,height:44,borderRadius:11,background:'rgba(74,159,255,.12)',border:'1px solid rgba(74,159,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>{card.icon}</div>
-            <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:'#4A9FFF',marginBottom:2}}>{card.name}</div><div style={{fontSize:10,color:'#3a5a78',lineHeight:1.4}}>{card.desc}</div></div>
-            <div style={{fontSize:18,color:'rgba(74,159,255,.5)',marginLeft:'auto'}}>›</div>
-          </div>
-        ))}
+      <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',alignItems:'center',width:'100%',maxWidth:380,padding:'56px 24px 40px'}}>
+        <div style={{fontSize:52,fontWeight:800,letterSpacing:8,color:'#4A9FFF',textShadow:'0 0 40px rgba(74,159,255,.5)',marginBottom:4}}>SGM</div>
+        <div style={{color:'rgba(255,255,255,.4)',fontSize:11,marginBottom:40}}>Sistema de Gestión · Córdoba</div>
+        <div style={{fontSize:22,fontWeight:700,color:'#F0F6FF',textAlign:'center',marginBottom:8}}>¿Cómo usás SGM?</div>
+        <div style={{fontSize:12,color:'rgba(255,255,255,.35)',textAlign:'center',marginBottom:28,lineHeight:1.6}}>Elegí tu rol y la app se adapta a lo que necesitás.</div>
+        <div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',marginBottom:28}}>
+          {cards.map(card=>{
+            const active=sel===card.id;
+            return (
+              <div key={card.id} onClick={()=>setSel(card.id)} style={{display:'flex',alignItems:'center',gap:14,padding:'18px 16px',borderRadius:16,border:`2px solid ${active?'#4A9FFF':'rgba(74,159,255,.2)'}`,background:active?'rgba(74,159,255,.1)':'rgba(12,30,53,.85)',cursor:'pointer',boxShadow:active?'0 0 0 4px rgba(74,159,255,.1)':'none'}}>
+                <div style={{width:52,height:52,borderRadius:13,background:active?'rgba(74,159,255,.2)':'rgba(74,159,255,.08)',border:`1px solid ${active?'rgba(74,159,255,.4)':'rgba(74,159,255,.12)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,flexShrink:0}}>{card.icon}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:15,fontWeight:700,color:active?'#4A9FFF':'#F0F6FF',marginBottom:3}}>{card.name}</div>
+                  <div style={{fontSize:11,color:'rgba(255,255,255,.4)',lineHeight:1.4}}>{card.desc}</div>
+                </div>
+                <div style={{width:22,height:22,borderRadius:'50%',border:`2px solid ${active?'#4A9FFF':'rgba(74,159,255,.25)'}`,background:active?'#4A9FFF':'transparent',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  {active&&<div style={{width:8,height:8,borderRadius:'50%',background:'#fff'}}/>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <button onClick={()=>sel&&onSelect(sel)} style={{width:'100%',padding:'16px',borderRadius:14,border:'none',background:sel?'#4A9FFF':'rgba(74,159,255,.2)',color:sel?'#fff':'rgba(255,255,255,.3)',fontSize:15,fontWeight:700,cursor:sel?'pointer':'default',boxShadow:sel?'0 4px 24px rgba(74,159,255,.4)':'none'}}>
+          Continuar
+        </button>
       </div>
     </div>
   );
@@ -1916,8 +1932,8 @@ function SGMApp() {
       if(error||!data){setDenegadoReason(fromSignUp?'pending':'unauthorized');setPhase('denegado');return;}
       setUserRol(data.rol||'cliente');
       const saved=localStorage.getItem('sgm-perfil');
-      if(saved) setPerfil(saved);
-      setPhase('app');
+      if(saved){setPerfil(saved);setPhase('app');}
+      else setPhase('onboarding');
       if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){
         PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok=>{
           if(ok){setWebAuthnModalStatus('idle');setShowWebAuthnModal(true);}
