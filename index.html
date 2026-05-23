@@ -226,6 +226,47 @@ const FAQS = [
   {q:"Resiste sismos?",a:"Si. Cumple normativas CIRSOC vigentes. Es uno de los sistemas con mayor resistencia sismica."},
 ];
 
+// ── WEBAUTHN HELPERS
+function bufferToBase64url(buf){
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+function base64urlToBuffer(b64){
+  const s=b64.replace(/-/g,'+').replace(/_/g,'/');
+  const p=s.padEnd(s.length+(4-s.length%4)%4,'=');
+  const bin=atob(p);const buf=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+  return buf.buffer;
+}
+
+// ── WEBAUTHN MODAL
+function WebAuthnModal({onActivate,onDismiss,status}){
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(7,17,31,.85)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:2000,backdropFilter:'blur(4px)'}}>
+      <div style={{background:'#1a2332',borderRadius:'20px 20px 0 0',padding:'28px 24px 36px',width:'100%',maxWidth:480,border:'1px solid rgba(255,255,255,.08)'}}>
+        {status==='success'
+          ? <div style={{textAlign:'center',padding:'12px 0'}}>
+              <div style={{fontSize:44,marginBottom:12}}>✅</div>
+              <div style={{color:'#64FFDA',fontSize:16,fontWeight:700,marginBottom:6}}>Face ID activado</div>
+              <div style={{color:'rgba(255,255,255,.4)',fontSize:12}}>La próxima vez podés entrar sin elegir cuenta</div>
+            </div>
+          : <>
+              <div style={{textAlign:'center',marginBottom:20}}>
+                <div style={{fontSize:44,marginBottom:10}}>🔐</div>
+                <div style={{color:'#fff',fontSize:15,fontWeight:700,marginBottom:8}}>¿Querés activar Face ID?</div>
+                <div style={{color:'rgba(255,255,255,.45)',fontSize:12,lineHeight:1.6}}>Entrá más rápido con Face ID o huella dactilar sin elegir tu cuenta de Google cada vez.</div>
+              </div>
+              {status==='error'&&<div style={{color:'rgba(255,100,100,.8)',fontSize:11,textAlign:'center',marginBottom:12}}>No se pudo activar. Intentá de nuevo.</div>}
+              <button onClick={onActivate} disabled={status==='activating'} style={{width:'100%',padding:13,borderRadius:12,border:'none',background:'#64FFDA',color:'#07111F',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:10,opacity:status==='activating'?0.6:1,fontFamily:'inherit'}}>
+                {status==='activating'?'Activando...':'Activar Face ID'}
+              </button>
+              <button onClick={onDismiss} style={{width:'100%',padding:11,borderRadius:12,border:'none',background:'rgba(255,255,255,.07)',color:'rgba(255,255,255,.55)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Ahora no</button>
+            </>
+        }
+      </div>
+    </div>
+  );
+}
+
 // ── TOPBAR
 function Topbar({screen,perfil,dolar,onAyuda,onLogin,loggedIn,t,onSound,soundOn,user,userRol,onSignOut}) {
   const labels={cliente:'🏠 Cliente',constructor:'🏗️ Constructor',proveedor:'🏪 Proveedor'};
@@ -1815,6 +1856,10 @@ function SGMApp() {
   const [userRol,setUserRol]=useState('cliente');
   const [lang,setLang]=useState('es');
   const [soundOn,setSoundOn]=useState(true);
+  const [showWebAuthnModal,setShowWebAuthnModal]=useState(false);
+  const [webAuthnModalStatus,setWebAuthnModalStatus]=useState('idle');
+  const [webAuthnLoginWorking,setWebAuthnLoginWorking]=useState(false);
+  const [webAuthnLoginFailed,setWebAuthnLoginFailed]=useState(false);
   const t=T[lang];
 
   // Splash: detectar sesión activa → saltar onboarding/login
@@ -1865,7 +1910,58 @@ function SGMApp() {
       const saved=localStorage.getItem('sgm-perfil');
       if(saved) setPerfil(saved);
       setPhase('app');
+      if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){
+        PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok=>{
+          if(ok){setWebAuthnModalStatus('idle');setShowWebAuthnModal(true);}
+        }).catch(()=>{});
+      }
     }catch(e){setPhase('denegado');}
+  }
+
+  async function activateWebAuthn(){
+    if(!user) return;
+    setWebAuthnModalStatus('activating');
+    try{
+      const cred=await navigator.credentials.create({publicKey:{
+        challenge:crypto.getRandomValues(new Uint8Array(32)),
+        rp:{name:'SGM',id:window.location.hostname},
+        user:{id:new TextEncoder().encode(user.id||user.email),name:user.email,displayName:user.user_metadata?.full_name||user.email},
+        pubKeyCredParams:[{alg:-7,type:'public-key'},{alg:-257,type:'public-key'}],
+        authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
+        timeout:60000
+      }});
+      localStorage.setItem('sgm_webauthn_id',bufferToBase64url(cred.rawId));
+      localStorage.setItem('sgm_webauthn_email',user.email);
+      setWebAuthnModalStatus('success');
+      setTimeout(()=>setShowWebAuthnModal(false),2200);
+    }catch(e){setWebAuthnModalStatus('error');}
+  }
+
+  async function loginWithWebAuthn(){
+    const credId=localStorage.getItem('sgm_webauthn_id');
+    if(!credId||!supa) return;
+    setWebAuthnLoginWorking(true);
+    setWebAuthnLoginFailed(false);
+    try{
+      await navigator.credentials.get({publicKey:{
+        challenge:crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials:[{id:base64urlToBuffer(credId),type:'public-key',transports:['internal']}],
+        userVerification:'required',
+        timeout:60000
+      }});
+      // Biometría OK — intentar restaurar sesión existente
+      const {data:{session}}=await supa.auth.getSession();
+      if(session?.user){await handleAuthenticatedUser(session.user);return;}
+      // Sin sesión activa — OAuth silencioso con hint de email
+      const email=localStorage.getItem('sgm_webauthn_email');
+      await supa.auth.signInWithOAuth({provider:'google',options:{
+        redirectTo:'https://sgm-final.vercel.app',
+        queryParams:{prompt:'none',...(email?{login_hint:email}:{})}
+      }});
+    }catch(e){
+      setWebAuthnLoginFailed(true);
+      setWebAuthnLoginWorking(false);
+    }
   }
 
   async function loginWithGoogle(){
@@ -1912,6 +2008,13 @@ function SGMApp() {
     <div style={{position:'absolute',inset:0,background:'#07111F',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:0,padding:32}}>
       <div style={{fontSize:52,fontWeight:800,letterSpacing:8,color:'#4A9FFF',marginBottom:4}}>SGM</div>
       <div style={{color:'rgba(255,255,255,.4)',fontSize:11,textAlign:'center',marginBottom:40}}>Sistema de Gestión · Córdoba</div>
+      {localStorage.getItem('sgm_webauthn_id')&&(
+        <button onClick={loginWithWebAuthn} disabled={webAuthnLoginWorking} style={{width:'100%',maxWidth:300,background:'linear-gradient(135deg,#1a2d3d,#1e3a4a)',color:'#64FFDA',border:'1px solid rgba(100,255,218,.3)',borderRadius:12,padding:'14px 20px',fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,marginBottom:10,boxShadow:'0 2px 12px rgba(0,0,0,.3)',opacity:webAuthnLoginWorking?0.7:1,fontFamily:'inherit'}}>
+          <span style={{fontSize:18}}>{webAuthnLoginWorking?'⏳':'🔐'}</span>
+          {webAuthnLoginWorking?'Verificando...':'Entrar con Face ID'}
+        </button>
+      )}
+      {webAuthnLoginFailed&&<div style={{color:'rgba(255,120,120,.8)',fontSize:11,marginBottom:8,textAlign:'center'}}>No se pudo verificar. Usá tu cuenta de Google.</div>}
       <button onClick={loginWithGoogle} style={{width:'100%',maxWidth:300,background:'#fff',color:'#1f1f1f',border:'none',borderRadius:12,padding:'14px 20px',fontSize:14,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,marginBottom:12,boxShadow:'0 2px 12px rgba(0,0,0,.3)'}}>
         <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
         Continuar con Google
@@ -1961,6 +2064,7 @@ function SGMApp() {
       <BottomNav screen={screen} onNav={handleNav} t={t}/>
       {showMore&&<MoreMenu onNav={handleNav} onClose={()=>setShowMore(false)} t={t} lang={lang} onLang={()=>setLang(l=>l==='es'?'en':'es')} perfil={perfil}/>}
       {showAyuda&&<AyudaPanel onClose={()=>setShowAyuda(false)} t={t}/>}
+      {showWebAuthnModal&&<WebAuthnModal onActivate={activateWebAuthn} onDismiss={()=>setShowWebAuthnModal(false)} status={webAuthnModalStatus}/>}
     </div>
   );
 }
