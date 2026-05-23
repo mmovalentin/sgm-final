@@ -227,10 +227,19 @@ const FAQS = [
 ];
 
 // ── TOPBAR
-function Topbar({screen,perfil,dolar,onAyuda,onLogin,loggedIn,t,onSound,soundOn,user,onSignOut}) {
+function Topbar({screen,perfil,dolar,onAyuda,onLogin,loggedIn,t,onSound,soundOn,user,userRol,onSignOut}) {
   const labels={cliente:'🏠 Cliente',constructor:'🏗️ Constructor',proveedor:'🏪 Proveedor'};
   const scrNames={home:'Sistema de Gestion',modelos:t.galeria,cot:'Cotizador IA',chat:t.chat_title,mapa:'Mapa SGM',rubros:t.rubros_title,stats:t.stats_title,faq:t.faq_title,agenda:t.agenda_title,presup:t.presup_title};
   const displayName=user?.user_metadata?.full_name||user?.email?.split('@')[0]||'';
+  const [menuOpen,setMenuOpen]=useState(false);
+  const menuRef=useRef(null);
+  useEffect(()=>{
+    if(!menuOpen) return;
+    function handleOutside(e){if(menuRef.current&&!menuRef.current.contains(e.target))setMenuOpen(false);}
+    document.addEventListener('mousedown',handleOutside);
+    return()=>document.removeEventListener('mousedown',handleOutside);
+  },[menuOpen]);
+  const rolLabel={admin:'Admin',constructor:'Constructor',cliente:'Cliente',proveedor:'Proveedor'};
   return (
     <div style={{background:C.navy,padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
       <div style={{display:'flex',alignItems:'center',gap:9}}>
@@ -245,12 +254,23 @@ function Topbar({screen,perfil,dolar,onAyuda,onLogin,loggedIn,t,onSound,soundOn,
           ${dolar.toLocaleString('es-AR')} Blue
         </div>
         {user
-          ? <div style={{display:'flex',alignItems:'center',gap:4}}>
-              {user.user_metadata?.avatar_url
-                ? <img src={user.user_metadata.avatar_url} referrerPolicy="no-referrer" style={{width:26,height:26,borderRadius:'50%',objectFit:'cover'}}/>
-                : <div style={{width:26,height:26,borderRadius:'50%',background:C.acc,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:C.navy}}>{displayName[0]?.toUpperCase()||'U'}</div>
-              }
-              <button onClick={onSignOut} style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.15)',color:'rgba(255,255,255,.7)',fontSize:9,padding:'3px 7px',borderRadius:6,cursor:'pointer',fontWeight:600}}>Salir</button>
+          ? <div ref={menuRef} style={{position:'relative'}}>
+              <div onClick={()=>setMenuOpen(o=>!o)} style={{cursor:'pointer',display:'flex',alignItems:'center'}}>
+                {user.user_metadata?.avatar_url
+                  ? <img src={user.user_metadata.avatar_url} referrerPolicy="no-referrer" style={{width:26,height:26,borderRadius:'50%',objectFit:'cover',outline:menuOpen?'2px solid rgba(100,255,218,.6)':'none'}}/>
+                  : <div style={{width:26,height:26,borderRadius:'50%',background:C.acc,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:C.navy}}>{displayName[0]?.toUpperCase()||'U'}</div>
+                }
+              </div>
+              {menuOpen&&(
+                <div style={{position:'absolute',right:0,top:34,background:'#1a2332',border:'1px solid rgba(255,255,255,.15)',borderRadius:10,padding:12,minWidth:210,zIndex:999,boxShadow:'0 8px 24px rgba(0,0,0,.5)'}}>
+                  <div style={{marginBottom:10,paddingBottom:10,borderBottom:'1px solid rgba(255,255,255,.1)'}}>
+                    <div style={{color:'#fff',fontSize:12,fontWeight:700,marginBottom:2}}>{user.user_metadata?.full_name||displayName}</div>
+                    <div style={{color:'rgba(255,255,255,.45)',fontSize:10,marginBottom:4}}>{user.email}</div>
+                    <div style={{display:'inline-block',background:'rgba(100,255,218,.12)',color:'#64FFDA',fontSize:9,fontWeight:700,padding:'2px 7px',borderRadius:4}}>{rolLabel[userRol]||userRol}</div>
+                  </div>
+                  <button onClick={()=>{setMenuOpen(false);onSignOut();}} style={{width:'100%',padding:'9px 10px',borderRadius:7,border:'none',background:'rgba(255,80,80,.12)',color:'rgba(255,120,120,.9)',fontSize:11,cursor:'pointer',textAlign:'left',fontWeight:600,fontFamily:'inherit'}}>Cerrar sesión</button>
+                </div>
+              )}
             </div>
           : loggedIn
             ? <div style={{width:26,height:26,borderRadius:'50%',background:C.acc,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:C.navy}}>VM</div>
@@ -1792,6 +1812,7 @@ function SGMApp() {
   const [dolar,setDolar]=useState(1390);
   const [loggedIn,setLoggedIn]=useState(false);
   const [user,setUser]=useState(null);
+  const [userRol,setUserRol]=useState('cliente');
   const [lang,setLang]=useState('es');
   const [soundOn,setSoundOn]=useState(true);
   const t=T[lang];
@@ -1803,11 +1824,7 @@ function SGMApp() {
         if(!supa) throw new Error('supa not ready');
         const {data:{session}}=await supa.auth.getSession();
         if(session?.user){
-          setUser(session.user);
-          setLoggedIn(true);
-          const saved=localStorage.getItem('sgm-perfil');
-          if(saved) setPerfil(saved);
-          setPhase('app');
+          await handleAuthenticatedUser(session.user);
         } else {
           setPhase('login');
         }
@@ -1821,16 +1838,13 @@ function SGMApp() {
     let unsub;
     const setup=()=>{
       if(!supa){setTimeout(setup,200);return;}
-      const {data}=supa.auth.onAuthStateChange((event,session)=>{
-        if(session?.user){
-          setUser(session.user);
-          setLoggedIn(true);
-          const saved=localStorage.getItem('sgm-perfil');
-          if(saved) setPerfil(saved);
-          setPhase('app');
+      const {data}=supa.auth.onAuthStateChange(async(event,session)=>{
+        if(event==='SIGNED_IN'&&session?.user){
+          await handleAuthenticatedUser(session.user);
         } else if(event==='SIGNED_OUT'){
           setUser(null);
           setLoggedIn(false);
+          setUserRol('cliente');
         }
       });
       unsub=data.subscription;
@@ -1840,6 +1854,19 @@ function SGMApp() {
   },[]);
 
   useEffect(()=>{fetch('https://dolarapi.com/v1/dolares/blue').then(r=>r.json()).then(d=>setDolar(d.venta||1390)).catch(()=>{});},[]);
+
+  async function handleAuthenticatedUser(userObj){
+    setUser(userObj);
+    setLoggedIn(true);
+    try{
+      const {data,error}=await supa.from('usuarios_autorizados').select('rol').eq('email',userObj.email).eq('activo',true).single();
+      if(error||!data){setPhase('denegado');return;}
+      setUserRol(data.rol||'cliente');
+      const saved=localStorage.getItem('sgm-perfil');
+      if(saved) setPerfil(saved);
+      setPhase('app');
+    }catch(e){setPhase('denegado');}
+  }
 
   async function loginWithGoogle(){
     if(!supa) return;
@@ -1895,6 +1922,19 @@ function SGMApp() {
     </div>
   );
 
+  if(phase==='denegado') return (
+    <div style={{position:'absolute',inset:0,background:'#07111F',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:0,padding:32}}>
+      <div style={{fontSize:52,fontWeight:800,letterSpacing:8,color:'#4A9FFF',marginBottom:4}}>SGM</div>
+      <div style={{width:52,height:52,borderRadius:'50%',background:'rgba(255,80,80,.12)',border:'1px solid rgba(255,80,80,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,marginBottom:20}}>⛔</div>
+      <div style={{color:'#fff',fontSize:16,fontWeight:700,marginBottom:8,textAlign:'center'}}>Acceso no autorizado</div>
+      <div style={{color:'rgba(255,255,255,.45)',fontSize:12,textAlign:'center',maxWidth:280,lineHeight:1.6,marginBottom:32}}>
+        Tu cuenta no tiene permiso para acceder a esta aplicación.<br/>
+        Contactá a <span style={{color:'#64FFDA',fontWeight:600}}>Valentín</span> para solicitar acceso.
+      </div>
+      <button onClick={signOut} style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.15)',color:'rgba(255,255,255,.8)',borderRadius:10,padding:'12px 28px',fontSize:13,fontWeight:600,cursor:'pointer'}}>Cerrar sesión</button>
+    </div>
+  );
+
   if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{localStorage.setItem('sgm-perfil',p);setPerfil(p);setPhase('app');}}/></div>;
 
   const screens={
@@ -1914,7 +1954,7 @@ function SGMApp() {
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100vh',width:'100%',background:C.card,position:'relative',overflow:'hidden',fontFamily:"system-ui,sans-serif"}}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,button{font-family:inherit}`}</style>
-      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>setShowAyuda(true)} onLogin={()=>setLoggedIn(true)} loggedIn={loggedIn} t={t} onSound={()=>{setSoundOn(s=>!s);playTap();}} soundOn={soundOn} user={user} onSignOut={signOut}/>
+      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>setShowAyuda(true)} onLogin={()=>setLoggedIn(true)} loggedIn={loggedIn} t={t} onSound={()=>{setSoundOn(s=>!s);playTap();}} soundOn={soundOn} user={user} userRol={userRol} onSignOut={signOut}/>
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap}>
         {screens[screen]||screens.home}
       </div>
