@@ -1793,6 +1793,45 @@ function MoreMenu({onNav,onClose,t,lang,onLang,perfil}) {
   );
 }
 
+// ── WEBAUTHN HELPERS
+function bufferToBase64url(buf){
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+function base64urlToBuffer(b64){
+  const s=b64.replace(/-/g,'+').replace(/_/g,'/');
+  const p=s.padEnd(s.length+(4-s.length%4)%4,'=');
+  const bin=atob(p);const buf=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+  return buf.buffer;
+}
+function WebAuthnModal({onActivate,onDismiss,status}){
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(7,17,31,.85)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:2000,backdropFilter:'blur(4px)'}}>
+      <div style={{background:'#1a2332',borderRadius:'20px 20px 0 0',padding:'28px 24px 36px',width:'100%',maxWidth:480,border:'1px solid rgba(255,255,255,.08)'}}>
+        {status==='success'
+          ?<div style={{textAlign:'center',padding:'12px 0'}}>
+              <div style={{fontSize:44,marginBottom:12}}>✅</div>
+              <div style={{color:'#64FFDA',fontSize:16,fontWeight:700,marginBottom:6}}>Face ID activado</div>
+              <div style={{color:'rgba(255,255,255,.4)',fontSize:12}}>La próxima vez podés entrar sin elegir cuenta</div>
+            </div>
+          :<>
+              <div style={{textAlign:'center',marginBottom:20}}>
+                <div style={{fontSize:44,marginBottom:10}}>🔐</div>
+                <div style={{color:'#fff',fontSize:15,fontWeight:700,marginBottom:8}}>¿Querés activar Face ID?</div>
+                <div style={{color:'rgba(255,255,255,.45)',fontSize:12,lineHeight:1.6}}>Entrá más rápido con Face ID o huella dactilar sin elegir tu cuenta de Google cada vez.</div>
+              </div>
+              {status==='error'&&<div style={{color:'rgba(255,100,100,.8)',fontSize:11,textAlign:'center',marginBottom:12}}>No se pudo activar. Intentá de nuevo.</div>}
+              <button onClick={onActivate} disabled={status==='activating'} style={{width:'100%',padding:13,borderRadius:12,border:'none',background:'#64FFDA',color:'#07111F',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:10,opacity:status==='activating'?0.6:1,fontFamily:'inherit'}}>
+                {status==='activating'?'Activando...':'Activar Face ID'}
+              </button>
+              <button onClick={onDismiss} style={{width:'100%',padding:11,borderRadius:12,border:'none',background:'rgba(255,255,255,.07)',color:'rgba(255,255,255,.55)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Ahora no</button>
+            </>
+        }
+      </div>
+    </div>
+  );
+}
+
 // ── SPLASH SCREEN
 function LoadingBar() {
   const [pct,setPct]=useState(0);
@@ -1947,6 +1986,19 @@ function SGMApp() {
   const [user,setUser]=useState(null);
   const [lang,setLang]=useState('es');
   const [soundOn,setSoundOn]=useState(true);
+  const [userRol,setUserRol]=useState('cliente');
+  const [showWebAuthnModal,setShowWebAuthnModal]=useState(false);
+  const [webAuthnModalStatus,setWebAuthnModalStatus]=useState('idle');
+  const [webAuthnLoginWorking,setWebAuthnLoginWorking]=useState(false);
+  const [webAuthnLoginFailed,setWebAuthnLoginFailed]=useState(false);
+  const [loginView,setLoginView]=useState('login');
+  const [loginEmail,setLoginEmail]=useState('');
+  const [loginPassword,setLoginPassword]=useState('');
+  const [loginNombre,setLoginNombre]=useState('');
+  const [authLoading,setAuthLoading]=useState(false);
+  const [authError,setAuthError]=useState(null);
+  const [authMessage,setAuthMessage]=useState(null);
+  const [denegadoReason,setDenegadoReason]=useState('unauthorized');
   const [splashExiting,setSplashExiting]=useState(false);
   const pendingPhaseRef=useRef(null);
   const t=T[lang];
@@ -1959,10 +2011,18 @@ function SGMApp() {
         if(!supa) throw new Error('supa not ready');
         const {data:{session}}=await supa.auth.getSession();
         if(session?.user){
-          setUser(session.user);
-          setLoggedIn(true);
-          const saved=localStorage.getItem('sgm-perfil');
-          exitSplash(saved?'app':'onboarding');
+          setUser(session.user);setLoggedIn(true);
+          try{
+            const {data,error}=await supa.from('usuarios_autorizados').select('rol').eq('email',session.user.email).eq('activo',true).single();
+            if(error||!data){setDenegadoReason('unauthorized');exitSplash('denegado');return;}
+            setUserRol(data.rol||'cliente');
+            const saved=localStorage.getItem('sgm-perfil');
+            if(saved)setPerfil(saved);
+            exitSplash(saved?'app':'onboarding');
+            if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){
+              PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok=>{if(ok){setWebAuthnModalStatus('idle');setShowWebAuthnModal(true);}}).catch(()=>{});
+            }
+          }catch(e){setDenegadoReason('unauthorized');exitSplash('denegado');}
         } else {
           exitSplash('login');
         }
@@ -1976,16 +2036,11 @@ function SGMApp() {
     let unsub;
     const setup=()=>{
       if(!supa){setTimeout(setup,200);return;}
-      const {data}=supa.auth.onAuthStateChange((event,session)=>{
-        if(session?.user){
-          setUser(session.user);
-          setLoggedIn(true);
-          const saved=localStorage.getItem('sgm-perfil');
-          if(saved){setPerfil(saved);setPhase('app');}
-          else setPhase('onboarding');
+      const {data}=supa.auth.onAuthStateChange(async(event,session)=>{
+        if(event==='SIGNED_IN'&&session?.user){
+          await handleAuthenticatedUser(session.user);
         } else if(event==='SIGNED_OUT'){
-          setUser(null);
-          setLoggedIn(false);
+          setUser(null);setLoggedIn(false);setUserRol('cliente');
         }
       });
       unsub=data.subscription;
@@ -1996,6 +2051,94 @@ function SGMApp() {
 
   useEffect(()=>{fetch('https://dolarapi.com/v1/dolares/blue').then(r=>r.json()).then(d=>setDolar(d.venta||1390)).catch(()=>{});},[]);
 
+  async function handleAuthenticatedUser(userObj,fromSignUp=false){
+    setUser(userObj);setLoggedIn(true);
+    try{
+      const {data,error}=await supa.from('usuarios_autorizados').select('rol').eq('email',userObj.email).eq('activo',true).single();
+      if(error||!data){setDenegadoReason(fromSignUp?'pending':'unauthorized');setPhase('denegado');return;}
+      setUserRol(data.rol||'cliente');
+      const saved=localStorage.getItem('sgm-perfil');
+      if(saved)setPerfil(saved);
+      setPhase('app');
+      if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){
+        PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok=>{if(ok){setWebAuthnModalStatus('idle');setShowWebAuthnModal(true);}}).catch(()=>{});
+      }
+    }catch(e){setDenegadoReason(fromSignUp?'pending':'unauthorized');setPhase('denegado');}
+  }
+
+  async function activateWebAuthn(){
+    if(!user) return;
+    setWebAuthnModalStatus('activating');
+    try{
+      const cred=await navigator.credentials.create({publicKey:{
+        challenge:crypto.getRandomValues(new Uint8Array(32)),
+        rp:{name:'SGI',id:window.location.hostname},
+        user:{id:new TextEncoder().encode(user.id||user.email),name:user.email,displayName:user.user_metadata?.full_name||user.email},
+        pubKeyCredParams:[{alg:-7,type:'public-key'},{alg:-257,type:'public-key'}],
+        authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
+        timeout:60000
+      }});
+      localStorage.setItem('sgm_webauthn_id',bufferToBase64url(cred.rawId));
+      localStorage.setItem('sgm_webauthn_email',user.email);
+      setWebAuthnModalStatus('success');
+      setTimeout(()=>setShowWebAuthnModal(false),2200);
+    }catch(e){setWebAuthnModalStatus('error');}
+  }
+
+  async function loginWithWebAuthn(){
+    const credId=localStorage.getItem('sgm_webauthn_id');
+    if(!credId||!supa) return;
+    setWebAuthnLoginWorking(true);setWebAuthnLoginFailed(false);
+    try{
+      await navigator.credentials.get({publicKey:{
+        challenge:crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials:[{id:base64urlToBuffer(credId),type:'public-key',transports:['internal']}],
+        userVerification:'required',timeout:60000
+      }});
+      const {data:{session}}=await supa.auth.getSession();
+      if(session?.user){await handleAuthenticatedUser(session.user);return;}
+      const email=localStorage.getItem('sgm_webauthn_email');
+      await supa.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://sgm-final.vercel.app',queryParams:{prompt:'none',...(email?{login_hint:email}:{})}}});
+    }catch(e){setWebAuthnLoginFailed(true);setWebAuthnLoginWorking(false);}
+  }
+
+  function translateAuthError(msg){
+    if(!msg) return 'Error. Intentá de nuevo.';
+    if(msg.includes('Invalid login credentials')) return 'Email o contraseña incorrectos.';
+    if(msg.includes('Email not confirmed')) return 'Confirmá tu email antes de ingresar.';
+    if(msg.includes('User already registered')) return 'Ya existe una cuenta con ese email.';
+    if(msg.includes('Password should be')) return 'La contraseña debe tener al menos 6 caracteres.';
+    if(msg.includes('Unable to validate')) return 'Email inválido.';
+    return msg;
+  }
+
+  async function signInWithEmail(){
+    if(!supa) return;
+    if(!loginEmail.trim()||!loginPassword){setAuthError('Completá email y contraseña.');return;}
+    setAuthLoading(true);setAuthError(null);setAuthMessage(null);
+    try{
+      const {data,error}=await supa.auth.signInWithPassword({email:loginEmail.trim(),password:loginPassword});
+      if(error){setAuthError(translateAuthError(error.message));return;}
+      if(data.user)await handleAuthenticatedUser(data.user,false);
+    }catch(e){setAuthError('Error al ingresar. Intentá de nuevo.');}
+    finally{setAuthLoading(false);}
+  }
+
+  async function signUpWithEmail(){
+    if(!supa) return;
+    if(!loginNombre.trim()){setAuthError('Ingresá tu nombre completo.');return;}
+    if(!loginEmail.trim()){setAuthError('Ingresá tu email.');return;}
+    if(loginPassword.length<6){setAuthError('La contraseña debe tener al menos 6 caracteres.');return;}
+    setAuthLoading(true);setAuthError(null);setAuthMessage(null);
+    try{
+      const {data,error}=await supa.auth.signUp({email:loginEmail.trim(),password:loginPassword,options:{data:{full_name:loginNombre.trim()}}});
+      if(error){setAuthError(translateAuthError(error.message));return;}
+      if(data.session?.user){await handleAuthenticatedUser(data.session.user,true);}
+      else{setAuthMessage('Cuenta creada. Revisá tu email para confirmarla y luego ingresá.');}
+    }catch(e){setAuthError('Error al registrarse. Intentá de nuevo.');}
+    finally{setAuthLoading(false);}
+  }
+
   async function loginWithGoogle(){
     if(!supa) return;
     await supa.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://sgm-final.vercel.app'}});
@@ -2004,8 +2147,7 @@ function SGMApp() {
   async function signOut(){
     if(!supa) return;
     await supa.auth.signOut();
-    setUser(null);
-    setLoggedIn(false);
+    setUser(null);setLoggedIn(false);setUserRol('cliente');
     setPhase('login');
   }
 
@@ -2030,18 +2172,70 @@ function SGMApp() {
 
   if(phase==='splash') return <SplashScreen exiting={splashExiting} onExited={()=>setPhase(pendingPhaseRef.current)}/>;
 
-  if(phase==='login') return (
+  if(phase==='login'){
+    const hasWebAuthn=!!localStorage.getItem('sgm_webauthn_id');
+    const sep=<div style={{display:'flex',alignItems:'center',gap:10,margin:'16px 0'}}><div style={{flex:1,height:1,background:'rgba(255,255,255,.1)'}}/><span style={{color:'rgba(255,255,255,.3)',fontSize:11,fontWeight:600,letterSpacing:2}}>o</span><div style={{flex:1,height:1,background:'rgba(255,255,255,.1)'}}/></div>;
+    const inp={width:'100%',padding:'12px 14px',borderRadius:10,border:'1px solid rgba(255,255,255,.1)',background:'rgba(255,255,255,.05)',color:'#fff',fontSize:13,outline:'none',fontFamily:'inherit',marginBottom:8,display:'block'};
+    const handleKey=e=>{if(e.key==='Enter'&&!authLoading){loginView==='login'?signInWithEmail():signUpWithEmail();}};
+    const switchView=v=>{setLoginView(v);setAuthError(null);setAuthMessage(null);};
+    return (
+      <div style={{position:'absolute',inset:0,background:'#07111F',overflowY:'auto',display:'flex',flexDirection:'column',alignItems:'center',padding:'40px 24px 48px'}}>
+        <SGMLogo size={64}/>
+        <div style={{fontSize:32,fontWeight:700,color:'#fff',marginTop:16,marginBottom:4}}>SGI</div>
+        <div style={{color:'#64748B',fontSize:13,textAlign:'center',marginBottom:28}}>Gestión inteligente</div>
+        <div style={{width:'100%',maxWidth:320}}>
+          {hasWebAuthn&&(
+            <>
+              <button onClick={loginWithWebAuthn} disabled={webAuthnLoginWorking} style={{width:'100%',background:'linear-gradient(135deg,#1a2d3d,#1e3a4a)',color:'#64FFDA',border:'1px solid rgba(100,255,218,.3)',borderRadius:12,padding:'13px 20px',fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 2px 12px rgba(0,0,0,.3)',opacity:webAuthnLoginWorking?0.7:1,fontFamily:'inherit'}}>
+                <span style={{fontSize:18}}>{webAuthnLoginWorking?'⏳':'🔐'}</span>
+                {webAuthnLoginWorking?'Verificando...':'Entrar con Face ID'}
+              </button>
+              {webAuthnLoginFailed&&<div style={{color:'rgba(255,120,120,.8)',fontSize:11,marginTop:6,textAlign:'center'}}>No se pudo verificar. Usá otro método.</div>}
+              {sep}
+            </>
+          )}
+          <div style={{display:'flex',borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,.1)',marginBottom:16}}>
+            {['login','register'].map(v=>(
+              <button key={v} onClick={()=>switchView(v)} style={{flex:1,padding:'10px 0',border:'none',background:loginView===v?'rgba(74,159,255,.2)':'transparent',color:loginView===v?'#4A9FFF':'rgba(255,255,255,.4)',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',transition:'all .2s'}}>
+                {v==='login'?'Ingresar':'Registrarse'}
+              </button>
+            ))}
+          </div>
+          {loginView==='register'&&(
+            <input type="text" placeholder="Nombre completo" value={loginNombre} onChange={e=>setLoginNombre(e.target.value)} onKeyDown={handleKey} style={inp} autoComplete="name"/>
+          )}
+          <input type="email" placeholder="Email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} onKeyDown={handleKey} style={inp} autoComplete="email"/>
+          <input type="password" placeholder="Contraseña" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} onKeyDown={handleKey} style={{...inp,marginBottom:12}} autoComplete={loginView==='login'?'current-password':'new-password'}/>
+          {authError&&<div style={{color:'rgba(255,100,100,.9)',fontSize:11,marginBottom:10,textAlign:'center',lineHeight:1.5}}>{authError}</div>}
+          {authMessage&&<div style={{color:'#64FFDA',fontSize:11,marginBottom:10,textAlign:'center',lineHeight:1.5}}>{authMessage}</div>}
+          <button onClick={loginView==='login'?signInWithEmail:signUpWithEmail} disabled={authLoading} style={{width:'100%',padding:'13px',borderRadius:12,border:'none',background:'#4A9FFF',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',opacity:authLoading?0.6:1,fontFamily:'inherit',marginBottom:4}}>
+            {authLoading?'...':(loginView==='login'?'Ingresar':'Crear cuenta')}
+          </button>
+          {sep}
+          <button onClick={loginWithGoogle} style={{width:'100%',background:'#fff',color:'#1f1f1f',border:'none',borderRadius:12,padding:'13px 20px',fontSize:14,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 2px 12px rgba(0,0,0,.3)',fontFamily:'inherit'}}>
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Continuar con Google
+          </button>
+          <button onClick={()=>setPhase(localStorage.getItem('sgm-perfil')?'app':'onboarding')} style={{background:'none',border:'none',color:'rgba(255,255,255,.25)',fontSize:11,cursor:'pointer',padding:'14px 0 0',display:'block',width:'100%',textAlign:'center',fontFamily:'inherit'}}>
+            Continuar sin cuenta →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if(phase==='denegado') return (
     <div style={{position:'absolute',inset:0,background:'#07111F',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:0,padding:32}}>
-      <SGMLogo size={64}/>
-      <div style={{fontSize:32,fontWeight:700,color:'#fff',marginTop:16,marginBottom:6}}>SGI</div>
-      <div style={{color:'#64748B',fontSize:13,textAlign:'center',marginBottom:40}}>Gestión inteligente</div>
-      <button onClick={loginWithGoogle} style={{width:'100%',maxWidth:300,background:'#fff',color:'#1f1f1f',border:'none',borderRadius:12,padding:'14px 20px',fontSize:14,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,marginBottom:12,boxShadow:'0 2px 12px rgba(0,0,0,.3)'}}>
-        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-        Continuar con Google
-      </button>
-      <button onClick={()=>setPhase(localStorage.getItem('sgm-perfil')?'app':'onboarding')} style={{background:'none',border:'none',color:'rgba(255,255,255,.35)',fontSize:11,cursor:'pointer',padding:'8px 0'}}>
-        Continuar sin cuenta →
-      </button>
+      <SGMLogo size={52}/>
+      <div style={{width:52,height:52,borderRadius:'50%',background:denegadoReason==='pending'?'rgba(255,180,0,.12)':'rgba(255,80,80,.12)',border:`1px solid ${denegadoReason==='pending'?'rgba(255,180,0,.3)':'rgba(255,80,80,.3)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,marginBottom:20,marginTop:16}}>{denegadoReason==='pending'?'⏳':'⛔'}</div>
+      <div style={{color:'#fff',fontSize:16,fontWeight:700,marginBottom:8,textAlign:'center'}}>{denegadoReason==='pending'?'Cuenta pendiente de aprobación':'Acceso no autorizado'}</div>
+      <div style={{color:'rgba(255,255,255,.45)',fontSize:12,textAlign:'center',maxWidth:280,lineHeight:1.6,marginBottom:32}}>
+        {denegadoReason==='pending'
+          ?<>Tu cuenta fue creada pero aún no tiene acceso.<br/>Contactá a <span style={{color:'#64FFDA',fontWeight:600}}>Valentín</span> para que te apruebe.</>
+          :<>Tu cuenta no tiene permiso para acceder.<br/>Contactá a <span style={{color:'#64FFDA',fontWeight:600}}>Valentín</span> para solicitar acceso.</>
+        }
+      </div>
+      <button onClick={signOut} style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.15)',color:'rgba(255,255,255,.8)',borderRadius:10,padding:'12px 28px',fontSize:13,fontWeight:600,cursor:'pointer'}}>Cerrar sesión</button>
     </div>
   );
 
@@ -2064,13 +2258,14 @@ function SGMApp() {
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100vh',width:'100%',background:C.card,position:'relative',overflow:'hidden',fontFamily:"system-ui,sans-serif"}}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,button{font-family:inherit}`}</style>
-      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>setShowAyuda(true)} onLogin={()=>setLoggedIn(true)} loggedIn={loggedIn} t={t} onSound={()=>{setSoundOn(s=>!s);playTap();}} soundOn={soundOn} user={user} onSignOut={signOut}/>
+      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>setShowAyuda(true)} onLogin={()=>setLoggedIn(true)} loggedIn={loggedIn} t={t} onSound={()=>{setSoundOn(s=>!s);playTap();}} soundOn={soundOn} user={user} userRol={userRol} onSignOut={signOut}/>
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap}>
         {screens[screen]||screens.home}
       </div>
       <BottomNav screen={screen} onNav={handleNav} t={t}/>
       {showMore&&<MoreMenu onNav={handleNav} onClose={()=>setShowMore(false)} t={t} lang={lang} onLang={()=>setLang(l=>l==='es'?'en':'es')} perfil={perfil}/>}
       {showAyuda&&<AyudaPanel onClose={()=>setShowAyuda(false)} t={t}/>}
+      {showWebAuthnModal&&<WebAuthnModal onActivate={activateWebAuthn} onDismiss={()=>setShowWebAuthnModal(false)} status={webAuthnModalStatus}/>}
     </div>
   );
 }
