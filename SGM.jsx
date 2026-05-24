@@ -1809,7 +1809,7 @@ function LoadingBar() {
   const [pct,setPct]=useState(0);
   useEffect(()=>{
     const start=performance.now();
-    const dur=2000;
+    const dur=3000;
     let raf;
     function step(now){
       const p=Math.min((now-start)/dur,1);
@@ -1835,14 +1835,14 @@ function SplashScreen({exiting,onExited}) {
   const [opacity,setOpacity]=useState(1);
 
   useEffect(()=>{
-    const t=setTimeout(()=>setLogoVisible(true),1500);
+    const t=setTimeout(()=>setLogoVisible(true),2000);
     return()=>clearTimeout(t);
   },[]);
 
   useEffect(()=>{
     if(!exiting) return;
     setOpacity(0);
-    const t=setTimeout(()=>onExitedRef.current(),500);
+    const t=setTimeout(()=>onExitedRef.current(),800);
     return()=>clearTimeout(t);
   },[exiting]);
 
@@ -1912,7 +1912,7 @@ function SplashScreen({exiting,onExited}) {
   },[]);
 
   return (
-    <div style={{position:'absolute',inset:0,background:'#0D1B2A',opacity,transition:'opacity 0.5s ease',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
+    <div style={{position:'absolute',inset:0,background:'#0D1B2A',opacity,transition:'opacity 0.8s ease',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
       <canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>
       <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',alignItems:'center',opacity:logoVisible?1:0,transform:logoVisible?'none':'translateY(12px)',transition:'opacity 0.8s ease,transform 0.8s ease'}}>
         <div style={{width:64,height:64,borderRadius:14,background:'#1E293B',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 0 30px rgba(37,99,235,0.3)',marginBottom:16}}>
@@ -1973,8 +1973,14 @@ export default function SGMApp() {
   const [denegadoReason,setDenegadoReason]=useState('unauthorized');
   const [splashExiting,setSplashExiting]=useState(false);
   const pendingPhaseRef=useRef(null);
+  const splashResultRef=useRef(null);
+  const splashMinReadyRef=useRef(false);
   const t=T[lang];
   function exitSplash(next){pendingPhaseRef.current=next;setSplashExiting(true);}
+  function storeSplashResult(next){
+    splashResultRef.current=next;
+    if(splashMinReadyRef.current) exitSplash(next);
+  }
 
   // Splash: detectar sesión activa → saltar onboarding/login
   useEffect(()=>{
@@ -1986,21 +1992,30 @@ export default function SGMApp() {
           setUser(session.user);setLoggedIn(true);
           try{
             const {data,error}=await supa.from('usuarios_autorizados').select('rol').eq('email',session.user.email).eq('activo',true).single();
-            if(error||!data){setDenegadoReason('unauthorized');exitSplash('denegado');return;}
+            if(error||!data){setDenegadoReason('unauthorized');storeSplashResult('denegado');return;}
             setUserRol(data.rol||'cliente');
             const saved=localStorage.getItem('sgm-perfil');
             if(saved)setPerfil(saved);
-            exitSplash(saved?'app':'onboarding');
+            storeSplashResult(saved?'app':'onboarding');
             if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){
               PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok=>{if(ok){setWebAuthnModalStatus('idle');setShowWebAuthnModal(true);}}).catch(()=>{});
             }
-          }catch(e){setDenegadoReason('unauthorized');exitSplash('denegado');}
+          }catch(e){setDenegadoReason('unauthorized');storeSplashResult('denegado');}
         } else {
-          exitSplash('login');
+          storeSplashResult('login');
         }
-      }catch(e){exitSplash('login');}
+      }catch(e){storeSplashResult('login');}
     },2000);
     return()=>clearTimeout(timer);
+  },[]);
+
+  // Mínimo 4 segundos de splash
+  useEffect(()=>{
+    const t=setTimeout(()=>{
+      splashMinReadyRef.current=true;
+      if(splashResultRef.current!==null) exitSplash(splashResultRef.current);
+    },4000);
+    return()=>clearTimeout(t);
   },[]);
 
   // Listener de cambios de sesión (captura redirect OAuth)
