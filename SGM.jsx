@@ -279,7 +279,7 @@ function Topbar({screen,perfil,dolar,onAyuda,onLogin,loggedIn,t,onSound,soundOn,
             : null
         }
         <button onClick={onSound} style={{width:28,height:28,borderRadius:'50%',background:'rgba(255,255,255,.08)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>{soundOn?'🔊':'🔇'}</button>
-        <button onClick={onAyuda} style={{width:28,height:28,borderRadius:'50%',background:'rgba(255,255,255,.08)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>❓</button>
+        <button onClick={onAyuda} style={{width:28,height:28,borderRadius:'50%',background:'rgba(74,159,255,.2)',border:'1px solid rgba(74,159,255,.4)',color:'#4A9FFF',fontSize:15,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>?</button>
       </div>
     </div>
   );
@@ -494,7 +494,7 @@ function EmpresaScreen({onNav,user}) {
   return (
     <div style={{background:'#07111F',minHeight:'100%'}}>
       <div style={{background:C.navy,padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
-        <button onClick={()=>onNav('home')} style={{background:'none',border:'none',color:'rgba(255,255,255,.5)',fontSize:22,cursor:'pointer',padding:0,lineHeight:1,fontFamily:'inherit'}}>‹</button>
+        <button onClick={()=>onNav('home')} style={{background:'none',border:'none',color:'rgba(255,255,255,.55)',fontSize:13,fontWeight:600,cursor:'pointer',padding:0,fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>← Volver</button>
         <div>
           <div style={{color:'rgba(255,255,255,.35)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Empresa</div>
           <div style={{color:'#fff',fontSize:15,fontWeight:700}}>SGI Construcción</div>
@@ -1424,11 +1424,14 @@ function RubrosScreen({perfil,t}) {
 }
 
 // ── FAQ
-function FAQScreen({t}) {
+function FAQScreen({t,onNav}) {
   const [open,setOpen]=useState(null);
   return (
     <div>
-      <div style={{background:C.navy,padding:'13px 14px'}}><div style={{color:'#fff',fontSize:15,fontWeight:700}}>{t.faq_title}</div><div style={{color:'rgba(255,255,255,.35)',fontSize:10,marginTop:2}}>Steel Frame · Costos · Tiempos</div></div>
+      <div style={{background:C.navy,padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
+        {onNav&&<button onClick={()=>onNav('home')} style={{background:'none',border:'none',color:'rgba(255,255,255,.55)',fontSize:13,fontWeight:600,cursor:'pointer',padding:0,fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0}}>← Volver</button>}
+        <div><div style={{color:'#fff',fontSize:15,fontWeight:700}}>{t.faq_title}</div><div style={{color:'rgba(255,255,255,.35)',fontSize:10,marginTop:2}}>Steel Frame · Costos · Tiempos</div></div>
+      </div>
       <div style={{padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
         {FAQS.map((f,i)=>(
           <div key={i} style={{background:C.card,borderRadius:10,border:`.5px solid ${C.border}`,overflow:'hidden'}}>
@@ -2630,7 +2633,7 @@ export default function SGMApp() {
     cot:<CotizadorScreen t={t} initParams={screenParams} lang={lang}/>,
     chat:<ChatScreen t={t}/>,
     rubros:<RubrosScreen perfil={perfil} t={t}/>,
-    faq:<FAQScreen t={t}/>,
+    faq:<FAQScreen t={t} onNav={handleNav}/>,
     stats:<StatsScreen t={t}/>,
     presup:<PresupScreen t={t} dolar={dolar}/>,
     agenda:<AgendaScreen t={t}/>,
