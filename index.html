@@ -1861,6 +1861,8 @@ function SplashScreen({exiting,onExited}) {
   useEffect(()=>{onExitedRef.current=onExited;},[onExited]);
   const [logoVisible,setLogoVisible]=useState(false);
   const [opacity,setOpacity]=useState(1);
+  const convergeRef=useRef(false);
+  const exitingRef=useRef(false);
 
   useEffect(()=>{
     const t=setTimeout(()=>setLogoVisible(true),2000);
@@ -1868,7 +1870,13 @@ function SplashScreen({exiting,onExited}) {
   },[]);
 
   useEffect(()=>{
+    const t=setTimeout(()=>{convergeRef.current=true;},2500);
+    return()=>clearTimeout(t);
+  },[]);
+
+  useEffect(()=>{
     if(!exiting) return;
+    exitingRef.current=true;
     setOpacity(0);
     const t=setTimeout(()=>onExitedRef.current(),800);
     return()=>clearTimeout(t);
@@ -1879,6 +1887,7 @@ function SplashScreen({exiting,onExited}) {
     if(!canvas) return;
     const ctx=canvas.getContext('2d');
     const COLORS=['#2563EB','#F59E0B','#10B981','#1E40AF','#D97706'];
+    let flash=0;
     function resize(){
       canvas.width=canvas.offsetWidth||window.innerWidth||375;
       canvas.height=canvas.offsetHeight||window.innerHeight||667;
@@ -1896,23 +1905,60 @@ function SplashScreen({exiting,onExited}) {
         trail:[],maxT:50+Math.floor(Math.random()*40),
         alpha:0.15+Math.random()*0.25,
         life:0,maxL:250+Math.floor(Math.random()*300),
+        converged:false,
       };
     }
     const snakes=Array.from({length:12},mkSnake);
     function frame(){
       const w=canvas.width,h=canvas.height;
+      const cx=w/2,cy=h/2;
       ctx.clearRect(0,0,w,h);
+      if(flash>0){
+        const g=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(w,h)*0.65);
+        g.addColorStop(0,`rgba(255,255,255,${flash*0.85})`);
+        g.addColorStop(0.35,`rgba(37,99,235,${flash*0.45})`);
+        g.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=g;
+        ctx.fillRect(0,0,w,h);
+        flash=Math.max(0,flash-0.035);
+      }
       snakes.forEach((s,i)=>{
-        s.angle+=s.dA+Math.sin(s.life*0.04)*0.025;
+        if(s.converged) return;
+        const converging=convergeRef.current;
+        if(converging){
+          const ta=Math.atan2(cy-s.y,cx-s.x);
+          let da=ta-s.angle;
+          while(da>Math.PI)da-=Math.PI*2;
+          while(da<-Math.PI)da+=Math.PI*2;
+          const str=exitingRef.current?0.10:0.04;
+          s.angle+=da*str;
+          if(exitingRef.current) s.spd=Math.min(s.spd+0.08,4.5);
+        } else {
+          s.angle+=s.dA+Math.sin(s.life*0.04)*0.025;
+        }
         s.x+=Math.cos(s.angle)*s.spd;
         s.y+=Math.sin(s.angle)*s.spd;
-        if(s.x<-60)s.x=w+60; if(s.x>w+60)s.x=-60;
-        if(s.y<-60)s.y=h+60; if(s.y>h+60)s.y=-60;
+        const dx=cx-s.x,dy=cy-s.y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(converging&&dist<14){
+          s.converged=true;
+          flash=Math.min(1,flash+0.28);
+          return;
+        }
+        if(!converging){
+          if(s.x<-60)s.x=w+60; if(s.x>w+60)s.x=-60;
+          if(s.y<-60)s.y=h+60; if(s.y>h+60)s.y=-60;
+        }
         s.trail.push({x:s.x,y:s.y});
         if(s.trail.length>s.maxT)s.trail.shift();
         s.life++;
-        const lr=s.life/s.maxL;
-        const fa=lr>0.8?s.alpha*(1-(lr-0.8)/0.2):s.alpha;
+        let fa;
+        if(converging){
+          fa=s.alpha*Math.min(1,dist/90);
+        } else {
+          const lr=s.life/s.maxL;
+          fa=lr>0.8?s.alpha*(1-(lr-0.8)/0.2):s.alpha;
+        }
         if(s.trail.length>2){
           for(let j=1;j<s.trail.length;j++){
             const tp=j/s.trail.length;
@@ -1931,7 +1977,7 @@ function SplashScreen({exiting,onExited}) {
           ctx.beginPath();ctx.arc(s.x,s.y,7,0,Math.PI*2);ctx.fillStyle=s.color;ctx.fill();
         }
         ctx.globalAlpha=1;
-        if(s.life>=s.maxL)snakes[i]=mkSnake();
+        if(!converging&&s.life>=s.maxL)snakes[i]=mkSnake();
       });
       rafRef.current=requestAnimationFrame(frame);
     }
@@ -1943,12 +1989,12 @@ function SplashScreen({exiting,onExited}) {
     <div style={{position:'absolute',inset:0,background:'#0D1B2A',opacity,transition:'opacity 0.8s ease',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
       <canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>
       <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',alignItems:'center',opacity:logoVisible?1:0,transform:logoVisible?'none':'translateY(12px)',transition:'opacity 0.8s ease,transform 0.8s ease'}}>
-        <div style={{width:64,height:64,borderRadius:14,background:'#1E293B',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 0 30px rgba(37,99,235,0.3)',marginBottom:16}}>
-          <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
-            <rect x="4" y="5" width="20" height="3" rx="2" fill="white"/>
-            <rect x="12" y="12" width="12" height="3" rx="2" fill="#F59E0B"/>
-            <rect x="22" y="15" width="2" height="4" fill="white"/>
-            <rect x="4" y="19" width="20" height="3" rx="2" fill="white"/>
+        <div style={{width:80,height:80,borderRadius:16,background:'#1E293B',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 0 40px rgba(37,99,235,0.4)',marginBottom:16}}>
+          <svg width="56" height="56" viewBox="0 0 28 28" fill="none">
+            <rect x="3" y="5" width="22" height="4" rx="2" fill="white"/>
+            <rect x="12" y="13" width="13" height="4" rx="2" fill="#F59E0B"/>
+            <rect x="23" y="17" width="2.5" height="5" rx="1" fill="white"/>
+            <rect x="3" y="22" width="22" height="4" rx="2" fill="white"/>
           </svg>
         </div>
         <div style={{fontSize:36,fontWeight:800,color:'#fff',marginBottom:6,letterSpacing:2}}>SGI</div>
