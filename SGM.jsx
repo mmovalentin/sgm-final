@@ -199,8 +199,25 @@ const FAQS = [
   {q:"¿Resiste sismos?",a:"Sí. Cumple normativas CIRSOC vigentes. Es uno de los sistemas con mayor resistencia sísmica."},
 ];
 
+const SERVICIOS_PROF=[
+  {icon:'🏠',name:'Arquitectura a medida'},
+  {icon:'🎨',name:'Diseño exterior'},
+  {icon:'🛋️',name:'Diseño interior'},
+  {icon:'📋',name:'Planos municipales'},
+  {icon:'🏛️',name:'Planos colegio profesional'},
+  {icon:'🔬',name:'Estudio de suelo'},
+  {icon:'⚙️',name:'Cálculo de ingeniería'},
+  {icon:'📐',name:'Planos de montaje'},
+  {icon:'🏡',name:'Planos de casas existentes'},
+  {icon:'📁',name:'Carpetas municipales completas'},
+];
+
 // ── WHATSAPP HELPER
-function openWA(prefillFromCot=false) {
+function openWA(prefillFromCot=false, customMsg=null) {
+  if(customMsg!==null) {
+    window.open(`https://wa.me/5493512531634?text=${encodeURIComponent(customMsg)}`);
+    return;
+  }
   const perfil=localStorage.getItem('sgm-perfil');
   if(prefillFromCot||perfil==='cliente') {
     try {
@@ -434,7 +451,46 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
 }
 
 // ── EMPRESA SGI
-function EmpresaScreen({onNav}) {
+function EmpresaScreen({onNav,user}) {
+  const [myRating,setMyRating]=useState(0);
+  const [hoverRating,setHoverRating]=useState(0);
+  const [avgRating,setAvgRating]=useState(null);
+  const [ratingCount,setRatingCount]=useState(0);
+  const [comment,setComment]=useState('');
+  const [savingRating,setSavingRating]=useState(false);
+  const [ratedOk,setRatedOk]=useState(false);
+
+  useEffect(()=>{
+    if(!supa) return;
+    supa.from('ratings').select('estrellas').then(({data})=>{
+      if(data&&data.length>0){
+        setAvgRating(Math.round(data.reduce((s,r)=>s+r.estrellas,0)/data.length*10)/10);
+        setRatingCount(data.length);
+      }
+    });
+    if(user){
+      supa.from('ratings').select('estrellas,comentario').eq('user_id',user.id).single().then(({data})=>{
+        if(data){setMyRating(data.estrellas);setComment(data.comentario||'');setRatedOk(true);}
+      });
+    }
+  },[user]);
+
+  async function guardarRating(stars){
+    if(!user||savingRating) return;
+    setSavingRating(true);
+    await supa.from('ratings').upsert({user_id:user.id,estrellas:stars,comentario:comment,fecha:new Date().toISOString()},{onConflict:'user_id'});
+    setSavingRating(false);
+    setMyRating(stars);
+    setRatedOk(true);
+    const {data}=await supa.from('ratings').select('estrellas');
+    if(data&&data.length>0){
+      setAvgRating(Math.round(data.reduce((s,r)=>s+r.estrellas,0)/data.length*10)/10);
+      setRatingCount(data.length);
+    }
+  }
+
+  const displayStars=hoverRating||myRating;
+
   return (
     <div style={{background:'#07111F',minHeight:'100%'}}>
       <div style={{background:C.navy,padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
@@ -445,10 +501,43 @@ function EmpresaScreen({onNav}) {
         </div>
       </div>
       <div style={{padding:'20px 16px'}}>
-        <div style={{display:'flex',flexDirection:'column',alignItems:'center',paddingBottom:20}}>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',paddingBottom:16}}>
           <SGMLogo/>
           <div style={{color:'#fff',fontSize:20,fontWeight:800,marginTop:14,marginBottom:4}}>SGI Construcción</div>
-          <div style={{color:C.t3,fontSize:12}}>Steel Frame · Córdoba, Argentina</div>
+          <div style={{color:C.t3,fontSize:12,marginBottom:12}}>Steel Frame · Córdoba, Argentina</div>
+          {avgRating!==null&&(
+            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
+              <span style={{color:'#F59E0B',fontSize:18}}>{'★'.repeat(Math.round(avgRating))}{'☆'.repeat(5-Math.round(avgRating))}</span>
+              <span style={{color:'#fff',fontSize:14,fontWeight:700}}>{avgRating}</span>
+              <span style={{color:C.t3,fontSize:11}}>({ratingCount} {ratingCount===1?'reseña':'reseñas'})</span>
+            </div>
+          )}
+          <div style={{background:'rgba(255,255,255,.06)',borderRadius:14,padding:'14px 18px',width:'100%',textAlign:'center'}}>
+            <div style={{color:'rgba(255,255,255,.5)',fontSize:11,marginBottom:8}}>
+              {ratedOk?'Tu calificación':'¿Cómo nos calificás?'}
+            </div>
+            <div style={{display:'flex',justifyContent:'center',gap:6,marginBottom:ratedOk?0:10}}>
+              {[1,2,3,4,5].map(n=>(
+                <span key={n}
+                  onMouseEnter={()=>!ratedOk&&setHoverRating(n)}
+                  onMouseLeave={()=>setHoverRating(0)}
+                  onClick={()=>!ratedOk&&user&&guardarRating(n)}
+                  style={{fontSize:28,cursor:ratedOk||!user?'default':'pointer',color:n<=displayStars?'#F59E0B':'rgba(255,255,255,.2)',transition:'color .15s'}}>
+                  ★
+                </span>
+              ))}
+            </div>
+            {!ratedOk&&user&&myRating>0&&(
+              <div style={{marginTop:10}}>
+                <input value={comment} onChange={e=>setComment(e.target.value)} placeholder="Comentario opcional..." style={{width:'100%',borderRadius:8,border:'.5px solid rgba(255,255,255,.15)',background:'rgba(255,255,255,.08)',color:'#fff',padding:'8px 10px',fontSize:12,fontFamily:'inherit',outline:'none',marginBottom:8}}/>
+                <button onClick={()=>guardarRating(myRating)} disabled={savingRating} style={{width:'100%',padding:'9px',borderRadius:9,border:'none',background:'#4A9FFF',color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  {savingRating?'⏳ Guardando...':'✓ Enviar calificación'}
+                </button>
+              </div>
+            )}
+            {!user&&<div style={{color:'rgba(255,255,255,.3)',fontSize:11,marginTop:6}}>Iniciá sesión para calificar</div>}
+            {ratedOk&&<div style={{color:'#4CAF50',fontSize:12,marginTop:4}}>✓ ¡Gracias por tu calificación!</div>}
+          </div>
         </div>
         <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'16px',marginBottom:12}}>
           <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Quiénes somos</div>
@@ -545,6 +634,18 @@ function ModelosScreen({onNav,t}) {
           );
         })}
       </div>
+      <div style={{padding:'0 14px 20px'}}>
+        <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:10,paddingTop:4}}>📐 Servicios profesionales</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {SERVICIOS_PROF.map(s=>(
+            <div key={s.name} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px',display:'flex',flexDirection:'column',gap:6}}>
+              <div style={{fontSize:22}}>{s.icon}</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.t1,lineHeight:1.3,flex:1}}>{s.name}</div>
+              <button onClick={()=>openWA(false,`Hola, necesito cotizar el servicio: ${s.name}`)} style={{width:'100%',padding:'7px',borderRadius:8,background:'#25D366',border:'none',color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>💬 Consultar</button>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -554,6 +655,8 @@ const ETAPAS_BASE=[3,4,5,4,5,6,2,1];
 
 const ETAPAS_PCT=[7,6,26,17,17,15,6,6];
 function CotizadorScreen({t,initParams,lang='es'}) {
+  const [cotTab,setCotTab]=useState('obra');
+  const [selServicios,setSelServicios]=useState([]);
   const [tipo,setTipo]=useState('Casa habitacion');
   const [m2,setM2]=useState('80');
   const [sistema,setSistema]=useState('Steel Frame');
@@ -561,6 +664,15 @@ function CotizadorScreen({t,initParams,lang='es'}) {
   const [loading,setLoading]=useState(false);
   const [result,setResult]=useState(null);
   const [excluidas,setExcluidas]=useState([]);
+
+  function toggleServicio(name){
+    setSelServicios(s=>s.includes(name)?s.filter(x=>x!==name):[...s,name]);
+  }
+  function consultarServicios(){
+    if(!selServicios.length) return;
+    const lista=selServicios.map(s=>`• ${s}`).join('\n');
+    openWA(false,`Hola, necesito cotizar los siguientes servicios profesionales:\n${lista}`);
+  }
 
   // Cuando llega desde "Cotizar este modelo" aplicar los params
   useEffect(()=>{
@@ -609,11 +721,48 @@ function CotizadorScreen({t,initParams,lang='es'}) {
   const anticipoAdj=Math.round(totalAdj*0.6);
   const semsExcl=excluidas.reduce((s,i)=>s+Math.max(1,Math.round(ETAPAS_BASE[i]*factorCron)),0);
   const tiempoAdj=Math.max(1,(result?.tiempo_meses||4)-Math.round(semsExcl/4));
+  if(cotTab==='servicios') return (
+    <div>
+      <div style={{background:C.navy,padding:'13px 14px'}}>
+        <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Cotizador</div>
+        <div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:2}}>Servicios profesionales</div>
+      </div>
+      <div style={{display:'flex',background:'#fff',borderBottom:`.5px solid ${C.border}`}}>
+        <button onClick={()=>setCotTab('obra')} style={{flex:1,padding:'10px 4px',border:'none',background:'none',fontSize:12,fontWeight:700,cursor:'pointer',color:C.t3,borderBottom:`2px solid transparent`}}>🏗️ Obra</button>
+        <button onClick={()=>setCotTab('servicios')} style={{flex:1,padding:'10px 4px',border:'none',background:'none',fontSize:12,fontWeight:700,cursor:'pointer',color:'#7C3AED',borderBottom:`2px solid #7C3AED`}}>📐 Servicios</button>
+      </div>
+      <div style={{padding:'14px'}}>
+        <div style={{fontSize:12,color:C.t2,marginBottom:14,lineHeight:1.5}}>Seleccioná los servicios que necesitás y te cotizamos por WhatsApp.</div>
+        <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:16}}>
+          {SERVICIOS_PROF.map(s=>{
+            const sel=selServicios.includes(s.name);
+            return (
+              <div key={s.name} onClick={()=>toggleServicio(s.name)} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderRadius:12,border:`1.5px solid ${sel?'#7C3AED':C.border2}`,background:sel?'#F5F0FF':C.off,cursor:'pointer',transition:'all .15s'}}>
+                <span style={{fontSize:20}}>{s.icon}</span>
+                <span style={{flex:1,fontSize:13,fontWeight:600,color:sel?'#7C3AED':C.t1}}>{s.name}</span>
+                <span style={{width:20,height:20,borderRadius:'50%',border:`2px solid ${sel?'#7C3AED':C.border2}`,background:sel?'#7C3AED':'transparent',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  {sel&&<span style={{color:'#fff',fontSize:11,fontWeight:700}}>✓</span>}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <button onClick={consultarServicios} disabled={!selServicios.length} style={{width:'100%',padding:'13px',borderRadius:12,border:'none',background:selServicios.length?'#25D366':'rgba(0,0,0,.1)',color:selServicios.length?'#fff':C.t3,fontSize:14,fontWeight:700,cursor:selServicios.length?'pointer':'default',display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontFamily:'inherit'}}>
+          💬 Consultar por WhatsApp {selServicios.length>0&&`(${selServicios.length})`}
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div>
       <div style={{background:C.navy,padding:'13px 14px'}}>
         <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{t.herramienta}</div>
         <div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:2}}>{t.cot_ia}</div>
+      </div>
+      <div style={{display:'flex',background:'#fff',borderBottom:`.5px solid ${C.border}`}}>
+        <button onClick={()=>setCotTab('obra')} style={{flex:1,padding:'10px 4px',border:'none',background:'none',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1565C0',borderBottom:`2px solid #1565C0`}}>🏗️ Obra</button>
+        <button onClick={()=>setCotTab('servicios')} style={{flex:1,padding:'10px 4px',border:'none',background:'none',fontSize:12,fontWeight:700,cursor:'pointer',color:C.t3,borderBottom:`2px solid transparent`}}>📐 Servicios</button>
       </div>
       <div style={{padding:'14px',display:'flex',flexDirection:'column',gap:12}}>
         <div>
@@ -2487,13 +2636,13 @@ export default function SGMApp() {
     agenda:<AgendaScreen t={t}/>,
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)}/>,
     clientes:<ClientesScreen/>,
-    empresa:<EmpresaScreen onNav={handleNav}/>,
+    empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
   };
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100vh',width:'100%',background:C.card,position:'relative',overflow:'hidden',fontFamily:"system-ui,sans-serif"}}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,button{font-family:inherit}`}</style>
-      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>setShowAyuda(true)} onLogin={()=>setLoggedIn(true)} loggedIn={loggedIn} t={t} onSound={()=>{setSoundOn(s=>!s);playTap();}} soundOn={soundOn} user={user} userRol={userRol} onSignOut={signOut}/>
+      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>handleNav('faq')} onLogin={()=>setLoggedIn(true)} loggedIn={loggedIn} t={t} onSound={()=>{setSoundOn(s=>!s);playTap();}} soundOn={soundOn} user={user} userRol={userRol} onSignOut={signOut}/>
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap}>
         {screens[screen]||screens.home}
       </div>
