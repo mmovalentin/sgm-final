@@ -231,11 +231,11 @@ const FAQS = [
 function SGMLogo({size=28}) {
   return (
     <svg width={size} height={size} viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="28" height="28" rx="6" fill="#0D1B2A"/>
-      <rect x="4" y="5" width="20" height="3" rx="2" fill="white"/>
-      <rect x="12" y="12" width="12" height="3" rx="2" fill="#F59E0B"/>
-      <rect x="22" y="15" width="2" height="4" fill="white"/>
-      <rect x="4" y="19" width="20" height="3" rx="2" fill="white"/>
+      <rect width="28" height="28" rx="6" fill="#1E293B"/>
+      <rect x="4" y="4" width="20" height="4" rx="2" fill="white"/>
+      <rect x="12" y="12" width="12" height="4" rx="2" fill="#F59E0B"/>
+      <rect x="22" y="16" width="2" height="4" rx="1" fill="white"/>
+      <rect x="4" y="20" width="20" height="4" rx="2" fill="white"/>
     </svg>
   );
 }
@@ -1989,13 +1989,8 @@ function SplashScreen({exiting,onExited}) {
     <div style={{position:'absolute',inset:0,background:'#0D1B2A',opacity,transition:'opacity 0.8s ease',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
       <canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>
       <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',alignItems:'center',opacity:logoVisible?1:0,transform:logoVisible?'none':'translateY(12px)',transition:'opacity 0.8s ease,transform 0.8s ease'}}>
-        <div style={{width:80,height:80,borderRadius:16,background:'#1E293B',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 0 40px rgba(37,99,235,0.4)',marginBottom:16}}>
-          <svg width="56" height="56" viewBox="0 0 28 28" fill="none">
-            <rect x="3" y="5" width="22" height="4" rx="2" fill="white"/>
-            <rect x="12" y="13" width="13" height="4" rx="2" fill="#F59E0B"/>
-            <rect x="23" y="17" width="2.5" height="5" rx="1" fill="white"/>
-            <rect x="3" y="22" width="22" height="4" rx="2" fill="white"/>
-          </svg>
+        <div style={{borderRadius:16,boxShadow:'0 0 40px rgba(37,99,235,0.4)',marginBottom:16,lineHeight:0}}>
+          <SGMLogo size={80}/>
         </div>
         <div style={{fontSize:36,fontWeight:800,color:'#fff',marginBottom:6,letterSpacing:2}}>SGI</div>
         <div style={{fontSize:13,color:'#64748B',marginBottom:24}}>Gestión inteligente</div>
