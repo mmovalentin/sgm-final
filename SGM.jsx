@@ -259,6 +259,8 @@ function openWA(prefillFromCot=false, customMsg=null) {
   window.open('https://wa.me/5493512531634');
 }
 
+function haversine(la1,lo1,la2,lo2){const R=6371,dL=(la2-la1)*Math.PI/180,dG=(lo2-lo1)*Math.PI/180,a=Math.sin(dL/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dG/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+
 // ── SGM LOGO
 function SGMLogo({small=false,style={}}) {
   const cSize=small?32:72;
@@ -278,7 +280,7 @@ function SGMLogo({small=false,style={}}) {
 }
 
 // ── TOPBAR
-function Topbar({screen,perfil,dolar,onAyuda,loggedIn,t,user,onSignOut,onGoogleSignIn,theme,onThemeChange}) {
+function Topbar({screen,perfil,dolar,onAyuda,loggedIn,t,user,onSignOut,onGoogleSignIn,theme,onThemeChange,lang,onLang}) {
   const [showMenu,setShowMenu]=useState(false);
   const displayName=user?.user_metadata?.full_name||user?.email?.split('@')[0]||'';
   const avatarUrl=user?.user_metadata?.avatar_url;
@@ -315,6 +317,12 @@ function Topbar({screen,perfil,dolar,onAyuda,loggedIn,t,user,onSignOut,onGoogleS
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 3"/></svg>
                 Agregar cuenta
               </button>}
+              {onLang&&(
+                <button onClick={()=>{onLang(lang==='es'?'en':'es');setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#0F172A',cursor:'pointer',display:'flex',alignItems:'center',gap:8,borderTop:'1px solid #F1F5F9'}}>
+                  <span style={{fontSize:14}}>🌐</span>
+                  {lang==='es'?'Switch to English':'Cambiar a Español'}
+                </button>
+              )}
               {onThemeChange&&(
                 <button onClick={()=>{onThemeChange(theme==='dark'?'light':'dark');setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#0F172A',cursor:'pointer',display:'flex',alignItems:'center',gap:8,borderTop:'1px solid #F1F5F9'}}>
                   <span style={{fontSize:14}}>{theme==='dark'?'☀️':'🌙'}</span>
@@ -1081,7 +1089,7 @@ const MAPA_CHIPS=[
   {id:'profesional',label:'Profesionales',color:'#2E7D32'},
   {id:'proveedor',label:'Proveedores',color:'#E65100'},
 ];
-function MapaScreen({t,perfil,onLogin}) {
+function MapaScreen({t,perfil,onLogin,userLocation}) {
   const mapRef=useRef(null);
   const mapInst=useRef(null);
   const markersRef=useRef([]);
@@ -1111,8 +1119,13 @@ function MapaScreen({t,perfil,onLogin}) {
 
   useEffect(()=>{
     if(!window.L||mapInst.current) return;
-    const map=window.L.map(mapRef.current,{zoomControl:true}).setView([-31.4135,-64.1811],12);
+    const cLat=userLocation?.lat||-31.4135,cLng=userLocation?.lng||-64.1811;
+    const map=window.L.map(mapRef.current,{zoomControl:true}).setView([cLat,cLng],12);
     mapInst.current=map;
+    if(userLocation){
+      const uIco=window.L.divIcon({html:`<div style="background:#2563EB;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)">📍</div>`,className:'',iconSize:[30,30],iconAnchor:[15,15]});
+      window.L.marker([userLocation.lat,userLocation.lng],{icon:uIco,zIndexOffset:1000}).addTo(map).bindPopup('<b>Estás aquí</b>');
+    }
     window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
       attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:19
     }).addTo(map);
@@ -1192,11 +1205,13 @@ function MapaScreen({t,perfil,onLogin}) {
         </div>
       </div>
       <div style={{flex:1,overflowY:'auto'}}>
+        {userLocation&&<div style={{padding:'6px 14px',background:'rgba(37,99,235,.06)',borderBottom:`.5px solid ${C.border}`,fontSize:10,color:'#2563EB',fontWeight:600}}>📍 {userLocation.ciudad||userLocation.provincia||'Tu ubicación'} — ordenado por distancia</div>}
         {visibles.length===0&&sinUbicacion.length===0&&(
           <div style={{textAlign:'center',padding:32,color:C.t3,fontSize:13}}>Sin resultados. Activá algún filtro.</div>
         )}
-        {visibles.map((m,i)=>{
+        {(userLocation?[...visibles].sort((a,b)=>haversine(userLocation.lat,userLocation.lng,a.lat,a.lng)-haversine(userLocation.lat,userLocation.lng,b.lat,b.lng)):visibles).map((m,i)=>{
           const cfg=MAPA_TIPO[m.tipo];
+          const dist=userLocation?haversine(userLocation.lat,userLocation.lng,m.lat,m.lng):null;
           return(
             <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderBottom:`.5px solid ${C.border}`}}>
               <div style={{width:36,height:36,borderRadius:'50%',background:cfg.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>{cfg.em}</div>
@@ -1204,7 +1219,10 @@ function MapaScreen({t,perfil,onLogin}) {
                 <div style={{color:C.t1,fontSize:13,fontWeight:700}}>{m.nombre}</div>
                 <div style={{color:C.t3,fontSize:11,marginTop:2}}>{m.desc}</div>
               </div>
-              <div style={{fontSize:9,fontWeight:700,color:cfg.bg,border:`1px solid ${cfg.bg}`,borderRadius:10,padding:'2px 7px',flexShrink:0}}>{cfg.label}</div>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:3,flexShrink:0}}>
+                {dist!==null&&<div style={{fontSize:9,fontWeight:700,color:'#2563EB',background:'rgba(37,99,235,.08)',border:'1px solid rgba(37,99,235,.2)',borderRadius:8,padding:'2px 6px'}}>{dist<1?`${Math.round(dist*1000)}m`:`${dist.toFixed(1)}km`}</div>}
+                <div style={{fontSize:9,fontWeight:700,color:cfg.bg,border:`1px solid ${cfg.bg}`,borderRadius:10,padding:'2px 7px'}}>{cfg.label}</div>
+              </div>
             </div>
           );
         })}
@@ -1274,8 +1292,25 @@ function ChatScreen({t}) {
   const [busqueda,setBusqueda]=useState('');
   const [expandedId,setExpandedId]=useState(null);
   const [guardadoStatus,setGuardadoStatus]=useState({});
+  const [isListening,setIsListening]=useState(false);
+  const [waBanner,setWaBanner]=useState(null);
   const msgsRef=useRef(null);
+  const recogRef=useRef(null);
   useEffect(()=>{if(msgsRef.current)msgsRef.current.scrollTop=msgsRef.current.scrollHeight;},[msgs]);
+
+  function isComercial(text){return /presupuesto|cotizaci[oó]n|contratar|visita a obra|cu[aá]nto cuesta|precio de|urgente|quiero empezar|quiero construir|reuni[oó]n|llamame|llam[aá]/i.test(text);}
+
+  function toggleVoice(){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){alert('Tu navegador no soporta reconocimiento de voz');return;}
+    if(isListening){recogRef.current?.stop();setIsListening(false);return;}
+    const r=new SR();
+    r.lang='es-AR';r.continuous=false;r.interimResults=false;
+    r.onresult=e=>setInput(e.results[0][0].transcript);
+    r.onend=()=>setIsListening(false);
+    r.onerror=()=>setIsListening(false);
+    recogRef.current=r;r.start();setIsListening(true);
+  }
 
   async function fetchBiblioteca(){
     if(!supa) return;
@@ -1302,15 +1337,21 @@ function ChatScreen({t}) {
     setBiblioteca(b=>b.filter(c=>c.id!==id));
   }
 
-  async function send(txt) {
-    const q=txt||input.trim();if(!q)return;
-    setInput('');setMsgs(m=>[...m,{role:'user',text:q}]);setLoading(true);
+  async function sendDirect(q){
+    setMsgs(m=>[...m,{role:'user',text:q}]);setLoading(true);
     try{
       const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,system:'Sos el asistente IA de SGI, especializado en Steel Frame y construccion en Cordoba. Responde en espanol, conciso y practico.',messages:[{role:'user',content:q}]})});
       const d=await r.json();
       setMsgs(m=>[...m,{role:'ai',text:d.content?.[0]?.text||'Sin respuesta.',question:q}]);
     }catch(e){setMsgs(m=>[...m,{role:'ai',text:'Error de conexión.'}]);}
     setLoading(false);
+  }
+
+  async function send(txt) {
+    const q=txt||input.trim();if(!q)return;
+    setInput('');
+    if(isComercial(q)){setWaBanner(q);return;}
+    sendDirect(q);
   }
 
   const bibFiltrada=biblioteca.filter(c=>!busqueda||(c.pregunta+c.respuesta).toLowerCase().includes(busqueda.toLowerCase()));
@@ -1353,8 +1394,19 @@ function ChatScreen({t}) {
         <div style={{display:'flex',gap:6,padding:'6px 12px',overflowX:'auto',flexShrink:0}}>
           {[t.chip1||'Costo SF 100m2',t.chip2||'SF vs mamposteria',t.chip3||'Precio MO m2',t.chip4||'Checklist inicio'].map(c=><button key={c} onClick={()=>send(c)} style={{background:C.card,border:`.5px solid ${C.border2}`,borderRadius:14,padding:'6px 11px',fontSize:10,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap',color:C.t1}}>{c}</button>)}
         </div>
+        {waBanner&&(
+          <div style={{margin:'0 12px 6px',padding:'12px',background:'#FEF9C3',border:'1px solid #FDE68A',borderRadius:12,flexShrink:0}}>
+            <div style={{fontSize:12,fontWeight:700,color:'#92400E',marginBottom:4}}>💡 Esta consulta es mejor resolverla directamente</div>
+            <div style={{fontSize:11,color:'#78350F',marginBottom:10,lineHeight:1.4}}>¿Querés contactar a SGI por WhatsApp?</div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>{openWA(false,waBanner);setWaBanner(null);}} style={{flex:1,padding:'8px 4px',borderRadius:8,background:'#25D366',border:'none',color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer'}}>💬 Sí, contactar</button>
+              <button onClick={()=>{const q=waBanner;setWaBanner(null);sendDirect(q);}} style={{flex:1,padding:'8px 4px',borderRadius:8,background:'none',border:'1px solid #92400E',color:'#92400E',fontSize:11,fontWeight:700,cursor:'pointer'}}>No, seguir con IA</button>
+            </div>
+          </div>
+        )}
         <div style={{display:'flex',gap:8,padding:'8px 12px 10px',borderTop:`.5px solid ${C.border}`,background:C.card,flexShrink:0}}>
-          <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder={t.chat_ph} style={{flex:1,border:`.5px solid ${C.border2}`,borderRadius:20,padding:'9px 14px',fontSize:13,background:C.off,outline:'none'}}/>
+          <button onClick={toggleVoice} style={{width:36,height:36,borderRadius:'50%',border:`1px solid ${isListening?'#EF4444':C.border2}`,background:isListening?'#FEE2E2':C.off,color:isListening?'#EF4444':C.t3,fontSize:15,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>🎙️</button>
+          <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder={isListening?'Escuchando...':(t.chat_ph||'Escribí tu consulta...')} style={{flex:1,border:`.5px solid ${C.border2}`,borderRadius:20,padding:'9px 14px',fontSize:13,background:C.off,outline:'none'}}/>
           <button onClick={()=>send()} style={{background:'#2563EB',color:'#fff',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:14,flexShrink:0}}>↑</button>
         </div>
       </>}
@@ -2022,6 +2074,11 @@ function ClientesScreen() {
   const [showNota,setShowNota]=useState(false);
   const [showMover,setShowMover]=useState(false);
   const [saving,setSaving]=useState(false);
+  const [showNotif,setShowNotif]=useState(false);
+  const [notifTitulo,setNotifTitulo]=useState('');
+  const [notifMensaje,setNotifMensaje]=useState('');
+  const [sendingNotif,setSendingNotif]=useState(false);
+  const [notifSent,setNotifSent]=useState(false);
 
   const selCliente=clientes.find(c=>c.id===selId)||null;
 
@@ -2051,6 +2108,26 @@ function ClientesScreen() {
     setNotaTexto('');setShowNota(false);
     await fetchClientes();
     setSaving(false);
+  }
+
+  async function enviarNotificacion(){
+    if(!selCliente||(!notifTitulo.trim()&&!notifMensaje.trim())) return;
+    setSendingNotif(true);
+    const titulo=notifTitulo.trim()||'SGI';
+    const mensaje=notifMensaje.trim();
+    if(Notification.permission==='granted'){
+      try{new Notification(titulo,{body:mensaje,icon:'/icon.svg'});}catch(e){}
+    }
+    if(selCliente.telefono){
+      const wa=selCliente.telefono.replace(/\D/g,'');
+      const num=wa.startsWith('54')?wa:'54'+wa;
+      const texto=encodeURIComponent(`*${titulo}*\n${mensaje}`);
+      window.open(`https://wa.me/${num}?text=${texto}`,'_blank');
+    }
+    setSendingNotif(false);
+    setNotifSent(true);
+    setNotifTitulo('');setNotifMensaje('');
+    setTimeout(()=>{setNotifSent(false);setShowNotif(false);},2200);
   }
 
   async function moverEtapa(nuevaEtapa){
@@ -2117,14 +2194,14 @@ function ClientesScreen() {
 
       {/* Panel detalle cliente */}
       {selCliente&&(
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:200,display:'flex',alignItems:'flex-end'}} onClick={()=>{setSelId(null);setShowNota(false);setShowMover(false);}}>
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:200,display:'flex',alignItems:'flex-end'}} onClick={()=>{setSelId(null);setShowNota(false);setShowMover(false);setShowNotif(false);}}>
           <div style={{background:C.card,borderRadius:'16px 16px 0 0',width:'100%',maxHeight:'88vh',overflow:'auto',padding:16}} onClick={e=>e.stopPropagation()}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
               <div>
                 <div style={{fontSize:15,fontWeight:700,color:C.t1}}>{selCliente.nombre}</div>
                 <span style={{background:ETAPAS.find(e=>e.id===selCliente.etapa)?.color||C.acc,color:'#fff',padding:'2px 9px',borderRadius:10,fontWeight:700,fontSize:9,marginTop:4,display:'inline-block'}}>{selCliente.etapa}</span>
               </div>
-              <button onClick={()=>{setSelId(null);setShowNota(false);setShowMover(false);}} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:C.t3}}>✕</button>
+              <button onClick={()=>{setSelId(null);setShowNota(false);setShowMover(false);setShowNotif(false);}} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:C.t3}}>✕</button>
             </div>
 
             <div style={{background:C.off,borderRadius:10,padding:'10px 12px',marginBottom:12,display:'flex',flexDirection:'column',gap:5}}>
@@ -2171,6 +2248,27 @@ function ClientesScreen() {
               </div>
             ):(
               <button onClick={()=>setShowMover(true)} style={{width:'100%',padding:10,borderRadius:8,border:'none',background:C.navy,color:'#fff',cursor:'pointer',fontSize:12,fontWeight:700,marginBottom:8}}>↕ Mover etapa</button>
+            )}
+
+            {showNotif?(
+              <div style={{marginBottom:10,background:C.off,borderRadius:10,padding:'12px'}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.t2,marginBottom:8}}>🔔 Notificar a {selCliente.nombre}</div>
+                {notifSent?(
+                  <div style={{textAlign:'center',padding:'12px 0',color:'#16A34A',fontSize:13,fontWeight:700}}>✅ Notificación enviada</div>
+                ):(
+                  <>
+                    <input value={notifTitulo} onChange={e=>setNotifTitulo(e.target.value)} placeholder="Título (ej: Tu obra está lista)" style={{width:'100%',marginBottom:8,padding:'9px 11px',borderRadius:8,border:`.5px solid ${C.border2}`,fontSize:12,outline:'none',fontFamily:'inherit'}}/>
+                    <textarea value={notifMensaje} onChange={e=>setNotifMensaje(e.target.value)} placeholder="Mensaje para el cliente..." rows={3} style={{width:'100%',marginBottom:8,padding:'9px 11px',borderRadius:8,border:`.5px solid ${C.border2}`,fontSize:12,resize:'none',outline:'none',fontFamily:'inherit'}}/>
+                    {!selCliente.telefono&&<div style={{fontSize:10,color:C.t3,marginBottom:8}}>Sin teléfono registrado — se enviará solo notificación push (si está activa).</div>}
+                    <div style={{display:'flex',gap:6}}>
+                      <button onClick={()=>{setShowNotif(false);setNotifTitulo('');setNotifMensaje('');}} style={{flex:1,padding:9,borderRadius:8,border:`.5px solid ${C.border}`,background:'none',cursor:'pointer',fontSize:12,color:C.t2}}>Cancelar</button>
+                      <button onClick={enviarNotificacion} disabled={sendingNotif||(!notifTitulo.trim()&&!notifMensaje.trim())} style={{flex:2,padding:9,borderRadius:8,border:'none',background:'#7C3AED',color:'#fff',cursor:'pointer',fontSize:12,fontWeight:700,opacity:sendingNotif?0.6:1}}>{sendingNotif?'⏳ Enviando...':selCliente.telefono?'📲 Enviar por WA':'🔔 Enviar notificación'}</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ):(
+              <button onClick={()=>{setShowNotif(true);setNotifSent(false);}} style={{width:'100%',padding:10,borderRadius:8,border:'none',background:'#7C3AED',color:'#fff',cursor:'pointer',fontSize:12,fontWeight:700,marginBottom:8}}>🔔 Notificar cliente</button>
             )}
 
             {selCliente.telefono&&(()=>{const wa=selCliente.telefono.replace(/\D/g,'');return(
@@ -2459,8 +2557,11 @@ export default function SGMApp() {
   const [dolar,setDolar]=useState(1390);
   const [loggedIn,setLoggedIn]=useState(false);
   const [user,setUser]=useState(null);
-  const [lang,setLang]=useState('es');
+  const [lang,setLang]=useState(()=>localStorage.getItem('sgi_lang')||'es');
   const [soundOn,setSoundOn]=useState(true);
+  const [userLocation,setUserLocation]=useState(()=>{try{const s=localStorage.getItem('sgi_location');return s?JSON.parse(s):null;}catch{return null;}});
+  const [showPermisosModal,setShowPermisosModal]=useState(false);
+  const [notifPermission,setNotifPermission]=useState(()=>localStorage.getItem('sgi_notif_perm')||'default');
   const [userRol,setUserRol]=useState('cliente');
   const [showWebAuthnModal,setShowWebAuthnModal]=useState(false);
   const [webAuthnModalStatus,setWebAuthnModalStatus]=useState('idle');
@@ -2549,6 +2650,44 @@ export default function SGMApp() {
 
   useEffect(()=>{fetch('https://dolarapi.com/v1/dolares/blue').then(r=>r.json()).then(d=>setDolar(d.venta||1390)).catch(()=>{});},[]);
   useEffect(()=>{localStorage.setItem('sgi_theme',theme);if(theme==='light')document.body.classList.add('theme-light');else document.body.classList.remove('theme-light');},[theme]);
+  useEffect(()=>{localStorage.setItem('sgi_lang',lang);},[lang]);
+
+  async function solicitarUbicacion(){
+    if(!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      const {latitude:lat,longitude:lng}=pos.coords;
+      try{
+        const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=es`);
+        const d=await r.json();
+        const loc={lat,lng,ciudad:d.city||d.locality||d.localityInfo?.administrative?.[2]?.name||'',provincia:d.principalSubdivision||'',pais:d.countryName||''};
+        localStorage.setItem('sgi_location',JSON.stringify(loc));
+        setUserLocation(loc);
+      }catch{
+        const loc={lat,lng,ciudad:'',provincia:'',pais:''};
+        localStorage.setItem('sgi_location',JSON.stringify(loc));
+        setUserLocation(loc);
+      }
+    },()=>{},{timeout:10000,enableHighAccuracy:false});
+  }
+
+  function solicitarMicrofono(){
+    navigator.mediaDevices?.getUserMedia({audio:true}).then(s=>{s.getTracks().forEach(t=>t.stop());}).catch(()=>{});
+  }
+
+  async function solicitarNotificaciones(userObj){
+    if(!('Notification' in window)) return;
+    const perm=await Notification.requestPermission();
+    setNotifPermission(perm);
+    localStorage.setItem('sgi_notif_perm',perm);
+    const u=userObj||user;
+    if(perm==='granted'&&supa&&u){
+      await supa.from('push_tokens').upsert({user_id:u.id,email:u.email,permission:'granted'},{onConflict:'user_id'}).catch(()=>{});
+    }
+  }
+
+  function mostrarPermisosModal(){
+    if(!localStorage.getItem('sgi_permisos_asked')) setTimeout(()=>setShowPermisosModal(true),1800);
+  }
 
   async function handleAuthenticatedUser(userObj,fromSignUp=false){
     setUser(userObj);setLoggedIn(true);
@@ -2559,6 +2698,7 @@ export default function SGMApp() {
       const saved=localStorage.getItem('sgm-perfil');
       if(saved)setPerfil(saved);
       setPhase('app');
+      mostrarPermisosModal();
       if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){
         PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok=>{if(ok){setWebAuthnModalStatus('idle');setShowWebAuthnModal(true);}}).catch(()=>{});
       }
@@ -2790,7 +2930,7 @@ export default function SGMApp() {
     stats:<StatsScreen t={t}/>,
     presup:<PresupScreen t={t} dolar={dolar}/>,
     agenda:<AgendaScreen t={t}/>,
-    mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)}/>,
+    mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation}/>,
     clientes:<ClientesScreen/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
   };
@@ -2798,7 +2938,7 @@ export default function SGMApp() {
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100vh',width:'100%',background:C.card,position:'relative',overflow:'hidden',fontFamily:"system-ui,sans-serif"}}>
       <style>{`:root{--c-navy:#0D1B2A;--c-bg:#0A1628;--c-card:#0D1B2A;--c-off:#0F2035;--c-t1:#F0F6FF;--c-t2:rgba(240,246,255,.55);--c-t3:rgba(240,246,255,.35);--c-border:rgba(255,255,255,.07);--c-border2:rgba(255,255,255,.14);--c-on-navy:#FFFFFF;--c-nav-dim:rgba(255,255,255,.3);--c-nav-border:rgba(255,255,255,.06);--c-dolar-bg:rgba(100,255,218,.1);--c-dolar-text:#64FFDA}body.theme-light{--c-navy:#FFFFFF;--c-bg:#F0F4F8;--c-card:#FFFFFF;--c-off:#F1F5F9;--c-t1:#0F172A;--c-t2:#475569;--c-t3:#94A3B8;--c-border:#E2E8F0;--c-border2:#CBD5E1;--c-on-navy:#0F172A;--c-nav-dim:#64748B;--c-nav-border:#E2E8F0;--c-dolar-bg:rgba(37,99,235,.08);--c-dolar-text:#2563EB}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,textarea{color:var(--c-t1)}input,select,button,textarea{font-family:inherit}`}</style>
-      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>handleNav('faq')} loggedIn={loggedIn} t={t} user={user} onSignOut={signOut} onGoogleSignIn={loginWithGoogle} theme={theme} onThemeChange={setTheme}/>
+      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>handleNav('faq')} loggedIn={loggedIn} t={t} user={user} onSignOut={signOut} onGoogleSignIn={loginWithGoogle} theme={theme} onThemeChange={setTheme} lang={lang} onLang={l=>{setLang(l);localStorage.setItem('sgi_lang',l);}}/>
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap} onTouchStart={e=>{touchStartXRef.current=e.touches[0].clientX;touchStartYRef.current=e.touches[0].clientY;}} onTouchEnd={e=>{const dx=e.changedTouches[0].clientX-touchStartXRef.current;const dy=Math.abs(e.changedTouches[0].clientY-touchStartYRef.current);if(touchStartXRef.current<30&&dx>80&&dy<80&&screen!=='home')handleNav('home');}}>
         {screens[screen]||screens.home}
       </div>
@@ -2806,6 +2946,42 @@ export default function SGMApp() {
       {showMore&&<MoreMenu onNav={handleNav} onClose={()=>setShowMore(false)} t={t} lang={lang} onLang={()=>setLang(l=>l==='es'?'en':'es')} perfil={perfil}/>}
       {showAyuda&&<AyudaPanel onClose={()=>setShowAyuda(false)} t={t}/>}
       {showWebAuthnModal&&<WebAuthnModal onActivate={activateWebAuthn} onDismiss={()=>setShowWebAuthnModal(false)} status={webAuthnModalStatus}/>}
+      {showPermisosModal&&(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.65)',zIndex:700,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
+          <div style={{background:C.card,borderRadius:'20px 20px 0 0',width:'100%',maxWidth:440,padding:'24px 20px 32px'}}>
+            <div style={{width:36,height:4,borderRadius:2,background:C.border2,margin:'0 auto 20px'}}/>
+            <div style={{fontSize:17,fontWeight:800,color:C.t1,marginBottom:4}}>Mejorar experiencia</div>
+            <div style={{fontSize:12,color:C.t2,marginBottom:20,lineHeight:1.5}}>Activá estos permisos para aprovechar todas las funciones de SGI.</div>
+            <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:20}}>
+              <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderRadius:12,background:C.off,border:`.5px solid ${C.border}`}}>
+                <span style={{fontSize:24,flexShrink:0}}>📍</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.t1}}>Ubicación</div>
+                  <div style={{fontSize:11,color:C.t3,marginTop:1}}>Mostramos proveedores cercanos ordenados por distancia</div>
+                </div>
+                <button onClick={solicitarUbicacion} style={{background:userLocation?C.green:'#2563EB',border:'none',borderRadius:8,padding:'7px 12px',fontSize:11,fontWeight:700,color:'#fff',cursor:'pointer',flexShrink:0}}>{userLocation?'✓ Activa':'Activar'}</button>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderRadius:12,background:C.off,border:`.5px solid ${C.border}`}}>
+                <span style={{fontSize:24,flexShrink:0}}>🎙️</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.t1}}>Micrófono</div>
+                  <div style={{fontSize:11,color:C.t3,marginTop:1}}>Dictá tus consultas al asistente IA por voz</div>
+                </div>
+                <button onClick={solicitarMicrofono} style={{background:'#2563EB',border:'none',borderRadius:8,padding:'7px 12px',fontSize:11,fontWeight:700,color:'#fff',cursor:'pointer',flexShrink:0}}>Activar</button>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderRadius:12,background:C.off,border:`.5px solid ${C.border}`}}>
+                <span style={{fontSize:24,flexShrink:0}}>🔔</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.t1}}>Notificaciones</div>
+                  <div style={{fontSize:11,color:C.t3,marginTop:1}}>Recibí actualizaciones de tu obra en tiempo real</div>
+                </div>
+                <button onClick={()=>solicitarNotificaciones()} style={{background:notifPermission==='granted'?C.green:'#2563EB',border:'none',borderRadius:8,padding:'7px 12px',fontSize:11,fontWeight:700,color:'#fff',cursor:'pointer',flexShrink:0}}>{notifPermission==='granted'?'✓ Activas':'Activar'}</button>
+              </div>
+            </div>
+            <button onClick={()=>{localStorage.setItem('sgi_permisos_asked','1');setShowPermisosModal(false);}} style={{width:'100%',padding:13,borderRadius:12,border:'none',background:C.navy,color:C.onNavy,fontSize:14,fontWeight:700,cursor:'pointer'}}>Listo</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
