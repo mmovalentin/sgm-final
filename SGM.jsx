@@ -365,19 +365,19 @@ function HomeScreen({onNav,t}) {
     <div>
       <div style={{background:C.navy,padding:'16px 14px 20px',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',top:-50,right:-50,width:160,height:160,background:'rgba(74,159,255,.05)',borderRadius:'50%'}}/>
-        <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1.5}}>{t.bienvenido}</div>
-        <div style={{color:'#fff',fontSize:19,fontWeight:700,marginTop:3}}>{t.mi_proyecto}</div>
-        <div style={{color:'rgba(255,255,255,.28)',fontSize:10,marginTop:2}}>{new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</div>
-        <div style={{display:'flex',marginTop:12,background:'rgba(255,255,255,.05)',borderRadius:10,overflow:'hidden'}}>
+        <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1.5}}>{t.bienvenido}</div>
+        <div style={{color:C.onNavy,fontSize:19,fontWeight:700,marginTop:3}}>{t.mi_proyecto}</div>
+        <div style={{color:C.t3,fontSize:10,marginTop:2}}>{new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</div>
+        <div style={{display:'flex',marginTop:12,background:C.border,borderRadius:10,overflow:'hidden'}}>
           {[['67%',t.avance],['USD 105K',t.presup_lbl],['12',t.proveed],['8',t.op]].map(([v,l])=>(
-            <div key={l} style={{flex:1,padding:'9px 5px',textAlign:'center',borderRight:'1px solid rgba(255,255,255,.05)'}}>
-              <div style={{fontSize:12,fontWeight:700,color:'#fff'}}>{v}</div>
-              <div style={{fontSize:9,color:'rgba(255,255,255,.3)',marginTop:1}}>{l}</div>
+            <div key={l} style={{flex:1,padding:'9px 5px',textAlign:'center',borderRight:`1px solid ${C.border}`}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.onNavy}}>{v}</div>
+              <div style={{fontSize:9,color:C.t3,marginTop:1}}>{l}</div>
             </div>
           ))}
         </div>
         <div style={{marginTop:10}}>
-          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'rgba(255,255,255,.4)',marginBottom:4}}><span>{t.progreso}</span><span>67%</span></div>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:C.t3,marginBottom:4}}><span>{t.progreso}</span><span>67%</span></div>
           <div style={{background:'rgba(255,255,255,.08)',borderRadius:3,height:4}}><div style={{background:'linear-gradient(90deg,#4A9FFF,#64FFDA)',width:'67%',height:'100%',borderRadius:3}}/></div>
         </div>
       </div>
@@ -442,12 +442,12 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
     {svg:`<rect x="3" y="3" width="14" height="15" rx="1"/><line x1="3" y1="8" x2="17" y2="8"/><line x1="7" y1="3" x2="7" y2="8"/><line x1="13" y1="3" x2="13" y2="8"/><rect x="7" y="12" width="6" height="6"/>`,title:'SGI Construcción',desc:'Tu empresa constructora',nav:'empresa'},
   ];
   return (
-    <div style={{background:'#07111F',minHeight:'100%',paddingBottom:8}}>
-      <div style={{padding:'20px 16px 0',background:'linear-gradient(180deg,#0D1B2A 0%,#07111F 100%)'}}>
+    <div style={{background:C.bg,minHeight:'100%',paddingBottom:8}}>
+      <div style={{padding:'20px 16px 0',background:C.bg}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
           <div>
-            <div style={{color:'rgba(255,255,255,.4)',fontSize:11,marginBottom:2}}>Bienvenido a SGI</div>
-            <div style={{color:'#fff',fontSize:22,fontWeight:800}}>{nombre?`Hola, ${nombre} 👋`:'¡Hola!'}</div>
+            <div style={{color:C.t3,fontSize:11,marginBottom:2}}>Bienvenido a SGI</div>
+            <div style={{color:C.t1,fontSize:22,fontWeight:800}}>{nombre?`Hola, ${nombre} 👋`:'¡Hola!'}</div>
           </div>
           <div style={{width:44,height:44,borderRadius:'50%',background:'linear-gradient(135deg,#2563EB,#1E3A5F)',display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid rgba(74,159,255,.3)',flexShrink:0}}>
             {initials
@@ -474,11 +474,11 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
       </div>
       {lastCot&&(
         <div style={{padding:'0 16px 16px'}}>
-          <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.3)',textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Tu última cotización</div>
+          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Tu última cotización</div>
           <div style={{background:C.card,borderRadius:16,border:`.5px solid ${C.border}`,padding:'14px 16px'}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
               <div>
-                <div style={{color:'#fff',fontSize:14,fontWeight:700}}>{lastCot.tipo} · {lastCot.m2}m²</div>
+                <div style={{color:C.t1,fontSize:14,fontWeight:700}}>{lastCot.tipo} · {lastCot.m2}m²</div>
                 <div style={{color:C.t3,fontSize:11,marginTop:2}}>{lastCot.sistema} · {new Date(lastCot.fecha).toLocaleDateString('es-AR')}</div>
               </div>
               <div style={{textAlign:'right'}}>
@@ -494,15 +494,15 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
         </div>
       )}
       <div style={{padding:'0 16px 16px'}}>
-        <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.3)',textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Explorá</div>
+        <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Explorá</div>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           {explora.map((e,i)=>(
             <button key={i} onClick={()=>onNav(e.nav)} style={{display:'flex',alignItems:'center',gap:12,padding:'14px',borderRadius:14,background:C.card,border:`.5px solid ${C.border}`,cursor:'pointer',textAlign:'left',width:'100%',fontFamily:'inherit'}}>
-              <div style={{width:44,height:44,borderRadius:12,background:C.navy,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <div style={{width:44,height:44,borderRadius:12,background:C.off,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${C.border}`}}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:e.svg}}/>
               </div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{color:'#fff',fontSize:13,fontWeight:700}}>{e.title}</div>
+                <div style={{color:C.t1,fontSize:13,fontWeight:700}}>{e.title}</div>
                 <div style={{color:C.t3,fontSize:11,marginTop:2}}>{e.desc}</div>
               </div>
               <span style={{color:C.t3,fontSize:18,flexShrink:0}}>›</span>
@@ -556,28 +556,28 @@ function EmpresaScreen({onNav,user}) {
   const displayStars=hoverRating||myRating;
 
   return (
-    <div style={{background:'#07111F',minHeight:'100%'}}>
+    <div style={{background:C.bg,minHeight:'100%'}}>
       <div style={{background:C.navy,padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
-        <button onClick={()=>onNav('home')} style={{background:'none',border:'none',color:'rgba(255,255,255,.55)',fontSize:13,fontWeight:600,cursor:'pointer',padding:0,fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>← Volver</button>
+        <button onClick={()=>onNav('home')} style={{background:'none',border:'none',color:C.t2,fontSize:13,fontWeight:600,cursor:'pointer',padding:0,fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>← Volver</button>
         <div>
-          <div style={{color:'rgba(255,255,255,.35)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Empresa</div>
-          <div style={{color:'#fff',fontSize:15,fontWeight:700}}>SGI Construcción</div>
+          <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Empresa</div>
+          <div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>SGI Construcción</div>
         </div>
       </div>
       <div style={{padding:'20px 16px'}}>
         <div style={{display:'flex',flexDirection:'column',alignItems:'center',paddingBottom:16}}>
           <SGMLogo/>
-          <div style={{color:'#fff',fontSize:20,fontWeight:800,marginTop:14,marginBottom:4}}>SGI Construcción</div>
+          <div style={{color:C.t1,fontSize:20,fontWeight:800,marginTop:14,marginBottom:4}}>SGI Construcción</div>
           <div style={{color:C.t3,fontSize:12,marginBottom:12}}>Steel Frame · Córdoba, Argentina</div>
           {avgRating!==null&&(
             <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
               <span style={{color:'#F59E0B',fontSize:18}}>{'★'.repeat(Math.round(avgRating))}{'☆'.repeat(5-Math.round(avgRating))}</span>
-              <span style={{color:'#fff',fontSize:14,fontWeight:700}}>{avgRating}</span>
+              <span style={{color:C.t1,fontSize:14,fontWeight:700}}>{avgRating}</span>
               <span style={{color:C.t3,fontSize:11}}>({ratingCount} {ratingCount===1?'reseña':'reseñas'})</span>
             </div>
           )}
-          <div style={{background:'rgba(255,255,255,.06)',borderRadius:14,padding:'14px 18px',width:'100%',textAlign:'center'}}>
-            <div style={{color:'rgba(255,255,255,.5)',fontSize:11,marginBottom:8}}>
+          <div style={{background:C.off,borderRadius:14,padding:'14px 18px',width:'100%',textAlign:'center',border:`.5px solid ${C.border}`}}>
+            <div style={{color:C.t2,fontSize:11,marginBottom:8}}>
               {ratedOk?'Tu calificación':'¿Cómo nos calificás?'}
             </div>
             <div style={{display:'flex',justifyContent:'center',gap:6,marginBottom:ratedOk?0:10}}>
@@ -586,26 +586,26 @@ function EmpresaScreen({onNav,user}) {
                   onMouseEnter={()=>!ratedOk&&setHoverRating(n)}
                   onMouseLeave={()=>setHoverRating(0)}
                   onClick={()=>!ratedOk&&user&&guardarRating(n)}
-                  style={{fontSize:28,cursor:ratedOk||!user?'default':'pointer',color:n<=displayStars?'#F59E0B':'rgba(255,255,255,.2)',transition:'color .15s'}}>
+                  style={{fontSize:28,cursor:ratedOk||!user?'default':'pointer',color:n<=displayStars?'#F59E0B':C.border2,transition:'color .15s'}}>
                   ★
                 </span>
               ))}
             </div>
             {!ratedOk&&user&&myRating>0&&(
               <div style={{marginTop:10}}>
-                <input value={comment} onChange={e=>setComment(e.target.value)} placeholder="Comentario opcional..." style={{width:'100%',borderRadius:8,border:'.5px solid rgba(255,255,255,.15)',background:'rgba(255,255,255,.08)',color:'#fff',padding:'8px 10px',fontSize:12,fontFamily:'inherit',outline:'none',marginBottom:8}}/>
+                <input value={comment} onChange={e=>setComment(e.target.value)} placeholder="Comentario opcional..." style={{width:'100%',borderRadius:8,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,padding:'8px 10px',fontSize:12,fontFamily:'inherit',outline:'none',marginBottom:8}}/>
                 <button onClick={()=>guardarRating(myRating)} disabled={savingRating} style={{width:'100%',padding:'9px',borderRadius:9,border:'none',background:'#4A9FFF',color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                   {savingRating?'⏳ Guardando...':'✓ Enviar calificación'}
                 </button>
               </div>
             )}
-            {!user&&<div style={{color:'rgba(255,255,255,.3)',fontSize:11,marginTop:6}}>Iniciá sesión para calificar</div>}
+            {!user&&<div style={{color:C.t3,fontSize:11,marginTop:6}}>Iniciá sesión para calificar</div>}
             {ratedOk&&<div style={{color:'#4CAF50',fontSize:12,marginTop:4}}>✓ ¡Gracias por tu calificación!</div>}
           </div>
         </div>
         <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'16px',marginBottom:12}}>
           <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Quiénes somos</div>
-          <div style={{color:'rgba(255,255,255,.8)',fontSize:13,lineHeight:1.7}}>SGI es una empresa constructora especializada en Steel Frame y sistemas modulares en Córdoba, Argentina. Combinamos tecnología, diseño y eficiencia para construir viviendas de alta calidad en menor tiempo. Cada proyecto es único y trabajamos junto al cliente desde el diseño hasta la entrega de llaves.</div>
+          <div style={{color:C.t1,fontSize:13,lineHeight:1.7}}>SGI es una empresa constructora especializada en Steel Frame y sistemas modulares en Córdoba, Argentina. Combinamos tecnología, diseño y eficiencia para construir viviendas de alta calidad en menor tiempo. Cada proyecto es único y trabajamos junto al cliente desde el diseño hasta la entrega de llaves.</div>
         </div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
           {[
@@ -632,7 +632,7 @@ function EmpresaScreen({onNav,user}) {
           {[['Casa 90m² · Económico','Villa Allende · 2024'],['Casa 60m² · Premium','Río Ceballos · 2024'],['Ampliación 27m²','Córdoba Capital · 2023'],['Galpón 120m²','Malagueño · 2023']].map(([n,d])=>(
             <div key={n} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 0',borderBottom:`.5px solid ${C.border}`}}>
               <div>
-                <div style={{color:'rgba(255,255,255,.85)',fontSize:12,fontWeight:600}}>{n}</div>
+                <div style={{color:C.t1,fontSize:12,fontWeight:600}}>{n}</div>
                 <div style={{color:C.t3,fontSize:10,marginTop:2}}>{d}</div>
               </div>
               <span style={{fontSize:14}}>✅</span>
@@ -653,11 +653,11 @@ function ModelosScreen({onNav,t}) {
   return (
     <div>
       <div style={{background:C.navy,padding:'13px 14px'}}>
-        <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1.5}}>{t.galeria}</div>
-        <div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:2}}>{t.elegir}</div>
+        <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1.5}}>{t.galeria}</div>
+        <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.elegir}</div>
         <div style={{display:'flex',gap:6,marginTop:10,overflowX:'auto',paddingBottom:2}}>
           {Object.entries(CAL).map(([k,v])=>(
-            <button key={k} onClick={()=>setCal(k)} style={{padding:'7px 14px',borderRadius:20,fontSize:11,fontWeight:700,border:`1.5px solid ${cal===k?'rgba(255,255,255,.5)':'rgba(255,255,255,.2)'}`,background:cal===k?'rgba(255,255,255,.18)':'rgba(255,255,255,.06)',color:cal===k?'#fff':'rgba(255,255,255,.5)',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
+            <button key={k} onClick={()=>setCal(k)} style={{padding:'7px 14px',borderRadius:20,fontSize:11,fontWeight:700,border:`1.5px solid ${cal===k?C.acc:C.border2}`,background:cal===k?C.acc:C.border,color:cal===k?'#fff':C.t2,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
               {v.icon} {k.charAt(0).toUpperCase()+k.slice(1)} · USD {v.m2.toLocaleString()}
             </button>
           ))}
@@ -799,8 +799,8 @@ function CotizadorScreen({t,initParams,lang='es'}) {
   if(cotTab==='servicios') return (
     <div>
       <div style={{background:C.navy,padding:'13px 14px'}}>
-        <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Cotizador</div>
-        <div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:2}}>Servicios profesionales</div>
+        <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Cotizador</div>
+        <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>Servicios profesionales</div>
       </div>
       <div style={{display:'flex',background:'#fff',borderBottom:`.5px solid ${C.border}`}}>
         <button onClick={()=>setCotTab('obra')} style={{flex:1,padding:'10px 4px',border:'none',background:'none',fontSize:12,fontWeight:700,cursor:'pointer',color:C.t3,borderBottom:`2px solid transparent`}}>🏗️ Obra</button>
@@ -835,8 +835,8 @@ function CotizadorScreen({t,initParams,lang='es'}) {
   return (
     <div>
       <div style={{background:C.navy,padding:'13px 14px'}}>
-        <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{t.herramienta}</div>
-        <div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:2}}>{t.cot_ia}</div>
+        <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{t.herramienta}</div>
+        <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.cot_ia}</div>
       </div>
       <div style={{display:'flex',background:'#fff',borderBottom:`.5px solid ${C.border}`}}>
         <button onClick={()=>setCotTab('obra')} style={{flex:1,padding:'10px 4px',border:'none',background:'none',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1565C0',borderBottom:`2px solid #1565C0`}}>🏗️ Obra</button>
@@ -953,14 +953,14 @@ function CotizadorScreen({t,initParams,lang='es'}) {
           );
         })()}
         {loading&&(
-          <div style={{textAlign:'center',padding:24,background:C.navy,borderRadius:12}}>
+          <div style={{textAlign:'center',padding:24,background:'#0D1B2A',borderRadius:12}}>
             <div style={{fontSize:28,marginBottom:8}}>⚙️</div>
             <div style={{color:'#fff',fontSize:13,fontWeight:600}}>{t.generando}</div>
             <div style={{color:'rgba(255,255,255,.4)',fontSize:11,marginTop:4}}>{m2}m² · {sistema} · {cal}</div>
           </div>
         )}
         {result&&!result.error&&(
-          <div style={{background:C.navy,borderRadius:12,overflow:'hidden'}}>
+          <div style={{background:'#0D1B2A',borderRadius:12,overflow:'hidden'}}>
             <div style={{padding:14,borderBottom:'1px solid rgba(255,255,255,.08)'}}>
               <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{tipo} · {m2}m² · {cal}</div>
               <div style={{color:'#fff',fontSize:22,fontWeight:800,marginTop:4}}>USD {totalAdj.toLocaleString()}</div>
@@ -1040,7 +1040,7 @@ function CotizadorScreen({t,initParams,lang='es'}) {
             })()}
             <div style={{padding:'12px 14px',display:'flex',gap:8}}>
               <button onClick={()=>openWA(true)} style={{flex:1,background:'#25D366',color:'#fff',border:'none',borderRadius:8,padding:11,fontSize:12,fontWeight:700,cursor:'pointer'}}>💬 {t.consultar}</button>
-              <button onClick={()=>setResult(null)} style={{flex:1,background:'rgba(255,255,255,.1)',color:'#fff',border:'none',borderRadius:8,padding:11,fontSize:12,fontWeight:700,cursor:'pointer'}}>{t.nueva_cot}</button>
+              <button onClick={()=>setResult(null)} style={{flex:1,background:C.border,color:C.t1,border:`1px solid ${C.border2}`,borderRadius:8,padding:11,fontSize:12,fontWeight:700,cursor:'pointer'}}>{t.nueva_cot}</button>
             </div>
           </div>
         )}
@@ -1049,7 +1049,7 @@ function CotizadorScreen({t,initParams,lang='es'}) {
             <div style={{fontSize:28,marginBottom:8}}>⚠️</div>
             <div style={{fontSize:13,fontWeight:700,color:C.red}}>{t.error_cot}</div>
             <div style={{fontSize:11,color:'#E57373',marginTop:4,marginBottom:12}}>{t.verif_con}</div>
-            <button onClick={()=>setResult(null)} style={{background:C.navy,color:'#fff',border:'none',borderRadius:8,padding:'9px 20px',cursor:'pointer',fontSize:12,fontWeight:700}}>{t.reintentar}</button>
+            <button onClick={()=>setResult(null)} style={{background:'#2563EB',color:'#fff',border:'none',borderRadius:8,padding:'9px 20px',cursor:'pointer',fontSize:12,fontWeight:700}}>{t.reintentar}</button>
           </div>
         )}
       </div>
@@ -1171,8 +1171,8 @@ function MapaScreen({t,perfil,onLogin}) {
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <div style={{background:C.navy,padding:'12px 14px',flexShrink:0}}>
-        <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>SGI</div>
-        <div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:2}}>Mapa SGI</div>
+        <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>SGI</div>
+        <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>Mapa SGI</div>
       </div>
       <div ref={mapRef} style={{height:240,flexShrink:0}}/>
       <div style={{background:C.card,padding:'10px 14px',flexShrink:0,borderBottom:`.5px solid ${C.border}`}}>
@@ -1237,7 +1237,7 @@ function MapaScreen({t,perfil,onLogin}) {
             </button>
           )}
           {perfil==='cliente'&&(
-            <button onClick={onLogin} style={{width:'100%',background:C.navy,color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            <button onClick={onLogin} style={{width:'100%',background:'#2563EB',color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
               🔐 Login para guardar mis cotizaciones
             </button>
           )}
@@ -1318,9 +1318,9 @@ function ChatScreen({t}) {
   return (
     <div style={{display:'flex',flexDirection:'column',height:'calc(100vh - 110px)'}}>
       <div style={{background:C.navy,padding:'12px 14px',flexShrink:0}}>
-        <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>IA</div>
-        <div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:1}}>{t.chat_title}</div>
-        <div style={{color:'rgba(255,255,255,.3)',fontSize:10}}>Steel Frame · Córdoba</div>
+        <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>IA</div>
+        <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:1}}>{t.chat_title}</div>
+        <div style={{color:C.t3,fontSize:10}}>Steel Frame · Córdoba</div>
       </div>
 
       {/* Tab switcher */}
@@ -1338,7 +1338,7 @@ function ChatScreen({t}) {
           {msgs.map((m,i)=>(
             <div key={i} style={{alignSelf:m.role==='user'?'flex-end':'flex-start',maxWidth:'82%',display:'flex',flexDirection:'column',gap:4}}>
               {m.role==='user'
-                ? <div style={{padding:'10px 12px',borderRadius:'12px 12px 2px 12px',background:C.navy,color:'#fff',fontSize:13,lineHeight:1.5}}>{m.text}</div>
+                ? <div style={{padding:'10px 12px',borderRadius:'12px 12px 2px 12px',background:'#1E3A5F',color:'#fff',fontSize:13,lineHeight:1.5}}>{m.text}</div>
                 : <div style={{padding:'10px 12px',borderRadius:'2px 12px 12px 12px',background:C.card,color:C.t1,border:`.5px solid ${C.border}`,fontSize:13,lineHeight:1.5}} dangerouslySetInnerHTML={{__html:renderMd(m.text)}}/>
               }
               {m.role==='ai'&&(()=>{const cs=guardadoStatus[i];return(
@@ -1355,7 +1355,7 @@ function ChatScreen({t}) {
         </div>
         <div style={{display:'flex',gap:8,padding:'8px 12px 10px',borderTop:`.5px solid ${C.border}`,background:C.card,flexShrink:0}}>
           <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder={t.chat_ph} style={{flex:1,border:`.5px solid ${C.border2}`,borderRadius:20,padding:'9px 14px',fontSize:13,background:C.off,outline:'none'}}/>
-          <button onClick={()=>send()} style={{background:C.navy,color:'#fff',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:14,flexShrink:0}}>↑</button>
+          <button onClick={()=>send()} style={{background:'#2563EB',color:'#fff',border:'none',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:14,flexShrink:0}}>↑</button>
         </div>
       </>}
 
@@ -1549,8 +1549,8 @@ function RubrosScreen({perfil,t}) {
   return (
     <div>
       <div style={{background:C.navy,padding:'12px 14px'}}>
-        <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{t.materiales}</div>
-        <div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:2}}>{t.rubros_title}</div>
+        <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{t.materiales}</div>
+        <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.rubros_title}</div>
       </div>
       <div style={{padding:'12px 14px'}}>
         <div style={{display:'flex',alignItems:'center',gap:8,background:C.card,border:`.5px solid ${C.border2}`,borderRadius:10,padding:'9px 12px',marginBottom:12}}>
@@ -1578,8 +1578,8 @@ function FAQScreen({t,onNav}) {
   return (
     <div>
       <div style={{background:C.navy,padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
-        {onNav&&<button onClick={()=>onNav('home')} style={{background:'none',border:'none',color:'rgba(255,255,255,.55)',fontSize:13,fontWeight:600,cursor:'pointer',padding:0,fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0}}>← Volver</button>}
-        <div><div style={{color:'#fff',fontSize:15,fontWeight:700}}>{t.faq_title}</div><div style={{color:'rgba(255,255,255,.35)',fontSize:10,marginTop:2}}>Steel Frame · Costos · Tiempos</div></div>
+        {onNav&&<button onClick={()=>onNav('home')} style={{background:'none',border:'none',color:C.t2,fontSize:13,fontWeight:600,cursor:'pointer',padding:0,fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0}}>← Volver</button>}
+        <div><div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>{t.faq_title}</div><div style={{color:C.t3,fontSize:10,marginTop:2}}>Steel Frame · Costos · Tiempos</div></div>
       </div>
       <div style={{padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
         {FAQS.map((f,i)=>(
@@ -1600,10 +1600,10 @@ function FAQScreen({t,onNav}) {
 function StatsScreen({t}) {
   return (
     <div>
-      <div style={{background:C.navy,padding:'13px 14px'}}><div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{t.empresa}</div><div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:2}}>{t.stats_title}</div></div>
+      <div style={{background:C.navy,padding:'13px 14px'}}><div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{t.empresa}</div><div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.stats_title}</div></div>
       <div style={{padding:'12px 14px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
         {[['24',t.stats_cot],['USD 142K',t.stats_pipeline],['1.840',t.stats_m2],['18',t.stats_leads]].map(([v,l])=>(
-          <div key={l} style={{background:C.card,borderRadius:10,padding:12,border:`.5px solid ${C.border}`}}><div style={{fontSize:22,fontWeight:800,color:C.navy}}>{v}</div><div style={{fontSize:10,color:C.t3,marginTop:2}}>{l}</div></div>
+          <div key={l} style={{background:C.card,borderRadius:10,padding:12,border:`.5px solid ${C.border}`}}><div style={{fontSize:22,fontWeight:800,color:C.acc}}>{v}</div><div style={{fontSize:10,color:C.t3,marginTop:2}}>{l}</div></div>
         ))}
       </div>
     </div>
@@ -1613,7 +1613,7 @@ function StatsScreen({t}) {
 function AgendaScreen({t}) {
   return (
     <div>
-      <div style={{background:C.navy,padding:'13px 14px'}}><div style={{color:'#fff',fontSize:15,fontWeight:700}}>{t.agenda_title}</div></div>
+      <div style={{background:C.navy,padding:'13px 14px'}}><div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>{t.agenda_title}</div></div>
       <div style={{padding:'12px 14px'}}>
         <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,overflow:'hidden'}}>
           <div style={{padding:'11px 13px',borderBottom:`.5px solid ${C.border}`,fontSize:13,fontWeight:700}}>📅 {t.esta_semana||'Esta semana'}</div>
@@ -1809,25 +1809,25 @@ function PresupScreen({t,dolar=1415}) {
   }
   return (
     <div>
-      <div style={{background:C.navy,padding:'13px 14px'}}><div style={{color:'#fff',fontSize:15,fontWeight:700}}>{t.presup_title}</div><div style={{color:'rgba(255,255,255,.35)',fontSize:10,marginTop:2}}>{t.presup_sub}</div></div>
+      <div style={{background:C.navy,padding:'13px 14px'}}><div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>{t.presup_title}</div><div style={{color:C.t3,fontSize:10,marginTop:2}}>{t.presup_sub}</div></div>
       <div style={{padding:'14px',display:'flex',flexDirection:'column',gap:12}}>
         <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:20,textAlign:'center'}}>
           <div style={{fontSize:32,marginBottom:8}}>📎</div>
           <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>{t.subir}</div>
           <div style={{fontSize:12,color:C.t3,marginBottom:12}}>{t.presup_sub}</div>
           <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,image/*" style={{display:'none'}} onChange={handleFile}/>
-          <button onClick={()=>fileRef.current?.click()} style={{width:'100%',background:C.navy,color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer'}}>📂 {t.sel_archivo}</button>
+          <button onClick={()=>fileRef.current?.click()} style={{width:'100%',background:'#2563EB',color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer'}}>📂 {t.sel_archivo}</button>
         </div>
         {loading&&<div style={{textAlign:'center',padding:20,fontSize:13,fontWeight:600,color:C.t2}}>⏳ {t.analizando}</div>}
         {result&&!result.error&&(
           <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,overflow:'hidden'}}>
             <div style={{background:C.navy,padding:'11px 13px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <div>
-                <div style={{color:'#fff',fontSize:13,fontWeight:700}}>{(()=>{const p=result.data.proveedor;return typeof p==='object'?p?.nombre||result.name:p||result.name;})()} </div>
+                <div style={{color:C.onNavy,fontSize:13,fontWeight:700}}>{(()=>{const p=result.data.proveedor;return typeof p==='object'?p?.nombre||result.name:p||result.name;})()} </div>
                 {typeof result.data.proveedor==='object'&&result.data.proveedor.especialidad&&(
-                  <div style={{color:'rgba(255,255,255,.55)',fontSize:10,marginTop:1}}>{result.data.proveedor.especialidad}</div>
+                  <div style={{color:C.t2,fontSize:10,marginTop:1}}>{result.data.proveedor.especialidad}</div>
                 )}
-                <div style={{color:'rgba(255,255,255,.35)',fontSize:9,marginTop:1}}>{new Date().toLocaleDateString('es-AR')}</div>
+                <div style={{color:C.t3,fontSize:9,marginTop:1}}>{new Date().toLocaleDateString('es-AR')}</div>
               </div>
               <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:2}}>
                 <div style={{color:'#64FFDA',fontSize:14,fontWeight:800}}>USD {(result.data.total_usd||0).toLocaleString()}</div>
@@ -2068,8 +2068,8 @@ function ClientesScreen() {
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%',position:'relative'}}>
       <div style={{background:C.navy,padding:'13px 14px',flexShrink:0}}>
-        <div style={{color:'#fff',fontSize:15,fontWeight:700}}>Pipeline de Clientes</div>
-        <div style={{color:'rgba(255,255,255,.35)',fontSize:10,marginTop:2}}>{clientes.length} clientes en seguimiento</div>
+        <div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>Pipeline de Clientes</div>
+        <div style={{color:C.t3,fontSize:10,marginTop:2}}>{clientes.length} clientes en seguimiento</div>
       </div>
 
       {/* Tabs etapas */}
