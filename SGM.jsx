@@ -116,7 +116,7 @@ const T = {
     explora_lbl:"Explorá",
     cambiar_cuenta:"Cambiar cuenta",agregar_cuenta:"Agregar cuenta",cerrar_sesion:"Cerrar sesión",
     switch_light:"Cambiar a tema claro",switch_dark:"Cambiar a tema oscuro",
-    mapa_lbl:"Mapa",
+    mapa_lbl:"Mapa",sin_alertas:"Sin alertas activas",
     explora_items:[
       ['Sistemas constructivos','Steel Frame, Mampostería y más','rubros'],
       ['Modelos disponibles','Ver renders y precios','modelos'],
@@ -187,7 +187,7 @@ const T = {
     explora_lbl:"Explore",
     cambiar_cuenta:"Change account",agregar_cuenta:"Add account",cerrar_sesion:"Sign out",
     switch_light:"Switch to light theme",switch_dark:"Switch to dark theme",
-    mapa_lbl:"Map",
+    mapa_lbl:"Map",sin_alertas:"No active alerts",
     explora_items:[
       ['Construction systems','Steel Frame, Masonry and more','rubros'],
       ['Available models','View renders and prices','modelos'],
@@ -402,7 +402,25 @@ function BottomNav({screen,onNav,t,perfil}) {
 }
 
 // ── HOME
-function HomeScreen({onNav,t}) {
+function HomeScreen({onNav,t,user}) {
+  const [lastCot,setLastCot]=useState(null);
+  const [met,setMet]=useState({avance:0,presup:0,proveed:0,op:0,ingresos:0,egresos:0,ahorro:0,saldo:0});
+
+  useEffect(()=>{
+    try{
+      const s=localStorage.getItem('sgi_last_cot');
+      if(s){
+        const d=JSON.parse(s);
+        setLastCot(d);
+        const total=d.total_usd||0;
+        setMet(m=>({...m,presup:total,ingresos:total,saldo:total}));
+      }
+    }catch(e){}
+  },[]);
+
+  function fmtUSD(v){if(!v)return'USD 0';if(v>=1000)return`USD ${(v/1000).toFixed(v%1000===0?0:1)}K`;return`USD ${v.toLocaleString()}`;}
+  const pct=met.avance;
+
   return (
     <div>
       <div style={{background:C.navy,padding:'16px 14px 20px',position:'relative',overflow:'hidden'}}>
@@ -411,7 +429,7 @@ function HomeScreen({onNav,t}) {
         <div style={{color:C.onNavy,fontSize:19,fontWeight:700,marginTop:3}}>{t.mi_proyecto}</div>
         <div style={{color:C.t3,fontSize:10,marginTop:2}}>{new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</div>
         <div style={{display:'flex',marginTop:12,background:C.border,borderRadius:10,overflow:'hidden'}}>
-          {[['67%',t.avance],['USD 105K',t.presup_lbl],['12',t.proveed],['8',t.op]].map(([v,l])=>(
+          {[[`${pct}%`,t.avance],[fmtUSD(met.presup),t.presup_lbl],[`${met.proveed}`,t.proveed],[`${met.op}`,t.op]].map(([v,l])=>(
             <div key={l} style={{flex:1,padding:'9px 5px',textAlign:'center',borderRight:`1px solid ${C.border}`}}>
               <div style={{fontSize:12,fontWeight:700,color:C.onNavy}}>{v}</div>
               <div style={{fontSize:9,color:C.t3,marginTop:1}}>{l}</div>
@@ -419,31 +437,41 @@ function HomeScreen({onNav,t}) {
           ))}
         </div>
         <div style={{marginTop:10}}>
-          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:C.t3,marginBottom:4}}><span>{t.progreso}</span><span>67%</span></div>
-          <div style={{background:'rgba(255,255,255,.08)',borderRadius:3,height:4}}><div style={{background:'linear-gradient(90deg,#4A9FFF,#64FFDA)',width:'67%',height:'100%',borderRadius:3}}/></div>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:C.t3,marginBottom:4}}><span>{t.progreso}</span><span>{pct}%</span></div>
+          <div style={{background:'rgba(255,255,255,.08)',borderRadius:3,height:4}}><div style={{background:'linear-gradient(90deg,#4A9FFF,#64FFDA)',width:`${pct}%`,height:'100%',borderRadius:3}}/></div>
         </div>
       </div>
       <div style={{padding:'12px 14px'}}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
-          {[[t.ingresos,'USD 63K',C.green],[t.egresos,'USD 38K',C.red],[t.ahorro,'USD 4.2K',C.acc],[t.saldo,'USD 25K',C.amber]].map(([l,v,c])=>(
+          {[[t.ingresos,fmtUSD(met.ingresos),C.green],[t.egresos,fmtUSD(met.egresos),C.red],[t.ahorro,fmtUSD(met.ahorro),C.acc],[t.saldo,fmtUSD(met.saldo),C.amber]].map(([l,v,c])=>(
             <div key={l} style={{background:C.card,borderRadius:10,padding:'10px 11px',border:`.5px solid ${C.border}`,borderLeft:`3px solid ${c}`}}>
               <div style={{fontSize:10,color:C.t3,marginBottom:2}}>{l}</div>
               <div style={{fontSize:16,fontWeight:700,color:c}}>{v}</div>
             </div>
           ))}
         </div>
+        {lastCot&&(
+          <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px',marginBottom:12}}>
+            <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>{t.ultima_cot||'Última cotización'}</div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div>
+                <div style={{color:C.t1,fontSize:13,fontWeight:700}}>{lastCot.tipo} · {lastCot.m2}m²</div>
+                <div style={{color:C.t3,fontSize:11,marginTop:2}}>{lastCot.sistema} · {new Date(lastCot.fecha).toLocaleDateString('es-AR')}</div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{color:C.acc,fontSize:16,fontWeight:800}}>{fmtUSD(lastCot.total_usd||0)}</div>
+                <button onClick={()=>onNav('cot')} style={{fontSize:11,color:C.acc,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit'}}>{t.ver_detalle||'Ver detalle →'}</button>
+              </div>
+            </div>
+          </div>
+        )}
         <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,overflow:'hidden',marginBottom:12}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 13px',borderBottom:`.5px solid ${C.border}`}}>
             <div style={{fontSize:13,fontWeight:700}}>⚠️ {t.alertas}</div>
             <button onClick={()=>onNav('agenda')} style={{background:'none',border:'none',color:C.acc,fontSize:11,fontWeight:600,cursor:'pointer'}}>{t.ver_agenda||'Ver agenda'}</button>
           </div>
-          <div style={{padding:'4px 13px 8px'}}>
-            {[[t.alerta1,'USD 850',C.red,t.urgente],[t.alerta2,t.dias3,C.amber,t.proximo]].map(([t2,d,c,b])=>(
-              <div key={t2} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'7px 0',borderBottom:`.5px solid ${C.border}`}}>
-                <div style={{width:7,height:7,borderRadius:'50%',background:c,marginTop:4,flexShrink:0}}/>
-                <div><div style={{fontSize:12,fontWeight:500}}>{t2}</div><div style={{fontSize:10,color:C.t3,marginTop:1}}>{d} <span style={{background:c,color:'#fff',fontSize:8,fontWeight:700,padding:'1px 5px',borderRadius:4,marginLeft:3}}>{b}</span></div></div>
-              </div>
-            ))}
+          <div style={{padding:'16px 13px',textAlign:'center',color:C.t3,fontSize:12}}>
+            {t.sin_alertas||'Sin alertas activas'}
           </div>
         </div>
         <div style={{marginBottom:12}}>
@@ -2956,7 +2984,7 @@ export default function SGMApp() {
   const screens={
     home:perfil==='cliente'
       ?<ClienteHomeScreen onNav={handleNav} t={t} user={user} dolar={dolar}/>
-      :<HomeScreen onNav={handleNav} t={t}/>,
+      :<HomeScreen onNav={handleNav} t={t} user={user}/>,
     modelos:<ModelosScreen onNav={handleNav} t={t}/>,
     cot:<CotizadorScreen t={t} initParams={screenParams} lang={lang}/>,
     chat:<ChatScreen t={t}/>,
