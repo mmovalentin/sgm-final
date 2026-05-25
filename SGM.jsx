@@ -200,16 +200,16 @@ const FAQS = [
 ];
 
 const SERVICIOS_PROF=[
-  {icon:'🏠',name:'Arquitectura a medida'},
-  {icon:'🎨',name:'Diseño exterior'},
-  {icon:'🛋️',name:'Diseño interior'},
-  {icon:'📋',name:'Planos municipales'},
-  {icon:'🏛️',name:'Planos colegio profesional'},
-  {icon:'🔬',name:'Estudio de suelo'},
-  {icon:'⚙️',name:'Cálculo de ingeniería'},
-  {icon:'📐',name:'Planos de montaje'},
-  {icon:'🏡',name:'Planos de casas existentes'},
-  {icon:'📁',name:'Carpetas municipales completas'},
+  {name:'Arquitectura a medida',desc:'Diseño personalizado según tu terreno y necesidades'},
+  {name:'Diseño exterior',desc:'Fachadas, materiales, colores y volumetría exterior'},
+  {name:'Diseño interior',desc:'Distribución de ambientes, terminaciones y estética'},
+  {name:'Planos municipales',desc:'Confección y gestión de planos para aprobación municipal'},
+  {name:'Presentación en Colegio Profesional',desc:'Visado y presentación de documentación técnica en el colegio'},
+  {name:'Estudio de suelo',desc:'Análisis del terreno para definir el tipo de fundación'},
+  {name:'Cálculo estructural',desc:'Ingeniería de estructura para Steel Frame o mampostería'},
+  {name:'Planos de montaje',desc:'Planos técnicos detallados para el armado en obra'},
+  {name:'Relevamiento de planos existentes',desc:'Medición y documentación de construcciones ya realizadas'},
+  {name:'Carpeta municipal completa',desc:'Toda la documentación necesaria para el expediente municipal'},
 ];
 
 // ── WHATSAPP HELPER
@@ -635,13 +635,16 @@ function ModelosScreen({onNav,t}) {
         })}
       </div>
       <div style={{padding:'0 14px 20px'}}>
-        <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:10,paddingTop:4}}>📐 Servicios profesionales</div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-          {SERVICIOS_PROF.map(s=>(
-            <div key={s.name} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px',display:'flex',flexDirection:'column',gap:6}}>
-              <div style={{fontSize:22}}>{s.icon}</div>
-              <div style={{fontSize:12,fontWeight:700,color:C.t1,lineHeight:1.3,flex:1}}>{s.name}</div>
-              <button onClick={()=>openWA(false,`Hola, necesito cotizar el servicio: ${s.name}`)} style={{width:'100%',padding:'7px',borderRadius:8,background:'#25D366',border:'none',color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>💬 Consultar</button>
+        <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:10,paddingTop:4}}>Servicios profesionales</div>
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          {SERVICIOS_PROF.map((s,i)=>(
+            <div key={s.name} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px',display:'flex',alignItems:'center',gap:12}}>
+              <div style={{width:22,height:22,borderRadius:'50%',background:C.off,border:`.5px solid ${C.border2}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:C.t3,flexShrink:0}}>{i+1}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.t1,lineHeight:1.3}}>{s.name}</div>
+                <div style={{fontSize:11,color:C.t3,marginTop:2,lineHeight:1.4}}>{s.desc}</div>
+              </div>
+              <button onClick={()=>openWA(false,`Hola, necesito cotizar el servicio: ${s.name}`)} style={{padding:'7px 12px',borderRadius:8,background:'#25D366',border:'none',color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>💬 Consultar</button>
             </div>
           ))}
         </div>
@@ -738,8 +741,10 @@ function CotizadorScreen({t,initParams,lang='es'}) {
             const sel=selServicios.includes(s.name);
             return (
               <div key={s.name} onClick={()=>toggleServicio(s.name)} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderRadius:12,border:`1.5px solid ${sel?'#7C3AED':C.border2}`,background:sel?'#F5F0FF':C.off,cursor:'pointer',transition:'all .15s'}}>
-                <span style={{fontSize:20}}>{s.icon}</span>
-                <span style={{flex:1,fontSize:13,fontWeight:600,color:sel?'#7C3AED':C.t1}}>{s.name}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:700,color:sel?'#7C3AED':C.t1,lineHeight:1.3}}>{s.name}</div>
+                  <div style={{fontSize:11,color:C.t3,marginTop:2,lineHeight:1.4}}>{s.desc}</div>
+                </div>
                 <span style={{width:20,height:20,borderRadius:'50%',border:`2px solid ${sel?'#7C3AED':C.border2}`,background:sel?'#7C3AED':'transparent',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                   {sel&&<span style={{color:'#fff',fontSize:11,fontWeight:700}}>✓</span>}
                 </span>
