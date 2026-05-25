@@ -208,12 +208,12 @@ function openWA(prefillFromCot=false) {
       if(s) {
         const c=JSON.parse(s);
         const msg=encodeURIComponent(`Hola, me interesa construir ${c.m2}m² sistema ${c.sistema} calidad ${c.cal}. Quisiera más información.`);
-        window.open(`https://wa.me/5493516000000?text=${msg}`);
+        window.open(`https://wa.me/5493512531634?text=${msg}`);
         return;
       }
     } catch(e){}
   }
-  window.open('https://wa.me/5493516000000');
+  window.open('https://wa.me/5493512531634');
 }
 
 // ── SGM LOGO
