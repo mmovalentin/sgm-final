@@ -85,8 +85,8 @@ const MODELOS = [
   { m2:90, nombre:"Modelo 90m²", desc:"3 dorm · 2 baños · living · cochera",        prices:{economico:81000,standard:94500,premium:117000} },
 ];
 
-function isCliente(p){return p==='cliente';}
-function isAdmin(p){return p==='constructor'||p==='profesional'||p==='proveedor'||p==='admin'||p==='empresa';}
+function isCliente(p){return p==='cliente'||!p;}
+function isAdmin(p){return p==='admin'||p==='empresa'||p==='superadmin';}
 
 const CAL = {
   economico:{ color:"#2E7D32", bg:"#E8F5E9", icon:"🪨", m2:900 },
@@ -434,7 +434,7 @@ function BottomNav({screen,onNav,t,perfil,userRol}) {
 }
 
 // ── HOME
-function HomeScreen({onNav,t,user,perfil}) {
+function HomeScreen({onNav,t,user,perfil,userRol}) {
   const [lastCot,setLastCot]=useState(null);
   const [met,setMet]=useState({avance:0,presup:0,proveed:0,op:0,ingresos:0,egresos:0,ahorro:0,saldo:0});
 
@@ -474,7 +474,7 @@ function HomeScreen({onNav,t,user,perfil}) {
         </div>
       </div>
       <div style={{padding:'12px 14px'}}>
-        {!isCliente(perfil)&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+        {(!isCliente(perfil)&&userRol!=='cliente')&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
           {[[t.ingresos,fmtUSD(met.ingresos),C.green],[t.egresos,fmtUSD(met.egresos),C.red],[t.ahorro,fmtUSD(met.ahorro),C.acc],[t.saldo,fmtUSD(met.saldo),C.amber]].map(([l,v,c])=>(
             <div key={l} style={{background:C.card,borderRadius:10,padding:'10px 11px',border:`.5px solid ${C.border}`,borderLeft:`3px solid ${c}`}}>
               <div style={{fontSize:10,color:C.t3,marginBottom:2}}>{l}</div>
@@ -2230,7 +2230,7 @@ const ETAPAS=[
   {id:'Perdido',color:'#C62828',icon:'❌'},
 ];
 
-function ClientesScreen() {
+function ClientesScreen({perfil,userRol}) {
   const [clientes,setClientes]=useState([]);
   const [loading,setLoading]=useState(false);
   const [etapaActiva,setEtapaActiva]=useState('Interesado');
@@ -2309,6 +2309,16 @@ function ClientesScreen() {
 
   const colActiva=ETAPAS.find(e=>e.id===etapaActiva)||ETAPAS[0];
   const itemsActivos=clientes.filter(c=>c.etapa===etapaActiva);
+
+  if(isCliente(perfil)||userRol==='cliente'){
+    return(
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',padding:32,textAlign:'center'}}>
+        <div style={{fontSize:48,marginBottom:16}}>🔒</div>
+        <div style={{color:C.t1,fontSize:16,fontWeight:700,marginBottom:8}}>Acceso restringido</div>
+        <div style={{color:C.t3,fontSize:13}}>Esta sección es solo para administradores.</div>
+      </div>
+    );
+  }
 
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%',position:'relative'}}>
@@ -2471,7 +2481,7 @@ function ClientesScreen() {
   );
 }
 
-const CLIENTE_HIDDEN=['rubros','agenda','presup','stats','clientes'];
+const CLIENTE_HIDDEN=['rubros','presup','stats','clientes'];
 function MoreMenu({onNav,onClose,t,lang,onLang,perfil,userRol}) {
   const allItems=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['👥','Clientes','clientes']];
   const isC=(perfil==='cliente'||userRol==='cliente');
@@ -2777,6 +2787,7 @@ function SGMApp() {
             const {data,error}=await supa.from('usuarios_autorizados').select('rol').eq('email',session.user.email).eq('activo',true).single();
             if(error||!data){setDenegadoReason('unauthorized');storeSplashResult('denegado');return;}
             const rol=data.rol||'cliente';
+            console.log('[SGI splash] email=',session.user.email,' rol_supabase=',data.rol,' → rol_usado=',rol,' perfil_local=',localStorage.getItem('sgm-perfil'));
             setUserRol(rol);
             if(rol==='cliente'){
               setPerfil('cliente');
@@ -2873,6 +2884,7 @@ function SGMApp() {
       const {data,error}=await supa.from('usuarios_autorizados').select('rol').eq('email',userObj.email).eq('activo',true).single();
       if(error||!data){setDenegadoReason(fromSignUp?'pending':'unauthorized');setPhase('denegado');return;}
       const rol=data.rol||'cliente';
+      console.log('[SGI auth] email=',userObj.email,' rol_supabase=',data.rol,' → rol_usado=',rol,' perfil_local=',localStorage.getItem('sgm-perfil'));
       setUserRol(rol);
       if(rol==='cliente'){
         // Always enforce client profile — never inherit a stale admin/constructor localStorage value
@@ -3108,7 +3120,7 @@ function SGMApp() {
   const screens={
     home:(perfil==='cliente'||userRol==='cliente')
       ?<ClienteHomeScreen onNav={handleNav} t={t} user={user} dolar={dolar}/>
-      :<HomeScreen onNav={handleNav} t={t} user={user} perfil={perfil}/>,
+      :<HomeScreen onNav={handleNav} t={t} user={user} perfil={perfil} userRol={userRol}/>,
     modelos:<ModelosScreen onNav={handleNav} t={t}/>,
     cot:<CotizadorScreen t={t} initParams={screenParams} lang={lang}/>,
     chat:<ChatScreen t={t}/>,
@@ -3118,7 +3130,7 @@ function SGMApp() {
     presup:<PresupScreen t={t} dolar={dolar}/>,
     agenda:<AgendaScreen t={t} perfil={perfil} userRol={userRol}/>,
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation}/>,
-    clientes:<ClientesScreen/>,
+    clientes:<ClientesScreen perfil={perfil} userRol={userRol}/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
   };
 
