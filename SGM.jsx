@@ -212,6 +212,29 @@ const SERVICIOS_PROF=[
   {name:'Carpeta municipal completa',desc:'Toda la documentación necesaria para el expediente municipal'},
 ];
 
+const SVCICONS=[
+  // 1. Arquitectura a medida - compass
+  `<circle cx="10" cy="10" r="3.5"/><line x1="10" y1="2" x2="10" y2="6.5"/><line x1="10" y1="13.5" x2="10" y2="18"/><line x1="2" y1="10" x2="6.5" y2="10"/><line x1="13.5" y1="10" x2="18" y2="10"/>`,
+  // 2. Diseño exterior - house
+  `<polyline points="2,10 10,2 18,10"/><polyline points="4,9.5 4,18 16,18 16,9.5"/><rect x="7" y="12" width="6" height="6"/>`,
+  // 3. Diseño interior - armchair
+  `<path d="M3 9h14v7H3z" rx="2"/><path d="M1 11v5h2M17 11v5h2"/><path d="M6 9V6h8v3"/>`,
+  // 4. Planos municipales - document + stamp
+  `<path d="M5 2h8l4 4v13H5V2z"/><path d="M13 2v4h4"/><line x1="8" y1="9" x2="13" y2="9"/><line x1="8" y1="12" x2="11" y2="12"/><circle cx="12.5" cy="14.5" r="2"/>`,
+  // 5. Colegio profesional - certificate
+  `<rect x="3" y="3" width="14" height="9" rx="1"/><line x1="7" y1="7" x2="13" y2="7"/><line x1="7" y1="10" x2="11" y2="10"/><path d="M10 12v3M8 17l2-1.5L12 17l-2-2"/>`,
+  // 6. Estudio de suelo - terrain layers
+  `<path d="M2 15c3-3.5 5 2 8 0s5-3.5 8 0"/><path d="M2 11c3-3.5 5 2 8 0s5-3.5 8 0"/><line x1="2" y1="18" x2="18" y2="18"/>`,
+  // 7. Cálculo estructural - I-beam
+  `<line x1="4" y1="4" x2="16" y2="4"/><line x1="4" y1="16" x2="16" y2="16"/><line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/>`,
+  // 8. Planos de montaje - wrench
+  `<path d="M14 3a4.5 4.5 0 00-4.2 6.2L4 15a1.5 1.5 0 002 2l5.8-5.8A4.5 4.5 0 0014 3z"/><line x1="13" y1="7" x2="16" y2="4"/>`,
+  // 9. Relevamiento - ruler
+  `<rect x="2" y="6" width="16" height="8" rx="1"/><line x1="5" y1="6" x2="5" y2="10"/><line x1="8" y1="6" x2="8" y2="11"/><line x1="11" y1="6" x2="11" y2="10"/><line x1="14" y1="6" x2="14" y2="11"/>`,
+  // 10. Carpeta municipal - folder
+  `<path d="M2 7h5l2-2h9v12H2V7z"/><line x1="7" y1="11" x2="14" y2="11"/><line x1="7" y1="14" x2="12" y2="14"/>`,
+];
+
 // ── WHATSAPP HELPER
 function openWA(prefillFromCot=false, customMsg=null) {
   if(customMsg!==null) {
@@ -379,7 +402,7 @@ function HomeScreen({onNav,t}) {
 // ── CLIENTE HOME
 function ClienteHomeScreen({onNav,t,user,dolar}) {
   const nombre=user?.user_metadata?.full_name?.split(' ')[0]||user?.email?.split('@')[0]||null;
-  const initials=nombre?nombre.charAt(0).toUpperCase():'?';
+  const initials=nombre?nombre.charAt(0).toUpperCase():null;
   const [lastCot,setLastCot]=useState(null);
   useEffect(()=>{const s=localStorage.getItem('sgi_last_cot');if(s)try{setLastCot(JSON.parse(s));}catch(e){};},[]);
   const calMap={economico:{label:'Económico',color:'#4CAF50'},standard:{label:'Standard',color:'#2196F3'},premium:{label:'Premium',color:'#9C27B0'}};
@@ -398,7 +421,12 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
             <div style={{color:'rgba(255,255,255,.4)',fontSize:11,marginBottom:2}}>Bienvenido a SGI</div>
             <div style={{color:'#fff',fontSize:22,fontWeight:800}}>{nombre?`Hola, ${nombre} 👋`:'¡Hola!'}</div>
           </div>
-          <div style={{width:44,height:44,borderRadius:'50%',background:'linear-gradient(135deg,#2563EB,#1E3A5F)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:800,color:'#fff',border:'2px solid rgba(74,159,255,.3)',flexShrink:0}}>{initials}</div>
+          <div style={{width:44,height:44,borderRadius:'50%',background:'linear-gradient(135deg,#2563EB,#1E3A5F)',display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid rgba(74,159,255,.3)',flexShrink:0}}>
+            {initials
+              ? <span style={{fontSize:18,fontWeight:800,color:'#fff'}}>{initials}</span>
+              : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.75)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            }
+          </div>
         </div>
         <div style={{borderRadius:20,background:'linear-gradient(135deg,#1E3A5F,#0D2A4A)',border:'1px solid rgba(74,159,255,.2)',padding:'22px 18px',position:'relative',overflow:'hidden',marginBottom:20}}>
           <div style={{position:'absolute',top:-24,right:-24,width:110,height:110,background:'rgba(74,159,255,.08)',borderRadius:'50%',pointerEvents:'none'}}/>
@@ -639,7 +667,7 @@ function ModelosScreen({onNav,t}) {
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           {SERVICIOS_PROF.map((s,i)=>(
             <div key={s.name} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px',display:'flex',alignItems:'center',gap:12}}>
-              <div style={{width:22,height:22,borderRadius:'50%',background:C.off,border:`.5px solid ${C.border2}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:C.t3,flexShrink:0}}>{i+1}</div>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}} dangerouslySetInnerHTML={{__html:SVCICONS[i]}}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:C.t1,lineHeight:1.3}}>{s.name}</div>
                 <div style={{fontSize:11,color:C.t3,marginTop:2,lineHeight:1.4}}>{s.desc}</div>
@@ -737,10 +765,11 @@ function CotizadorScreen({t,initParams,lang='es'}) {
       <div style={{padding:'14px'}}>
         <div style={{fontSize:12,color:C.t2,marginBottom:14,lineHeight:1.5}}>Seleccioná los servicios que necesitás y te cotizamos por WhatsApp.</div>
         <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:16}}>
-          {SERVICIOS_PROF.map(s=>{
+          {SERVICIOS_PROF.map((s,i)=>{
             const sel=selServicios.includes(s.name);
             return (
               <div key={s.name} onClick={()=>toggleServicio(s.name)} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderRadius:12,border:`1.5px solid ${sel?'#7C3AED':C.border2}`,background:sel?'#F5F0FF':C.off,cursor:'pointer',transition:'all .15s'}}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={sel?'#7C3AED':'#2563EB'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}} dangerouslySetInnerHTML={{__html:SVCICONS[i]}}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:700,color:sel?'#7C3AED':C.t1,lineHeight:1.3}}>{s.name}</div>
                   <div style={{fontSize:11,color:C.t3,marginTop:2,lineHeight:1.4}}>{s.desc}</div>
