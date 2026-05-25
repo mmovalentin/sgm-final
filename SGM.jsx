@@ -199,6 +199,23 @@ const FAQS = [
   {q:"¿Resiste sismos?",a:"Sí. Cumple normativas CIRSOC vigentes. Es uno de los sistemas con mayor resistencia sísmica."},
 ];
 
+// ── WHATSAPP HELPER
+function openWA(prefillFromCot=false) {
+  const perfil=localStorage.getItem('sgm-perfil');
+  if(prefillFromCot||perfil==='cliente') {
+    try {
+      const s=localStorage.getItem('sgi_last_cot');
+      if(s) {
+        const c=JSON.parse(s);
+        const msg=encodeURIComponent(`Hola, me interesa construir ${c.m2}m² sistema ${c.sistema} calidad ${c.cal}. Quisiera más información.`);
+        window.open(`https://wa.me/5493516000000?text=${msg}`);
+        return;
+      }
+    } catch(e){}
+  }
+  window.open('https://wa.me/5493516000000');
+}
+
 // ── SGM LOGO
 function SGMLogo({small=false,style={}}) {
   const cSize=small?32:72;
@@ -331,7 +348,7 @@ function HomeScreen({onNav,t}) {
             ))}
           </div>
         </div>
-        <button onClick={()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1')} style={{width:'100%',background:'#25D366',border:'none',borderRadius:10,padding:12,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+        <button onClick={()=>openWA()} style={{width:'100%',background:'#25D366',border:'none',borderRadius:10,padding:12,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
           💬 {t.wa}
         </button>
         <button onClick={()=>{localStorage.removeItem('sgm-perfil');window.location.reload();}} style={{width:'100%',background:'none',border:`.5px solid ${C.border2}`,borderRadius:10,padding:10,fontSize:12,fontWeight:600,color:C.t3,cursor:'pointer',marginTop:8}}>
@@ -390,7 +407,10 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
                 <div style={{fontSize:10,color:C.t3,marginTop:1}}>{calMap[lastCot.cal]?.label||lastCot.cal}</div>
               </div>
             </div>
-            <button onClick={()=>onNav('cot')} style={{width:'100%',padding:'9px',borderRadius:10,background:'none',border:`1px solid ${C.border2}`,color:C.acc,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Ver detalle →</button>
+            <div style={{display:'flex',gap:6,marginTop:0}}>
+              <button onClick={()=>onNav('cot')} style={{flex:1,padding:'9px',borderRadius:10,background:'none',border:`1px solid ${C.border2}`,color:C.acc,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Ver detalle →</button>
+              <button onClick={()=>{localStorage.removeItem('sgi_last_cot');setLastCot(null);}} style={{padding:'9px 14px',borderRadius:10,background:'none',border:'1px solid rgba(255,80,80,.3)',color:'#FF5252',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>✕ Eliminar</button>
+            </div>
           </div>
         </div>
       )}
@@ -435,12 +455,18 @@ function EmpresaScreen({onNav}) {
           <div style={{color:'rgba(255,255,255,.8)',fontSize:13,lineHeight:1.7}}>Empresa especializada en construcción con tecnología Steel Frame en Córdoba. Ofrecemos soluciones integrales desde el diseño hasta la llave en mano, con materiales de primera calidad y tiempos garantizados.</div>
         </div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
-          {[['🏗️','+50 obras','Realizadas'],['📐','27–120m²','Modelos'],['⭐','10 años','De experiencia'],['📍','Córdoba','Zona de operación']].map(([ic,v,l])=>(
-            <div key={l} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px',textAlign:'center'}}>
-              <div style={{fontSize:18,marginBottom:4}}>{ic}</div>
-              <div style={{color:'#fff',fontSize:13,fontWeight:700}}>{v}</div>
-              <div style={{color:C.t3,fontSize:10,marginTop:2}}>{l}</div>
-            </div>
+          {[['🏗️','+20 obras','Realizadas','modelos'],['📐','+8 modelos','Modelos','modelos'],['⭐','+5 años','De experiencia',null],['📍','Córdoba','Zona de operación','mapa']].map(([ic,v,l,nav])=>(
+            nav
+            ? <button key={l} onClick={()=>onNav(nav)} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px',textAlign:'center',cursor:'pointer',fontFamily:'inherit',width:'100%'}}>
+                <div style={{fontSize:18,marginBottom:4}}>{ic}</div>
+                <div style={{color:'#fff',fontSize:13,fontWeight:700}}>{v}</div>
+                <div style={{color:C.t3,fontSize:10,marginTop:2}}>{l}</div>
+              </button>
+            : <div key={l} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px',textAlign:'center'}}>
+                <div style={{fontSize:18,marginBottom:4}}>{ic}</div>
+                <div style={{color:'#fff',fontSize:13,fontWeight:700}}>{v}</div>
+                <div style={{color:C.t3,fontSize:10,marginTop:2}}>{l}</div>
+              </div>
           ))}
         </div>
         <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'16px',marginBottom:12}}>
@@ -455,7 +481,7 @@ function EmpresaScreen({onNav}) {
             </div>
           ))}
         </div>
-        <button onClick={()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1')} style={{width:'100%',background:'#25D366',border:'none',borderRadius:12,padding:'13px',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontFamily:'inherit'}}>
+        <button onClick={()=>openWA()} style={{width:'100%',background:'#25D366',border:'none',borderRadius:12,padding:'13px',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontFamily:'inherit'}}>
           💬 Contactar por WhatsApp
         </button>
       </div>
@@ -715,7 +741,7 @@ function CotizadorScreen({t,initParams,lang='es'}) {
               );
             })()}
             <div style={{padding:'12px 14px',display:'flex',gap:8}}>
-              <button onClick={()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1')} style={{flex:1,background:'#25D366',color:'#fff',border:'none',borderRadius:8,padding:11,fontSize:12,fontWeight:700,cursor:'pointer'}}>💬 {t.consultar}</button>
+              <button onClick={()=>openWA(true)} style={{flex:1,background:'#25D366',color:'#fff',border:'none',borderRadius:8,padding:11,fontSize:12,fontWeight:700,cursor:'pointer'}}>💬 {t.consultar}</button>
               <button onClick={()=>setResult(null)} style={{flex:1,background:'rgba(255,255,255,.1)',color:'#fff',border:'none',borderRadius:8,padding:11,fontSize:12,fontWeight:700,cursor:'pointer'}}>{t.nueva_cot}</button>
             </div>
           </div>
@@ -903,12 +929,12 @@ function MapaScreen({t,perfil,onLogin}) {
       {perfil&&(
         <div style={{flexShrink:0,padding:'12px 14px',borderTop:`.5px solid ${C.border}`,background:C.card}}>
           {(perfil==='constructor'||perfil==='profesional')&&(
-            <button onClick={()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1')} style={{width:'100%',background:'#25D366',color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            <button onClick={()=>openWA()} style={{width:'100%',background:'#25D366',color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
               🏗️ Quiero sumarme como constructor
             </button>
           )}
           {perfil==='proveedor'&&(
-            <button onClick={()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1')} style={{width:'100%',background:'#25D366',color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            <button onClick={()=>openWA()} style={{width:'100%',background:'#25D366',color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
               🏪 Quiero sumarme como proveedor
             </button>
           )}
@@ -1162,17 +1188,20 @@ function RubrosScreen({perfil,t}) {
                     <div style={{fontSize:10,color:C.t3,marginTop:1}}>{m.proveedores?.nombre||''}
                     </div>
                   </div>
-                  <div style={{textAlign:'right',flexShrink:0}}>
-                    <div style={{fontSize:11,fontWeight:700,color:r.color}}>USD {(m.precio_usd||0).toLocaleString()}</div>
-                    <div style={{fontSize:9,color:C.t3}}>${(m.precio_pesos||0).toLocaleString()}</div>
-                  </div>
+                  {isCliente
+                    ? <div style={{fontSize:9,padding:'2px 7px',borderRadius:8,background:'#E8F5E9',color:'#2E7D32',fontWeight:700,flexShrink:0}}>✓ Incluido</div>
+                    : <div style={{textAlign:'right',flexShrink:0}}>
+                        <div style={{fontSize:11,fontWeight:700,color:r.color}}>USD {(m.precio_usd||0).toLocaleString()}</div>
+                        <div style={{fontSize:9,color:C.t3}}>${(m.precio_pesos||0).toLocaleString()}</div>
+                      </div>
+                  }
                 </div>
               ))}
             </div>
           )}
-          <button onClick={abrirComparar} style={{margin:'12px 14px',width:'calc(100% - 28px)',padding:11,borderRadius:9,border:'none',background:C.navy,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+          {!isCliente&&<button onClick={abrirComparar} style={{margin:'12px 14px',width:'calc(100% - 28px)',padding:11,borderRadius:9,border:'none',background:C.navy,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
             🔍 Comparar proveedores
-          </button>
+          </button>}
         </div>
       {showComparar&&(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:200,display:'flex',alignItems:'flex-end'}} onClick={()=>setShowComparar(false)}>
@@ -1663,7 +1692,7 @@ function AyudaPanel({onClose,t}) {
           ))}
         </div>
         <div style={{padding:'10px 14px',borderTop:`.5px solid ${C.border}`}}>
-          <button onClick={()=>window.open('https://wa.me/message/HAVPMBHE4QTVH1')} style={{width:'100%',background:'#25D366',border:'none',borderRadius:10,padding:10,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer'}}>💬 {t.wa}</button>
+          <button onClick={()=>openWA()} style={{width:'100%',background:'#25D366',border:'none',borderRadius:10,padding:10,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer'}}>💬 {t.wa}</button>
         </div>
       </div>
     </div>
