@@ -452,7 +452,7 @@ function HomeScreen({onNav,t,user,perfil}) {
               <div style={{fontSize:16,fontWeight:700,color:c}}>{v}</div>
             </div>
           ))}
-        </div>
+        </div>}
         {lastCot&&(
           <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px',marginBottom:12}}>
             <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>{t.ultima_cot||'Última cotización'}</div>
