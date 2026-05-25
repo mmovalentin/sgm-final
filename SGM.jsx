@@ -60,33 +60,33 @@ const CAL = {
 // Traducciones ES/EN
 const T = {
   es:{
-    inicio:"Inicio",modelos:"Modelos",cotizar:"Cotizar",ia:"IA",mas:"Mas",
+    inicio:"Inicio",modelos:"Modelos",cotizar:"Cotizar",ia:"IA",mas:"Más",
     bienvenido:"Bienvenido a tu obra",progreso:"Progreso",
-    alertas:"Alertas",acceso:"ACCESO RAPIDO",
-    cotBtn:"Generar cotizacion IA",tipo:"TIPO",m2lbl:"M2",sistema:"SISTEMA",calidad:"CALIDAD",
+    alertas:"Alertas",acceso:"ACCESO RÁPIDO",
+    cotBtn:"Generar cotización IA",tipo:"TIPO",m2lbl:"M2",sistema:"SISTEMA",calidad:"CALIDAD",
     entrar:"Entrar",salir:"salir",
-    galeria:"Galeria",elegir:"Elegi tu modelo",
+    galeria:"Galería",elegir:"Elegí tu modelo",
     chat_title:"Asistente SGI",chat_ph:"Consulta sobre tu obra...",
     rubros_title:"Rubros de obra",materiales:"Materiales",buscar:"Buscar rubro...",
     faq_title:"Preguntas frecuentes",
-    stats_title:"Estadisticas",agenda_title:"Agenda de obra",
+    stats_title:"Estadísticas",agenda_title:"Agenda de obra",
     presup_title:"Presupuestos",presup_sub:"La IA convierte a USD",subir:"Subir PDF, foto o imagen",sel_archivo:"Subir PDF, foto o imagen",
     ayuda_title:"Centro de Ayuda",
     cotizar_modelo:"Cotizar este modelo",
-    mas_menu:"Mas opciones",traducir:"English",
+    mas_menu:"Más opciones",traducir:"English",
     wa:"Consultar por WhatsApp",cambiar_perfil:"Cambiar perfil",
     nueva_cot:"Nueva cot.",consultar:"Consultar",
-    generando:"Generando cotizacion...",analizando:"Analizando con IA...",
-    ver_agenda:"Ver agenda",urgente:"Urgente",proximo:"Proximo",
+    generando:"Generando cotización...",analizando:"Analizando con IA...",
+    ver_agenda:"Ver agenda",urgente:"Urgente",proximo:"Próximo",
     precio_est:"Precio total estimado",anticipo:"Anticipo",tiempo:"Tiempo",
-    terminaciones:"Terminaciones",analisis_ia:"Analisis IA",
+    terminaciones:"Terminaciones",analisis_ia:"Análisis IA",
     esta_semana:"Esta semana",
-    chip1:"Costo SF 100m2",chip2:"SF vs mamposteria",chip3:"Precio MO m2",chip4:"Checklist inicio",
-    error_cot:"Error al generar cotizacion",reintentar:"Reintentar",empresa:"Empresa",no_analizar:"No se pudo analizar",verif_con:"Verifica tu conexion e intenta de nuevo",
+    chip1:"Costo SF 100m2",chip2:"SF vs mampostería",chip3:"Precio MO m2",chip4:"Checklist inicio",
+    error_cot:"Error al generar cotización",reintentar:"Reintentar",empresa:"Empresa",no_analizar:"No se pudo analizar",verif_con:"Verificá tu conexión e intentá de nuevo",
     ingresos:"Ingresos",egresos:"Egresos",ahorro:"Ahorro",saldo:"Saldo",
     avance:"Avance",presup_lbl:"Presup.",proveed:"Proveed.",op:"Op.",
-    alerta1:"Pago proveedor hierros vencido",alerta2:"Cotizar hormigon H25",
-    dias3:"3 dias",
+    alerta1:"Pago proveedor hierros vencido",alerta2:"Cotizar hormigón H25",
+    dias3:"3 días",
     cot_ia:"Cotizador IA",asist_ia:"Asistente IA",presup_usd:"Presupuesto USD",
     consulta_obra:"Consulta tu obra",ver_renders:"Ver renders SF",panel_emp:"Panel empresa",
     mi_proyecto:"Mi Proyecto 2026",
@@ -94,14 +94,14 @@ const T = {
     rubros_sub:"por calidad",mat_std:"Materiales Standard recomendados",
     volver:"Volver",incluir:"Incluir",
     stats_cot:"Cotizaciones",stats_pipeline:"Pipeline",stats_m2:"m2 cotizados",stats_leads:"Leads",
-    pago_hierros:"Pago hierros",insp:"Inspeccion Municipal",pago_mo:"Pago MO semanal",
+    pago_hierros:"Pago hierros",insp:"Inspección Municipal",pago_mo:"Pago MO semanal",
     vencido:"Vencido",confirmado:"Confirmado",
     subir_pdf:"Subir PDF o imagen",analizando_pdf:"Analizando con IA...",
     no_analizar:"No se pudo analizar",cargados:"Cargados",
     prov_lbl:"proveedor",fecha_lbl:"fecha",items_lbl:"items",
-    tipo_casa:"Casa habitacion",tipo_amp:"Ampliacion",tipo_galp:"Galpon",
-    sis_sf:"Steel Frame",sis_mamp:"Mamposteria",
-    cal_eco:"Economico",cal_std:"Standard",cal_prem:"Premium",
+    tipo_casa:"Casa habitación",tipo_amp:"Ampliación",tipo_galp:"Galpón",
+    sis_sf:"Steel Frame",sis_mamp:"Mampostería",
+    cal_eco:"Económico",cal_std:"Standard",cal_prem:"Premium",
     cron_titulo:"Cronograma estimado de obra",
     etapas:[
       ["Proyecto y Representación Técnica","Planos, documentación y gestión municipal"],
@@ -172,31 +172,31 @@ const T = {
 };
 
 const RUBROS = [
-  { name:"Fundaciones",icon:"🏗",color:"#0D47A1",pct:85,mats:{economico:["Hormigon H21","Malla Q188","Cemento Portland","Arena gruesa","Hierro 10mm","Ladrillos comunes","Cal hidraulica","Membrana imp.","Piedra partida","Cano PVC 110"],standard:["Hormigon H25","Malla Q257","Cemento ARS 40kg","Arena clasificada","Hierro 12mm","Ladrillo ceramico","Hidrofugo","Membrana 4mm","Piedra basaltica","Cano PVC 160"],premium:["Hormigon H30","Malla Q335 doble","Cemento especial","Arena lavada","Hierro 16mm","Ladrillo portante","Drenaje perimetral","Membrana 6mm","Piedra sel.","Caneria PP doble"]}},
+  { name:"Fundaciones",icon:"🏗",color:"#0D47A1",pct:85,mats:{economico:["Hormigon H21","Malla Q188","Cemento Portland","Arena gruesa","Hierro 10mm","Ladrillos comunes","Cal hidráulica","Membrana imp.","Piedra partida","Cano PVC 110"],standard:["Hormigon H25","Malla Q257","Cemento ARS 40kg","Arena clasificada","Hierro 12mm","Ladrillo ceramico","Hidrofugo","Membrana 4mm","Piedra basaltica","Cano PVC 160"],premium:["Hormigon H30","Malla Q335 doble","Cemento especial","Arena lavada","Hierro 16mm","Ladrillo portante","Drenaje perimetral","Membrana 6mm","Piedra sel.","Caneria PP doble"]}},
   { name:"Steel Frame",icon:"🔩",color:"#1B5E20",pct:60,mats:{economico:["Perfil C 70x43","Perfil U 70x43","Tornillos 4x16","Cinta hidrofuga","Barrera vapor","OSB 11mm","Esquineros","Anclajes platea","Planchuelas 50x4","Tirantes"],standard:["Perfil C 100 galv.","Perfil U 100 galv.","Tornillos 6x25","Cinta reforzada","Barrera 200mic","OSB 18mm","Esquineros 2mm","Anclajes quimicos","Planchuelas 60x5","Tensores"],premium:["Perfil C 100x50","Perfil U 100x50","Tornillos clase 3","Cinta butilica","Membrana EPDM","OSB 18+aislante","Esquineros 3mm","Anclajes cert.","Planchuelas 80x6","Sistema calc."]}},
-  { name:"Electrica",icon:"⚡",color:"#E65100",pct:90,mats:{economico:["Cable 2.5mm","Cable 4mm","Cano corrugado","Tablero 12c","Diferencial 25A","Termica 10A","Caja 4x2","Llave simple","Tomacorriente","Cinta aisladora"],standard:["Cable 2.5mm LH","Cable 4mm LH","Cano rigido","Tablero 18c","Diferencial 40A","Termomagnetica","Caja 4x4","Cambre 6001","Toma USB","Sensor"],premium:["Cable 4mm LH","Cable 6mm LH","Cano metalico","Tablero inteligente","Diferencial 63A","Automatico dif.","Sistema domotico","Carga inalambrica","Solar","Central"]}},
+  { name:"Eléctrica",icon:"⚡",color:"#E65100",pct:90,mats:{economico:["Cable 2.5mm","Cable 4mm","Cano corrugado","Tablero 12c","Diferencial 25A","Termica 10A","Caja 4x2","Llave simple","Tomacorriente","Cinta aisladora"],standard:["Cable 2.5mm LH","Cable 4mm LH","Cano rigido","Tablero 18c","Diferencial 40A","Termomagnetica","Caja 4x4","Cambre 6001","Toma USB","Sensor"],premium:["Cable 4mm LH","Cable 6mm LH","Cano metalico","Tablero inteligente","Diferencial 63A","Automático dif.","Sistema domótico","Carga inalámbrica","Solar","Central"]}},
   { name:"Sanitaria",icon:"🚿",color:"#0277BD",pct:75,mats:{economico:["Cano PVC 110","Cano PP 25","Llave paso","Termotanque 60L","Trampa P","Codo 90","Pegamento PVC","Teflon","Rejilla","Flexible"],standard:["Cano PVC 160","Cano PP multicapa","Llave esfera","Termotanque 80L","Trampa doble","Ramal 45","Pegamento prem.","Kit selladores","Rejilla embutir","Griferia media"],premium:["Cano CPVC","Cano PERT-Al","Llave termostatica","Calefon 12L","Hidrojet","Prensolado","Kit profesional","Selladores cert.","Rejilla oculta","Griferia diseno"]}},
   { name:"Drywall",icon:"🧱",color:"#4A148C",pct:40,mats:{economico:["Placa 12.5mm","Perfil PAR 70","Perfil PGC 70","Tornillos","Cinta papel","Masilla secado","Lana vidrio 50mm","Perfil omega","Cantoneras","Sellador"],standard:["Placa RH 15mm","PAR 70 ref.","PGC 70 galv.","Tornillos TR","Cinta malla","Masilla elast.","Lana roca 70mm","Omega galv.","Cantoneras metal.","Masilla liso"],premium:["Placa RH+RF 15mm","PAR 100 galv.","PGC 100 galv.","Tornillos cert.","Juntas flotantes","Masilla polim.","Lana roca 100mm","Perfil acabado","Esq. invisible","Term. 0"]}},
   { name:"Cubierta",icon:"🏚",color:"#283593",pct:65,mats:{economico:["Chapa galvanizada","Membrana 3kg","Tornillos broca","Cumbrera chapa","Canaleta PVC","Bajada pluvial","Aislante 30mm","Tirafondos","Sargenta","Sellador"],standard:["Chapa prepintada","Membrana APP 4mm","Tornillos washer","Cumbrera zinc","Canaleta aluminio","Bajada aluminio","Aislante 50mm","Perfil soporte","Zingueria","Sellador PU"],premium:["Chapa prem.","Membrana PVC","Tornillos inox","Cumbrera anodizada","Canaleta inox","Bajada inox","Aislante PIR","Subestructura","Zingueria inox","Drenaje punto"]}},
   { name:"Pintura",icon:"🎨",color:"#1565C0",pct:25,mats:{economico:["Latex interior 20L","Fijador 4L","Masilla plastica","Lija 80/120","Rodillo lana","Rodillo espuma","Pincel 2 pulg","Cinta","Nylon","Bandeja"],standard:["Latex premium 20L","Sellador prof.","Masilla fina","Lija 80/120/220","Rodillo microfibra","Brochas prof.","Cinta 3M","Nylon antiadh.","Malla fibra","Tarquini"],premium:["Microcement","Sellador epoxi","Masilla PU","Lija orbital","Velour","Brochas japonesas","Cinta multiuso","Film prot.","Textura dec.","Revest. petreo"]}},
   { name:"Pisos",icon:"🪵",color:"#5D4037",pct:35,mats:{economico:["Ceramico 45x45","Zocalo 8x60","Adhesivo gris","Pastina gris","Cruzetas 3mm","Nivel","Perfil trans.","Nivelador","Membrana antivibr.","Autonivelante"],standard:["Porcelanato 60x60","Zocalo obra","Adhesivo flex.","Pastina epoxi","Cruzetas 2mm","Flotante AC5","Zocalo MDF","Fieltro","Banda perim.","Lamina PE"],premium:["Porcelanato GF","Zocalo integrado","Adhesivo 2c","Junta invisible","Crucetas niv.","Parquet ing.","Zocalo madera","Subpiso tec.","Amortiguador","Autonivelante"]}},
-  { name:"Carpinteria",icon:"🚪",color:"#37474F",pct:30,mats:{economico:["Marco chapa","Puerta HDF","Bisagra acero","Cerradura","Manija rect.","Umbral aluminio","Burlete PVC","Taco madera","Tornillos","Masilla"],standard:["Marco madera pino","Puerta MDF","Bisagra regul.","Cerradura seg.","Manija media","Umbral inox","Burlete silicona","Calce duro","Espuma exp.","Sellador"],premium:["Marco aluminio","Puerta solida","Bisagra oculta","Cerradura magn.","Manija diseno","Umbral inox pulido","Burlete magn.","Antipalanca","Espuma tec.","Sellador PU"]}},
+  { name:"Carpintería",icon:"🚪",color:"#37474F",pct:30,mats:{economico:["Marco chapa","Puerta HDF","Bisagra acero","Cerradura","Manija rect.","Umbral aluminio","Burlete PVC","Taco madera","Tornillos","Masilla"],standard:["Marco madera pino","Puerta MDF","Bisagra regul.","Cerradura seg.","Manija media","Umbral inox","Burlete silicona","Calce duro","Espuma exp.","Sellador"],premium:["Marco aluminio","Puerta sólida","Bisagra oculta","Cerradura magn.","Manija diseño","Umbral inox pulido","Burlete magn.","Antipalanca","Espuma tec.","Sellador PU"]}},
   { name:"Sanitarios",icon:"🛁",color:"#006064",pct:50,mats:{economico:["Inodoro FV","Bidet FV","Lavatorio Ferrum","Griferia Roca","Ducha basica","Espejo 60x80","Acc. PVC","Sellador","Valvula","Porta rollo"],standard:["Inodoro Johnson","Bidet Johnson","Lavatorio Zanett","Griferia Ferrum","Ducha presion","Espejo 80x100","Acc. inox","Sellador san.","Termostatica","Set acc."],premium:["Inodoro rimless","Bidet electronico","Lavatorio sobrep.","Griferia German","Ducha lluvia","Espejo led","Acc. black","Sellador epoxi","Set diseno","Porta empotrado"]}},
   { name:"Gas",icon:"🔥",color:"#BF360C",pct:80,mats:{economico:["Cano cobre 15","Cano cobre 22","Soldadura","Flux","Llave paso gas","Regulador","Gabinete","Detector gas","Valvula seg.","Fitting"],standard:["Cano multicapa 16","Cano multicapa 25","Prensolado","Accesorios","Llave esfera","Doble etapa","Gab. ventilado","Detector alarma","Kit seg.","Racores"],premium:["Cano inox","Cano inox 32","Sistema cert.","Fitting inox","Llave empotrable","Central regul.","Gas domotico","Detector wifi","Kit ENARGAS","Central"]}},
-  { name:"Iluminacion",icon:"💡",color:"#F9A825",pct:15,mats:{economico:["Spot GU10","LED 9W","Cinta LED","Interruptor","Dimmer","Caja octog.","Gripper PVC","Cano","Bornera","Enchufe"],standard:["Downlight 10W","LED filamento","Cinta 24V","Cambre","Dimmer LED","Caja rect.","Gripper metal","Cano rigido","Wago","Schuko"],premium:["Panel LED","Lampara diseno","RGBW","Sistema DALI","Atenuador int.","Caja profunda","Conector herm.","Preinst.","Central dom.","Escenas"]}},
-  { name:"Clima",icon:"❄",color:"#00695C",pct:10,mats:{economico:["Split 3000","Cobre 1/4","Cobre 3/8","Cable 4x2.5","Soporte","Flexible","Foam","Cinta","Drenaje","Taco"],standard:["Split inverter","Cobre clase K","Cable 4x4 LH","Soporte ref.","Caneria rigida","Armaflex","Condensacion","Breaker","Filtro","Vacuometro"],premium:["Multisplit 7500","Preisolada","Cable 6mm","Antivibr.","Copper preis.","Alta densidad","Centralizado","Termostato wifi","HEPA","Central"]}},
-  { name:"Muebles",icon:"🛋",color:"#6A1B9A",pct:20,mats:{economico:["Bajo 60cm","Alto 60cm","Pileta 60x40","Canilla basica","Bisagra clip","Corredor basico","Manija aluminio","Zocalo inf.","Postformada","ABS"],standard:["Bajo soft close","Alto soft close","Pileta 70x40","Monocomando","Bisagra amort.","Soft close","Manija barra","Zocalo aluminio","Granito sint.","Aluminio"],premium:["Lacado","Lacado UV","Fraternite","Cuello ganso","Blum","Blum Tandem","Manija diseno","Zocalo ilum.","Silestone","Acero inox"]}},
+  { name:"Iluminación",icon:"💡",color:"#F9A825",pct:15,mats:{economico:["Spot GU10","LED 9W","Cinta LED","Interruptor","Dimmer","Caja octog.","Gripper PVC","Cano","Bornera","Enchufe"],standard:["Downlight 10W","LED filamento","Cinta 24V","Cambre","Dimmer LED","Caja rect.","Gripper metal","Caño rígido","Wago","Schuko"],premium:["Panel LED","Lámpara diseño","RGBW","Sistema DALI","Atenuador int.","Caja profunda","Conector herm.","Preinst.","Central dom.","Escenas"]}},
+  { name:"Clima",icon:"❄",color:"#00695C",pct:10,mats:{economico:["Split 3000","Cobre 1/4","Cobre 3/8","Cable 4x2.5","Soporte","Flexible","Foam","Cinta","Drenaje","Taco"],standard:["Split inverter","Cobre clase K","Cable 4x4 LH","Soporte ref.","Cañería rígida","Armaflex","Condensación","Breaker","Filtro","Vacuómetro"],premium:["Multisplit 7500","Preisolada","Cable 6mm","Antivibr.","Copper preis.","Alta densidad","Centralizado","Termostato wifi","HEPA","Central"]}},
+  { name:"Muebles",icon:"🛋",color:"#6A1B9A",pct:20,mats:{economico:["Bajo 60cm","Alto 60cm","Pileta 60x40","Canilla básica","Bisagra clip","Corredor básico","Manija aluminio","Zocalo inf.","Postformada","ABS"],standard:["Bajo soft close","Alto soft close","Pileta 70x40","Monocomando","Bisagra amort.","Soft close","Manija barra","Zocalo aluminio","Granito sint.","Aluminio"],premium:["Lacado","Lacado UV","Fraternite","Cuello ganso","Blum","Blum Tandem","Manija diseño","Zocalo ilum.","Silestone","Acero inox"]}},
   { name:"Exterior",icon:"🌿",color:"#388E3C",pct:50,mats:{economico:["Tarquini","Fijador ext.","Lija 40","Rodillo ext.","Membrana 3kg","Zocalo hormigon","Malla fibra","Revoque","Sellador","Caucho"],standard:["Revoque hidrofugo","Mortero","Placa cementicia","Malla ref.","Revest. ceramico","Zocalo porcel.","Arranque","Esquina","Membrana liq.","Elastomerica"],premium:["Fachada ventilada","EIFS","Revest. petreo","Piedra recons.","Mosaico vitreo","Madera ext.","Perfileria Al.","Zocalo granito","PVC ref.","Nanotech"]}},
-  { name:"Final",icon:"✅",color:"#2E7D32",pct:5,mats:{economico:["Limpieza gruesa","Sellador piso","Cera","Kit limpieza","Bolsas","Contenedor 3m3","Film","Cinta","Guantes","Jabon"],standard:["Limpieza esp.","Sellador prof.","Cera resist.","Kit prof.","Aspiradora","Contenedor 5m3","Film antiray.","Etiquetado","EPP","Detergente"],premium:["Empresa limpieza","Antipolvo","Nanoceramic","Kit importado","HEPA","Gestion res.","Prot. prem.","Inventario","EPP cert.","Producto cert."]}},
+  { name:"Final",icon:"✅",color:"#2E7D32",pct:5,mats:{economico:["Limpieza gruesa","Sellador piso","Cera","Kit limpieza","Bolsas","Contenedor 3m3","Film","Cinta","Guantes","Jabon"],standard:["Limpieza esp.","Sellador prof.","Cera resist.","Kit prof.","Aspiradora","Contenedor 5m3","Film antiray.","Etiquetado","EPP","Detergente"],premium:["Empresa limpieza","Antipolvo","Nanoceramic","Kit importado","HEPA","Gestión res.","Prot. prem.","Inventario","EPP cert.","Producto cert."]}},
 ];
 
 const FAQS = [
-  {q:"Que es Steel Frame?",a:"Sistema constructivo industrializado con perfiles de acero galvanizado. Liviano, rapido y sismoresistente."},
-  {q:"Cuanto cuesta construir en SF?",a:"USD 900/m2 economico, USD 1.050/m2 standard, USD 1.300/m2 premium, llave en mano en Cordoba."},
-  {q:"Cuanto tiempo tarda una obra?",a:"Una casa de 100m2 se construye en 6 a 10 meses. El esqueleto en 2-3 semanas."},
-  {q:"Como funciona el anticipo?",a:"Cubre el 100% de materiales. La mano de obra se paga semanalmente contra avance certificado."},
-  {q:"Se puede ampliar?",a:"Si. El SF es modular, se amplia sin demoler anclando nuevos modulos."},
-  {q:"Resiste sismos?",a:"Si. Cumple normativas CIRSOC vigentes. Es uno de los sistemas con mayor resistencia sismica."},
+  {q:"¿Qué es Steel Frame?",a:"Sistema constructivo industrializado con perfiles de acero galvanizado. Liviano, rápido y sismorresistente."},
+  {q:"¿Cuánto cuesta construir en SF?",a:"USD 900/m2 económico, USD 1.050/m2 standard, USD 1.300/m2 premium, llave en mano en Córdoba."},
+  {q:"¿Cuánto tiempo tarda una obra?",a:"Una casa de 100m2 se construye en 6 a 10 meses. El esqueleto en 2-3 semanas."},
+  {q:"¿Cómo funciona el anticipo?",a:"Cubre el 100% de materiales. La mano de obra se paga semanalmente contra avance certificado."},
+  {q:"¿Se puede ampliar?",a:"Sí. El SF es modular, se amplía sin demoler anclando nuevos módulos."},
+  {q:"¿Resiste sismos?",a:"Sí. Cumple normativas CIRSOC vigentes. Es uno de los sistemas con mayor resistencia sísmica."},
 ];
 
 // ── SGM LOGO
@@ -220,7 +220,7 @@ function SGMLogo({small=false,style={}}) {
 // ── TOPBAR
 function Topbar({screen,perfil,dolar,onAyuda,onLogin,loggedIn,t,onSound,soundOn,user,onSignOut}) {
   const labels={cliente:'🏠 Cliente',constructor:'🏗️ Constructor',proveedor:'🏪 Proveedor'};
-  const scrNames={home:'Sistema de Gestion',modelos:t.galeria,cot:'Cotizador IA',chat:t.chat_title,mapa:'Mapa SGI',rubros:t.rubros_title,stats:t.stats_title,faq:t.faq_title,agenda:t.agenda_title,presup:t.presup_title};
+  const scrNames={home:'Sistema de Gestión',modelos:t.galeria,cot:'Cotizador IA',chat:t.chat_title,mapa:'Mapa SGI',rubros:t.rubros_title,stats:t.stats_title,faq:t.faq_title,agenda:t.agenda_title,presup:t.presup_title};
   const displayName=user?.user_metadata?.full_name||user?.email?.split('@')[0]||'';
   return (
     <div style={{background:C.navy,padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
@@ -541,7 +541,7 @@ function CotizadorScreen({t,initParams,lang='es'}) {
             </div>
             {result.analisis&&(
               <div style={{padding:'12px 14px',borderTop:'1px solid rgba(255,255,255,.08)'}}>
-                <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',marginBottom:4}}>{t.analisis_ia||'Analisis IA'}</div>
+                <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',marginBottom:4}}>{t.analisis_ia||'Análisis IA'}</div>
                 <div style={{color:'rgba(255,255,255,.8)',fontSize:12,lineHeight:1.6}}>{result.analisis}</div>
               </div>
             )}
@@ -812,7 +812,7 @@ function renderMd(text){
 }
 
 function ChatScreen({t}) {
-  const [msgs,setMsgs]=useState([{role:'ai',text:'Hola! Soy el asistente de SGI. Preguntame sobre construccion, costos o Steel Frame en Cordoba.'}]);
+  const [msgs,setMsgs]=useState([{role:'ai',text:'¡Hola! Soy el asistente de SGI. Preguntáme sobre construcción, costos o Steel Frame en Córdoba.'}]);
   const [input,setInput]=useState('');
   const [loading,setLoading]=useState(false);
   const [tab,setTab]=useState('chat');
@@ -856,7 +856,7 @@ function ChatScreen({t}) {
       const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,system:'Sos el asistente IA de SGI, especializado en Steel Frame y construccion en Cordoba. Responde en espanol, conciso y practico.',messages:[{role:'user',content:q}]})});
       const d=await r.json();
       setMsgs(m=>[...m,{role:'ai',text:d.content?.[0]?.text||'Sin respuesta.',question:q}]);
-    }catch(e){setMsgs(m=>[...m,{role:'ai',text:'Error de conexion.'}]);}
+    }catch(e){setMsgs(m=>[...m,{role:'ai',text:'Error de conexión.'}]);}
     setLoading(false);
   }
 
@@ -867,7 +867,7 @@ function ChatScreen({t}) {
       <div style={{background:C.navy,padding:'12px 14px',flexShrink:0}}>
         <div style={{color:'rgba(255,255,255,.4)',fontSize:9,textTransform:'uppercase',letterSpacing:1}}>IA</div>
         <div style={{color:'#fff',fontSize:15,fontWeight:700,marginTop:1}}>{t.chat_title}</div>
-        <div style={{color:'rgba(255,255,255,.3)',fontSize:10}}>Steel Frame · Cordoba</div>
+        <div style={{color:'rgba(255,255,255,.3)',fontSize:10}}>Steel Frame · Córdoba</div>
       </div>
 
       {/* Tab switcher */}
@@ -1510,7 +1510,7 @@ function Onboarding({onSelect}) {
 // ── AYUDA
 function AyudaPanel({onClose,t}) {
   const [open,setOpen]=useState(null);
-  const faqs=[{q:'Como funciona el Cotizador IA?',a:'Completas tipo, m2, sistema y calidad. La IA genera presupuesto en USD con desglose.'},{q:'Los precios estan actualizados?',a:'Los precios base se actualizan mensualmente. El dolar se actualiza en tiempo real.'},{q:'Puedo descargar el presupuesto?',a:'Si. Encontras presupuesto, contrato modelo y cronograma.'},{q:'Mis datos son confidenciales?',a:'Si. El login solo guarda tus cotizaciones de forma segura.'}];
+  const faqs=[{q:'¿Cómo funciona el Cotizador IA?',a:'Completás tipo, m2, sistema y calidad. La IA genera presupuesto en USD con desglose.'},{q:'¿Los precios están actualizados?',a:'Los precios base se actualizan mensualmente. El dólar se actualiza en tiempo real.'},{q:'¿Puedo descargar el presupuesto?',a:'Sí. Encontrás presupuesto, contrato modelo y cronograma.'},{q:'¿Mis datos son confidenciales?',a:'Sí. El login solo guarda tus cotizaciones de forma segura.'}];
   return (
     <div style={{position:'absolute',inset:0,zIndex:500,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
       <div onClick={onClose} style={{position:'absolute',inset:0,background:'rgba(10,22,40,.7)',backdropFilter:'blur(4px)'}}/>
