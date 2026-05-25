@@ -407,11 +407,11 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
   useEffect(()=>{const s=localStorage.getItem('sgi_last_cot');if(s)try{setLastCot(JSON.parse(s));}catch(e){};},[]);
   const calMap={economico:{label:'Económico',color:'#4CAF50'},standard:{label:'Standard',color:'#2196F3'},premium:{label:'Premium',color:'#9C27B0'}};
   const explora=[
-    {icon:'🏗️',title:'Sistemas constructivos',desc:'Steel Frame, Mampostería y más',nav:'rubros'},
-    {icon:'🏘️',title:'Modelos disponibles',desc:'Ver renders y precios',nav:'modelos'},
-    {icon:'🤖',title:'Consultá con IA',desc:'Preguntas sobre tu obra',nav:'chat'},
-    {icon:'📍',title:'Empresas de confianza',desc:'Proveedores verificados',nav:'mapa'},
-    {icon:'🏢',title:'SGI Construcción',desc:'Tu empresa constructora',nav:'empresa'},
+    {svg:`<rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/>`,title:'Sistemas constructivos',desc:'Steel Frame, Mampostería y más',nav:'rubros'},
+    {svg:`<rect x="2" y="3" width="16" height="13" rx="2"/><circle cx="7" cy="8" r="1.5"/><path d="M2 13l4-4 3 3 3-3 6 5"/>`,title:'Modelos disponibles',desc:'Ver renders y precios',nav:'modelos'},
+    {svg:`<path d="M3 4h14a1 1 0 011 1v8a1 1 0 01-1 1H7l-4 3V5a1 1 0 011-1z"/>`,title:'Consultá con IA',desc:'Preguntas sobre tu obra',nav:'chat'},
+    {svg:`<path d="M10 2a6 6 0 00-6 6c0 4 6 10 6 10s6-6 6-10a6 6 0 00-6-6z"/><path d="M7.5 8l2 2 3-3"/>`,title:'Empresas de confianza',desc:'Proveedores verificados',nav:'mapa'},
+    {svg:`<rect x="3" y="3" width="14" height="15" rx="1"/><line x1="3" y1="8" x2="17" y2="8"/><line x1="7" y1="3" x2="7" y2="8"/><line x1="13" y1="3" x2="13" y2="8"/><rect x="7" y="12" width="6" height="6"/>`,title:'SGI Construcción',desc:'Tu empresa constructora',nav:'empresa'},
   ];
   return (
     <div style={{background:'#07111F',minHeight:'100%',paddingBottom:8}}>
@@ -434,8 +434,14 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
           <div style={{color:'rgba(255,255,255,.45)',fontSize:11,marginBottom:4}}>Empezá tu proyecto</div>
           <div style={{color:'#fff',fontSize:20,fontWeight:800,marginBottom:3,lineHeight:1.2}}>¿Qué querés construir?</div>
           <div style={{color:'rgba(255,255,255,.35)',fontSize:12,marginBottom:18}}>Presupuesto en USD en segundos</div>
-          <button onClick={()=>onNav('cot')} style={{width:'100%',padding:'13px',borderRadius:12,background:'#4A9FFF',border:'none',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:8,fontFamily:'inherit'}}>✨ Cotizar mi obra</button>
-          <button onClick={()=>onNav('modelos')} style={{width:'100%',padding:'11px',borderRadius:12,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',color:'rgba(255,255,255,.65)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>🏘️ Ver modelos</button>
+          <button onClick={()=>onNav('cot')} style={{width:'100%',padding:'13px',borderRadius:12,background:'#4A9FFF',border:'none',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:8,fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:`<rect x="4" y="2" width="12" height="16" rx="2"/><line x1="7" y1="6" x2="13" y2="6"/><line x1="7" y1="10" x2="9" y2="10"/><line x1="11" y1="10" x2="13" y2="10"/><line x1="7" y1="14" x2="9" y2="14"/><line x1="11" y1="14" x2="13" y2="14"/>`}}/>
+            Cotizar mi obra
+          </button>
+          <button onClick={()=>onNav('modelos')} style={{width:'100%',padding:'11px',borderRadius:12,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',color:'rgba(255,255,255,.65)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,.65)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:`<path d="M2 10L10 2l8 8"/><path d="M4 9.5V18h4v-5h4v5h4V9.5"/>`}}/>
+            Ver modelos
+          </button>
         </div>
       </div>
       {lastCot&&(
@@ -464,7 +470,9 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           {explora.map((e,i)=>(
             <button key={i} onClick={()=>onNav(e.nav)} style={{display:'flex',alignItems:'center',gap:12,padding:'14px',borderRadius:14,background:C.card,border:`.5px solid ${C.border}`,cursor:'pointer',textAlign:'left',width:'100%',fontFamily:'inherit'}}>
-              <div style={{width:44,height:44,borderRadius:12,background:C.navy,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>{e.icon}</div>
+              <div style={{width:44,height:44,borderRadius:12,background:C.navy,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:e.svg}}/>
+              </div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{color:'#fff',fontSize:13,fontWeight:700}}>{e.title}</div>
                 <div style={{color:C.t3,fontSize:11,marginTop:2}}>{e.desc}</div>
