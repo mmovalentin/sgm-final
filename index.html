@@ -56,6 +56,8 @@ const C = {
   onNavy:'var(--c-on-navy)',navDim:'var(--c-nav-dim)',
   navBorder:'var(--c-nav-border)',
   dolorBg:'var(--c-dolar-bg)',dolorText:'var(--c-dolar-text)',
+  chipBg:'var(--c-chip-bg)',chipText:'var(--c-chip-text)',
+  dropBg:'var(--c-drop-bg)',dropText:'var(--c-drop-text)',dropBorder:'var(--c-drop-border)',
 };
 
 // Renders: fotos reales embebidas
@@ -135,6 +137,22 @@ const T = {
     sis_sf:"Steel Frame",sis_mamp:"Mampostería",
     cal_eco:"Económico",cal_std:"Standard",cal_prem:"Premium",
     cron_titulo:"Cronograma estimado de obra",
+    bienvenido_sgi:"Bienvenido a SGI",hola_prefix:"Hola,",hola:"¡Hola!",
+    empeza_proyecto:"Empezá tu proyecto",
+    que_queres:"¿Qué querés construir?",presup_segundos:"Presupuesto en USD en segundos",
+    cotizar_obra:"Cotizar mi obra",ver_modelos_btn:"Ver modelos",
+    ultima_cot:"Tu última cotización",ver_detalle:"Ver detalle →",eliminar:"✕ Eliminar",
+    explora_lbl:"Explorá",
+    cambiar_cuenta:"Cambiar cuenta",agregar_cuenta:"Agregar cuenta",cerrar_sesion:"Cerrar sesión",
+    switch_light:"Cambiar a tema claro",switch_dark:"Cambiar a tema oscuro",
+    mapa_lbl:"Mapa",
+    explora_items:[
+      ['Sistemas constructivos','Steel Frame, Mampostería y más','rubros'],
+      ['Modelos disponibles','Ver renders y precios','modelos'],
+      ['Consultá con IA','Preguntas sobre tu obra','chat'],
+      ['Empresas de confianza','Proveedores verificados','mapa'],
+      ['SGI Construcción','Tu empresa constructora','empresa'],
+    ],
     etapas:[
       ["Proyecto y Representación Técnica","Planos, documentación y gestión municipal"],
       ["Fundaciones con Ingeniería","Replanteo, excavación y hormigón de fundaciones"],
@@ -190,6 +208,22 @@ const T = {
     sis_sf:"Steel Frame",sis_mamp:"Masonry",
     cal_eco:"Economy",cal_std:"Standard",cal_prem:"Premium",
     cron_titulo:"Estimated construction schedule",
+    bienvenido_sgi:"Welcome to SGI",hola_prefix:"Hi,",hola:"Hello!",
+    empeza_proyecto:"Start your project",
+    que_queres:"What do you want to build?",presup_segundos:"Budget in USD in seconds",
+    cotizar_obra:"Quote my project",ver_modelos_btn:"View models",
+    ultima_cot:"Your last quote",ver_detalle:"View details →",eliminar:"✕ Remove",
+    explora_lbl:"Explore",
+    cambiar_cuenta:"Change account",agregar_cuenta:"Add account",cerrar_sesion:"Sign out",
+    switch_light:"Switch to light theme",switch_dark:"Switch to dark theme",
+    mapa_lbl:"Map",
+    explora_items:[
+      ['Construction systems','Steel Frame, Masonry and more','rubros'],
+      ['Available models','View renders and prices','modelos'],
+      ['Chat with AI','Questions about your project','chat'],
+      ['Trusted companies','Verified contractors','mapa'],
+      ['SGI Construction','Your construction company','empresa'],
+    ],
     etapas:[
       ["Project and Technical Management","Plans, documentation and municipal permitting"],
       ["Foundations with Engineering","Layout, excavation and foundation concrete work"],
@@ -331,38 +365,38 @@ function Topbar({screen,perfil,dolar,onAyuda,loggedIn,t,user,onSignOut,onGoogleS
             }
           </div>
           {showMenu&&(
-            <div style={{position:'absolute',top:36,right:0,background:'#fff',borderRadius:12,border:'1px solid #E2E8F0',boxShadow:'0 8px 32px rgba(0,0,0,.15)',minWidth:200,zIndex:600,overflow:'hidden'}}>
+            <div style={{position:'absolute',top:36,right:0,background:C.dropBg,borderRadius:12,border:`1px solid ${C.dropBorder}`,boxShadow:'0 8px 32px rgba(0,0,0,.25)',minWidth:200,zIndex:600,overflow:'hidden'}}>
               {user&&(
-                <div style={{padding:'12px 14px',borderBottom:'1px solid #F1F5F9'}}>
-                  <div style={{fontSize:13,fontWeight:700,color:'#0F172A',marginBottom:2}}>{displayName||'Usuario'}</div>
-                  <div style={{fontSize:11,color:'#64748B'}}>{user.email}</div>
+                <div style={{padding:'12px 14px',borderBottom:`1px solid ${C.dropBorder}`}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.dropText,marginBottom:2}}>{displayName||'Usuario'}</div>
+                  <div style={{fontSize:11,color:C.chipText}}>{user.email}</div>
                 </div>
               )}
-              <button onClick={()=>{onSignOut();setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#0F172A',cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
+              <button onClick={()=>{onSignOut();setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:C.dropText,cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M13 5l5 5-5 5M18 10H7"/><path d="M7 3H3v14h4"/></svg>
-                Cambiar cuenta
+                {t.cambiar_cuenta}
               </button>
-              {onGoogleSignIn&&<button onClick={()=>{onGoogleSignIn();setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#0F172A',cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
+              {onGoogleSignIn&&<button onClick={()=>{onGoogleSignIn();setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:C.dropText,cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 3"/></svg>
-                Agregar cuenta
+                {t.agregar_cuenta}
               </button>}
               {onLang&&(
-                <button onClick={()=>{onLang(lang==='es'?'en':'es');setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#0F172A',cursor:'pointer',display:'flex',alignItems:'center',gap:8,borderTop:'1px solid #F1F5F9'}}>
+                <button onClick={()=>{onLang(lang==='es'?'en':'es');setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:C.dropText,cursor:'pointer',display:'flex',alignItems:'center',gap:8,borderTop:`1px solid ${C.dropBorder}`}}>
                   <span style={{fontSize:14}}>🌐</span>
-                  {lang==='es'?'Switch to English':'Cambiar a Español'}
+                  {t.traducir}
                 </button>
               )}
               {onThemeChange&&(
-                <button onClick={()=>{onThemeChange(theme==='dark'?'light':'dark');setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#0F172A',cursor:'pointer',display:'flex',alignItems:'center',gap:8,borderTop:'1px solid #F1F5F9'}}>
+                <button onClick={()=>{onThemeChange(theme==='dark'?'light':'dark');setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:C.dropText,cursor:'pointer',display:'flex',alignItems:'center',gap:8,borderTop:`1px solid ${C.dropBorder}`}}>
                   <span style={{fontSize:14}}>{theme==='dark'?'☀️':'🌙'}</span>
-                  {theme==='dark'?'Cambiar a tema claro':'Cambiar a tema oscuro'}
+                  {theme==='dark'?t.switch_light:t.switch_dark}
                 </button>
               )}
-              <button onClick={()=>{onSignOut();setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#DC2626',cursor:'pointer',display:'flex',alignItems:'center',gap:8,borderTop:'1px solid #F1F5F9'}}>
+              <button onClick={()=>{onSignOut();setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#DC2626',cursor:'pointer',display:'flex',alignItems:'center',gap:8,borderTop:`1px solid ${C.dropBorder}`}}>
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M7 3H3v14h4M13 5l5 5-5 5M18 10H7"/></svg>
-                Cerrar sesión
+                {t.cerrar_sesion}
               </button>
-              <button onClick={()=>setShowMenu(false)} style={{position:'absolute',top:8,right:8,background:'none',border:'none',color:'#94A3B8',fontSize:16,cursor:'pointer',lineHeight:1}}>✕</button>
+              <button onClick={()=>setShowMenu(false)} style={{position:'absolute',top:8,right:8,background:'none',border:'none',color:C.chipText,fontSize:16,cursor:'pointer',lineHeight:1}}>✕</button>
             </div>
           )}
         </div>
@@ -376,11 +410,11 @@ function Topbar({screen,perfil,dolar,onAyuda,loggedIn,t,user,onSignOut,onGoogleS
 // ── BOTTOM NAV
 function BottomNav({screen,onNav,t,perfil}) {
   const clienteItems=[
-    {id:'home',icon:'🏠',label:'Inicio'},
-    {id:'cot',icon:'✨',label:'Cotizar'},
-    {id:'modelos',icon:'🏘️',label:'Modelos'},
-    {id:'chat',icon:'🤖',label:'IA'},
-    {id:'mapa',icon:'📍',label:'Mapa'},
+    {id:'home',icon:'🏠',label:t.inicio},
+    {id:'cot',icon:'✨',label:t.cotizar},
+    {id:'modelos',icon:'🏘️',label:t.modelos},
+    {id:'chat',icon:'🤖',label:t.ia},
+    {id:'mapa',icon:'📍',label:t.mapa_lbl},
   ];
   const defaultItems=[{id:'home',icon:'🏠',label:t.inicio},{id:'modelos',icon:'🏘️',label:t.modelos},{id:'cot',icon:'✨',label:t.cotizar},{id:'chat',icon:'🤖',label:t.ia},{id:'more',icon:'☰',label:t.mas}];
   const items=perfil==='cliente'?clienteItems:defaultItems;
@@ -470,21 +504,22 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
   const initials=nombre?nombre.charAt(0).toUpperCase():null;
   const [lastCot,setLastCot]=useState(null);
   useEffect(()=>{const s=localStorage.getItem('sgi_last_cot');if(s)try{setLastCot(JSON.parse(s));}catch(e){};},[]);
-  const calMap={economico:{label:'Económico',color:'#4CAF50'},standard:{label:'Standard',color:'#2196F3'},premium:{label:'Premium',color:'#9C27B0'}};
-  const explora=[
-    {svg:`<rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/>`,title:'Sistemas constructivos',desc:'Steel Frame, Mampostería y más',nav:'rubros'},
-    {svg:`<rect x="2" y="3" width="16" height="13" rx="2"/><circle cx="7" cy="8" r="1.5"/><path d="M2 13l4-4 3 3 3-3 6 5"/>`,title:'Modelos disponibles',desc:'Ver renders y precios',nav:'modelos'},
-    {svg:`<path d="M3 4h14a1 1 0 011 1v8a1 1 0 01-1 1H7l-4 3V5a1 1 0 011-1z"/>`,title:'Consultá con IA',desc:'Preguntas sobre tu obra',nav:'chat'},
-    {svg:`<path d="M10 2a6 6 0 00-6 6c0 4 6 10 6 10s6-6 6-10a6 6 0 00-6-6z"/><path d="M7.5 8l2 2 3-3"/>`,title:'Empresas de confianza',desc:'Proveedores verificados',nav:'mapa'},
-    {svg:`<rect x="3" y="3" width="14" height="15" rx="1"/><line x1="3" y1="8" x2="17" y2="8"/><line x1="7" y1="3" x2="7" y2="8"/><line x1="13" y1="3" x2="13" y2="8"/><rect x="7" y="12" width="6" height="6"/>`,title:'SGI Construcción',desc:'Tu empresa constructora',nav:'empresa'},
+  const calMap={economico:{label:t.cal_eco||'Económico',color:'#4CAF50'},standard:{label:t.cal_std||'Standard',color:'#2196F3'},premium:{label:t.cal_prem||'Premium',color:'#9C27B0'}};
+  const exploraSvg=[
+    `<rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/>`,
+    `<rect x="2" y="3" width="16" height="13" rx="2"/><circle cx="7" cy="8" r="1.5"/><path d="M2 13l4-4 3 3 3-3 6 5"/>`,
+    `<path d="M3 4h14a1 1 0 011 1v8a1 1 0 01-1 1H7l-4 3V5a1 1 0 011-1z"/>`,
+    `<path d="M10 2a6 6 0 00-6 6c0 4 6 10 6 10s6-6 6-10a6 6 0 00-6-6z"/><path d="M7.5 8l2 2 3-3"/>`,
+    `<rect x="3" y="3" width="14" height="15" rx="1"/><line x1="3" y1="8" x2="17" y2="8"/><line x1="7" y1="3" x2="7" y2="8"/><line x1="13" y1="3" x2="13" y2="8"/><rect x="7" y="12" width="6" height="6"/>`,
   ];
+  const explora=(t.explora_items||[]).map(([title,desc,nav],i)=>({svg:exploraSvg[i],title,desc,nav}));
   return (
     <div style={{background:C.bg,minHeight:'100%',paddingBottom:8}}>
       <div style={{padding:'20px 16px 0',background:C.bg}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
           <div>
-            <div style={{color:C.t3,fontSize:11,marginBottom:2}}>Bienvenido a SGI</div>
-            <div style={{color:C.t1,fontSize:22,fontWeight:800}}>{nombre?`Hola, ${nombre} 👋`:'¡Hola!'}</div>
+            <div style={{color:C.t3,fontSize:11,marginBottom:2}}>{t.bienvenido_sgi}</div>
+            <div style={{color:C.t1,fontSize:22,fontWeight:800}}>{nombre?`${t.hola_prefix||'Hola,'} ${nombre} 👋`:t.hola||'¡Hola!'}</div>
           </div>
           <div style={{width:44,height:44,borderRadius:'50%',background:'linear-gradient(135deg,#2563EB,#1E3A5F)',display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid rgba(74,159,255,.3)',flexShrink:0}}>
             {initials
@@ -496,22 +531,22 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
         <div style={{borderRadius:20,background:'linear-gradient(135deg,#1E3A5F,#0D2A4A)',border:'1px solid rgba(74,159,255,.2)',padding:'22px 18px',position:'relative',overflow:'hidden',marginBottom:20}}>
           <div style={{position:'absolute',top:-24,right:-24,width:110,height:110,background:'rgba(74,159,255,.08)',borderRadius:'50%',pointerEvents:'none'}}/>
           <div style={{position:'absolute',bottom:-20,left:'40%',width:70,height:70,background:'rgba(245,158,11,.06)',borderRadius:'50%',pointerEvents:'none'}}/>
-          <div style={{color:'rgba(255,255,255,.45)',fontSize:11,marginBottom:4}}>Empezá tu proyecto</div>
-          <div style={{color:'#fff',fontSize:20,fontWeight:800,marginBottom:3,lineHeight:1.2}}>¿Qué querés construir?</div>
-          <div style={{color:'rgba(255,255,255,.35)',fontSize:12,marginBottom:18}}>Presupuesto en USD en segundos</div>
+          <div style={{color:'rgba(255,255,255,.45)',fontSize:11,marginBottom:4}}>{t.empeza_proyecto}</div>
+          <div style={{color:'#fff',fontSize:20,fontWeight:800,marginBottom:3,lineHeight:1.2}}>{t.que_queres}</div>
+          <div style={{color:'rgba(255,255,255,.35)',fontSize:12,marginBottom:18}}>{t.presup_segundos}</div>
           <button onClick={()=>onNav('cot')} style={{width:'100%',padding:'13px',borderRadius:12,background:'#4A9FFF',border:'none',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:8,fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:`<rect x="4" y="2" width="12" height="16" rx="2"/><line x1="7" y1="6" x2="13" y2="6"/><line x1="7" y1="10" x2="9" y2="10"/><line x1="11" y1="10" x2="13" y2="10"/><line x1="7" y1="14" x2="9" y2="14"/><line x1="11" y1="14" x2="13" y2="14"/>`}}/>
-            Cotizar mi obra
+            {t.cotizar_obra}
           </button>
           <button onClick={()=>onNav('modelos')} style={{width:'100%',padding:'11px',borderRadius:12,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',color:'rgba(255,255,255,.65)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,.65)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:`<path d="M2 10L10 2l8 8"/><path d="M4 9.5V18h4v-5h4v5h4V9.5"/>`}}/>
-            Ver modelos
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,.65)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:`<path d="M2 10L10 2l8 8"/><path d="M4 9.5V18h4v-5h4V9.5"/>`}}/>
+            {t.ver_modelos_btn}
           </button>
         </div>
       </div>
       {lastCot&&(
         <div style={{padding:'0 16px 16px'}}>
-          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Tu última cotización</div>
+          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>{t.ultima_cot}</div>
           <div style={{background:C.card,borderRadius:16,border:`.5px solid ${C.border}`,padding:'14px 16px'}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
               <div>
@@ -524,14 +559,14 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
               </div>
             </div>
             <div style={{display:'flex',gap:6,marginTop:0}}>
-              <button onClick={()=>onNav('cot')} style={{flex:1,padding:'9px',borderRadius:10,background:'none',border:`1px solid ${C.border2}`,color:C.acc,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Ver detalle →</button>
-              <button onClick={()=>{localStorage.removeItem('sgi_last_cot');setLastCot(null);}} style={{padding:'9px 14px',borderRadius:10,background:'none',border:'1px solid rgba(255,80,80,.3)',color:'#FF5252',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>✕ Eliminar</button>
+              <button onClick={()=>onNav('cot')} style={{flex:1,padding:'9px',borderRadius:10,background:'none',border:`1px solid ${C.border2}`,color:C.acc,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{t.ver_detalle}</button>
+              <button onClick={()=>{localStorage.removeItem('sgi_last_cot');setLastCot(null);}} style={{padding:'9px 14px',borderRadius:10,background:'none',border:'1px solid rgba(255,80,80,.3)',color:'#FF5252',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{t.eliminar}</button>
             </div>
           </div>
         </div>
       )}
       <div style={{padding:'0 16px 16px'}}>
-        <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Explorá</div>
+        <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>{t.explora_lbl}</div>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           {explora.map((e,i)=>(
             <button key={i} onClick={()=>onNav(e.nav)} style={{display:'flex',alignItems:'center',gap:12,padding:'14px',borderRadius:14,background:C.card,border:`.5px solid ${C.border}`,cursor:'pointer',textAlign:'left',width:'100%',fontFamily:'inherit'}}>
@@ -694,7 +729,7 @@ function ModelosScreen({onNav,t}) {
         <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.elegir}</div>
         <div style={{display:'flex',gap:6,marginTop:10,overflowX:'auto',paddingBottom:2}}>
           {Object.entries(CAL).map(([k,v])=>(
-            <button key={k} onClick={()=>setCal(k)} style={{padding:'7px 14px',borderRadius:20,fontSize:11,fontWeight:700,border:`1.5px solid ${cal===k?C.acc:C.border2}`,background:cal===k?C.acc:C.border,color:cal===k?'#fff':C.t2,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
+            <button key={k} onClick={()=>setCal(k)} style={{padding:'7px 14px',borderRadius:20,fontSize:11,fontWeight:700,border:`1.5px solid ${cal===k?C.acc:C.border2}`,background:cal===k?C.acc:C.chipBg,color:cal===k?'#fff':C.chipText,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
               {v.icon} {k.charAt(0).toUpperCase()+k.slice(1)} · USD {v.m2.toLocaleString()}
             </button>
           ))}
@@ -716,8 +751,8 @@ function ModelosScreen({onNav,t}) {
                 </div>
               </div>
               <div style={{padding:14}}>
-                <div style={{background:cv.bg,borderRadius:8,padding:'8px 10px',marginBottom:12}}>
-                  <div style={{fontSize:9,fontWeight:700,color:cv.color,textTransform:'uppercase',letterSpacing:.5,marginBottom:3}}>{cv.icon} {t.terminaciones} {cal}</div>
+                <div style={{background:C.chipBg,borderRadius:8,padding:'8px 10px',marginBottom:12}}>
+                  <div style={{fontSize:9,fontWeight:700,color:C.chipText,textTransform:'uppercase',letterSpacing:.5,marginBottom:3}}>{cv.icon} {t.terminaciones} {cal}</div>
                   <div style={{fontSize:11,color:C.t2,lineHeight:1.5}}>
                     {{economico:'Tarquini · Ceramico · Herrero · Griferia Roca',standard:'PVC simil madera · Porcelanato · Ferrum · Modena',premium:'Piedra reconstituida · Gran formato · Johnson · DVH'}[cal]}
                   </div>
@@ -839,9 +874,9 @@ function CotizadorScreen({t,initParams,lang='es'}) {
         <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Cotizador</div>
         <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>Servicios profesionales</div>
       </div>
-      <div style={{display:'flex',background:'#fff',borderBottom:`.5px solid ${C.border}`}}>
-        <button onClick={()=>setCotTab('obra')} style={{flex:1,padding:'10px 4px',border:'none',background:'none',fontSize:12,fontWeight:700,cursor:'pointer',color:C.t3,borderBottom:`2px solid transparent`}}>🏗️ Obra</button>
-        <button onClick={()=>setCotTab('servicios')} style={{flex:1,padding:'10px 4px',border:'none',background:'none',fontSize:12,fontWeight:700,cursor:'pointer',color:'#7C3AED',borderBottom:`2px solid #7C3AED`}}>📐 Servicios profesionales</button>
+      <div style={{display:'flex',background:C.card,borderBottom:`.5px solid ${C.border}`}}>
+        <button onClick={()=>setCotTab('obra')} style={{flex:1,padding:'10px 4px',border:'none',background:C.chipBg,fontSize:12,fontWeight:700,cursor:'pointer',color:C.chipText,borderBottom:`2px solid transparent`}}>🏗️ Obra</button>
+        <button onClick={()=>setCotTab('servicios')} style={{flex:1,padding:'10px 4px',border:'none',background:'#2563EB',fontSize:12,fontWeight:700,cursor:'pointer',color:'#fff',borderBottom:`2px solid #2563EB`}}>📐 Servicios profesionales</button>
       </div>
       <div style={{padding:'14px'}}>
         <div style={{fontSize:12,color:C.t2,marginBottom:14,lineHeight:1.5}}>Seleccioná los servicios que necesitás y te cotizamos por WhatsApp.</div>
@@ -849,7 +884,7 @@ function CotizadorScreen({t,initParams,lang='es'}) {
           {SERVICIOS_PROF.map((s,i)=>{
             const sel=selServicios.includes(s.name);
             return (
-              <div key={s.name} onClick={()=>toggleServicio(s.name)} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderRadius:12,border:`1.5px solid ${sel?'#7C3AED':C.border2}`,background:sel?'#F5F0FF':C.off,cursor:'pointer',transition:'all .15s'}}>
+              <div key={s.name} onClick={()=>toggleServicio(s.name)} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',borderRadius:12,border:`1.5px solid ${sel?'#7C3AED':C.border2}`,background:sel?'rgba(124,58,237,.15)':C.off,cursor:'pointer',transition:'all .15s'}}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={sel?'#7C3AED':'#2563EB'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}} dangerouslySetInnerHTML={{__html:SVCICONS[i]}}/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:700,color:sel?'#7C3AED':C.t1,lineHeight:1.3}}>{s.name}</div>
@@ -875,14 +910,14 @@ function CotizadorScreen({t,initParams,lang='es'}) {
         <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{t.herramienta}</div>
         <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.cot_ia}</div>
       </div>
-      <div style={{display:'flex',background:'#fff',borderBottom:`.5px solid ${C.border}`}}>
-        <button onClick={()=>setCotTab('obra')} style={{flex:1,padding:'10px 4px',border:'none',background:'none',fontSize:12,fontWeight:700,cursor:'pointer',color:'#1565C0',borderBottom:`2px solid #1565C0`}}>🏗️ Obra</button>
-        <button onClick={()=>setCotTab('servicios')} style={{flex:1,padding:'10px 4px',border:'none',background:'none',fontSize:12,fontWeight:700,cursor:'pointer',color:C.t3,borderBottom:`2px solid transparent`}}>📐 Servicios profesionales</button>
+      <div style={{display:'flex',background:C.card,borderBottom:`.5px solid ${C.border}`}}>
+        <button onClick={()=>setCotTab('obra')} style={{flex:1,padding:'10px 4px',border:'none',background:'#2563EB',fontSize:12,fontWeight:700,cursor:'pointer',color:'#fff',borderBottom:`2px solid #2563EB`}}>🏗️ Obra</button>
+        <button onClick={()=>setCotTab('servicios')} style={{flex:1,padding:'10px 4px',border:'none',background:C.chipBg,fontSize:12,fontWeight:700,cursor:'pointer',color:C.chipText,borderBottom:`2px solid transparent`}}>📐 Servicios profesionales</button>
       </div>
       <div style={{padding:'14px',display:'flex',flexDirection:'column',gap:12}}>
         <div>
           <label style={{display:'block',fontSize:11,fontWeight:600,color:C.t2,marginBottom:5,textTransform:'uppercase'}}>{t.tipo}</label>
-          <select value={tipo} onChange={e=>setTipo(e.target.value)} style={{width:'100%',border:`.5px solid ${C.border2}`,borderRadius:10,padding:'10px 12px',fontSize:13,background:C.off}}>
+          <select value={tipo} onChange={e=>setTipo(e.target.value)} style={{width:'100%',border:`.5px solid ${C.border2}`,borderRadius:10,padding:'10px 12px',fontSize:13,background:C.off,color:C.t1}}>
             <option value="Casa habitacion">{t.tipo_casa}</option>
             <option value="Ampliacion">{t.tipo_amp}</option>
             <option value="Galpon">{t.tipo_galp}</option>
@@ -891,11 +926,11 @@ function CotizadorScreen({t,initParams,lang='es'}) {
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
           <div>
             <label style={{display:'block',fontSize:11,fontWeight:600,color:C.t2,marginBottom:5,textTransform:'uppercase'}}>{t.m2lbl}</label>
-            <input type="number" value={m2} onChange={e=>setM2(e.target.value)} placeholder="80" style={{width:'100%',border:`.5px solid ${C.border2}`,borderRadius:10,padding:'10px 12px',fontSize:13,background:C.off}}/>
+            <input type="number" value={m2} onChange={e=>setM2(e.target.value)} placeholder="80" style={{width:'100%',border:`.5px solid ${C.border2}`,borderRadius:10,padding:'10px 12px',fontSize:13,background:C.off,color:C.t1}}/>
           </div>
           <div>
             <label style={{display:'block',fontSize:11,fontWeight:600,color:C.t2,marginBottom:5,textTransform:'uppercase'}}>{t.sistema}</label>
-            <select value={sistema} onChange={e=>setSistema(e.target.value)} style={{width:'100%',border:`.5px solid ${C.border2}`,borderRadius:10,padding:'10px 12px',fontSize:13,background:C.off}}>
+            <select value={sistema} onChange={e=>setSistema(e.target.value)} style={{width:'100%',border:`.5px solid ${C.border2}`,borderRadius:10,padding:'10px 12px',fontSize:13,background:C.off,color:C.t1}}>
               <option value="Steel Frame">{t.sis_sf}</option>
               <option value="Mamposteria">{t.sis_mamp}</option>
             </select>
@@ -905,7 +940,7 @@ function CotizadorScreen({t,initParams,lang='es'}) {
           <label style={{display:'block',fontSize:11,fontWeight:600,color:C.t2,marginBottom:8,textTransform:'uppercase'}}>{t.calidad}</label>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
             {Object.entries(CAL).map(([k,v])=>(
-              <div key={k} onClick={()=>setCal(k)} style={{border:`2px solid ${cal===k?v.color:C.border2}`,borderRadius:10,padding:'10px 6px',textAlign:'center',cursor:'pointer',background:cal===k?v.color:C.off,color:cal===k?'#fff':C.t1,transition:'all .2s'}}>
+              <div key={k} onClick={()=>setCal(k)} style={{border:`2px solid ${cal===k?v.color:C.border2}`,borderRadius:10,padding:'10px 6px',textAlign:'center',cursor:'pointer',background:cal===k?v.color:C.chipBg,color:cal===k?'#fff':C.chipText,transition:'all .2s'}}>
                 <div style={{fontSize:18}}>{v.icon}</div>
                 <div style={{fontSize:11,fontWeight:700,marginTop:3}}>{{economico:t.cal_eco,standard:t.cal_std,premium:t.cal_prem}[k]}</div>
                 <div style={{fontSize:9,opacity:.7,marginTop:1}}>USD {v.m2}/m²</div>
@@ -2966,7 +3001,7 @@ function SGMApp() {
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100vh',width:'100%',background:C.card,position:'relative',overflow:'hidden',fontFamily:"system-ui,sans-serif"}}>
-      <style>{`:root{--c-navy:#0D1B2A;--c-bg:#0A1628;--c-card:#0D1B2A;--c-off:#0F2035;--c-t1:#F0F6FF;--c-t2:rgba(240,246,255,.55);--c-t3:rgba(240,246,255,.35);--c-border:rgba(255,255,255,.07);--c-border2:rgba(255,255,255,.14);--c-on-navy:#FFFFFF;--c-nav-dim:rgba(255,255,255,.3);--c-nav-border:rgba(255,255,255,.06);--c-dolar-bg:rgba(100,255,218,.1);--c-dolar-text:#64FFDA}body.theme-light{--c-navy:#FFFFFF;--c-bg:#F0F4F8;--c-card:#FFFFFF;--c-off:#F1F5F9;--c-t1:#0F172A;--c-t2:#475569;--c-t3:#94A3B8;--c-border:#E2E8F0;--c-border2:#CBD5E1;--c-on-navy:#0F172A;--c-nav-dim:#64748B;--c-nav-border:#E2E8F0;--c-dolar-bg:rgba(37,99,235,.08);--c-dolar-text:#2563EB}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,textarea{color:var(--c-t1)}input,select,button,textarea{font-family:inherit}`}</style>
+      <style>{`:root{--c-navy:#0D1B2A;--c-bg:#0A1628;--c-card:#0D1B2A;--c-off:#0F2035;--c-t1:#F0F6FF;--c-t2:rgba(240,246,255,.55);--c-t3:rgba(240,246,255,.35);--c-border:rgba(255,255,255,.07);--c-border2:rgba(255,255,255,.14);--c-on-navy:#FFFFFF;--c-nav-dim:rgba(255,255,255,.3);--c-nav-border:rgba(255,255,255,.06);--c-dolar-bg:rgba(100,255,218,.1);--c-dolar-text:#64FFDA;--c-chip-bg:#1E293B;--c-chip-text:#94A3B8;--c-drop-bg:#1E293B;--c-drop-text:#F0F6FF;--c-drop-border:rgba(255,255,255,.12)}body.theme-light{--c-navy:#FFFFFF;--c-bg:#F0F4F8;--c-card:#FFFFFF;--c-off:#F1F5F9;--c-t1:#0F172A;--c-t2:#475569;--c-t3:#94A3B8;--c-border:#E2E8F0;--c-border2:#CBD5E1;--c-on-navy:#0F172A;--c-nav-dim:#64748B;--c-nav-border:#E2E8F0;--c-dolar-bg:rgba(37,99,235,.08);--c-dolar-text:#2563EB;--c-chip-bg:#F1F5F9;--c-chip-text:#475569;--c-drop-bg:#FFFFFF;--c-drop-text:#0F172A;--c-drop-border:#E2E8F0}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,textarea{color:var(--c-t1)}input,select,button,textarea{font-family:inherit}`}</style>
       <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>handleNav('faq')} loggedIn={loggedIn} t={t} user={user} onSignOut={signOut} onGoogleSignIn={loginWithGoogle} theme={theme} onThemeChange={setTheme} lang={lang} onLang={l=>{setLang(l);localStorage.setItem('sgi_lang',l);}}/>
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap} onTouchStart={e=>{touchStartXRef.current=e.touches[0].clientX;touchStartYRef.current=e.touches[0].clientY;}} onTouchEnd={e=>{const dx=e.changedTouches[0].clientX-touchStartXRef.current;const dy=Math.abs(e.changedTouches[0].clientY-touchStartYRef.current);if(touchStartXRef.current<30&&dx>80&&dy<80&&screen!=='home')handleNav('home');}}>
         {screens[screen]||screens.home}
