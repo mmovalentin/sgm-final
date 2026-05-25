@@ -1159,7 +1159,7 @@ function MapaScreen({t,perfil,onLogin,userLocation}) {
   const mapRef=useRef(null);
   const mapInst=useRef(null);
   const markersRef=useRef([]);
-  const [activos,setActivos]=useState(new Set(['constructor','profesional','proveedor']));
+  const [filtroActivo,setFiltroActivo]=useState(null);
   const [dbProveedores,setDbProveedores]=useState([]);
   const [sinUbicacion,setSinUbicacion]=useState([]);
   const [refreshTick,setRefreshTick]=useState(0);
@@ -1227,25 +1227,21 @@ function MapaScreen({t,perfil,onLogin,userLocation}) {
     });
     dbMarkersRef.current=newDb;
     markersRef.current=[...markersRef.current.filter(m=>!m.fromDb),...newDb];
-    const hasActive=activos.has('proveedor');
+    const hasActive=!filtroActivo||filtroActivo==='proveedor';
     newDb.forEach(({marker})=>{if(!hasActive)mapInst.current.removeLayer(marker);});
   },[dbProveedores]);
 
   useEffect(()=>{
     if(!mapInst.current) return;
     markersRef.current.forEach(({marker,tipo})=>{
-      if(activos.has(tipo)) mapInst.current.addLayer(marker);
+      if(!filtroActivo||filtroActivo===tipo) mapInst.current.addLayer(marker);
       else mapInst.current.removeLayer(marker);
     });
-  },[activos]);
+  },[filtroActivo]);
 
-  const toggle=id=>setActivos(prev=>{
-    const next=new Set(prev);
-    next.has(id)?next.delete(id):next.add(id);
-    return next;
-  });
+  const toggle=id=>setFiltroActivo(prev=>prev===id?null:id);
 
-  const visibles=allMarkers.filter(m=>activos.has(m.tipo));
+  const visibles=filtroActivo?allMarkers.filter(m=>m.tipo===filtroActivo):allMarkers;
 
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
@@ -1257,7 +1253,7 @@ function MapaScreen({t,perfil,onLogin,userLocation}) {
       <div style={{background:C.card,padding:'10px 14px',flexShrink:0,borderBottom:`.5px solid ${C.border}`}}>
         <div style={{display:'flex',gap:8}}>
           {MAPA_CHIPS.map(ch=>{
-            const on=activos.has(ch.id);
+            const on=filtroActivo===ch.id;
             return(
               <button key={ch.id} onClick={()=>toggle(ch.id)} style={{
                 padding:'5px 13px',borderRadius:20,fontSize:11,fontWeight:700,cursor:'pointer',
@@ -1273,7 +1269,7 @@ function MapaScreen({t,perfil,onLogin,userLocation}) {
       <div style={{flex:1,overflowY:'auto'}}>
         {userLocation&&<div style={{padding:'6px 14px',background:'rgba(37,99,235,.06)',borderBottom:`.5px solid ${C.border}`,fontSize:10,color:'#2563EB',fontWeight:600}}>📍 {userLocation.ciudad||userLocation.provincia||'Tu ubicación'} — ordenado por distancia</div>}
         {visibles.length===0&&sinUbicacion.length===0&&(
-          <div style={{textAlign:'center',padding:32,color:C.t3,fontSize:13}}>Sin resultados. Activá algún filtro.</div>
+          <div style={{textAlign:'center',padding:32,color:C.t3,fontSize:13}}>Sin resultados.</div>
         )}
         {(userLocation?[...visibles].sort((a,b)=>haversine(userLocation.lat,userLocation.lng,a.lat,a.lng)-haversine(userLocation.lat,userLocation.lng,b.lat,b.lng)):visibles).map((m,i)=>{
           const cfg=MAPA_TIPO[m.tipo];
