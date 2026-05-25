@@ -382,7 +382,7 @@ function Topbar({screen,perfil,dolar,onAyuda,loggedIn,t,user,onSignOut,onGoogleS
 }
 
 // ── BOTTOM NAV
-function BottomNav({screen,onNav,t,perfil}) {
+function BottomNav({screen,onNav,t,perfil,userRol}) {
   const clienteItems=[
     {id:'home',icon:'🏠',label:t.inicio},
     {id:'cot',icon:'✨',label:t.cotizar},
@@ -391,7 +391,7 @@ function BottomNav({screen,onNav,t,perfil}) {
     {id:'mapa',icon:'📍',label:t.mapa_lbl},
   ];
   const defaultItems=[{id:'home',icon:'🏠',label:t.inicio},{id:'modelos',icon:'🏘️',label:t.modelos},{id:'cot',icon:'✨',label:t.cotizar},{id:'chat',icon:'🤖',label:t.ia},{id:'more',icon:'☰',label:t.mas}];
-  const items=perfil==='cliente'?clienteItems:defaultItems;
+  const items=(perfil==='cliente'||userRol==='cliente')?clienteItems:defaultItems;
   return (
     <div style={{display:'flex',background:C.navy,padding:'6px 0',flexShrink:0,borderTop:`1px solid ${C.navBorder}`}}>
       {items.map(it=>(
@@ -1715,10 +1715,10 @@ function FAQScreen({t,onNav}) {
 }
 
 // ── STATS / AGENDA / PRESUP simples
-function StatsScreen({t,perfil}) {
+function StatsScreen({t,perfil,userRol}) {
   const [lastCot,setLastCot]=useState(null);
   useEffect(()=>{try{const s=localStorage.getItem('sgi_last_cot');if(s)setLastCot(JSON.parse(s));}catch(e){};},[]);
-  if(isCliente(perfil)){
+  if(isCliente(perfil)||userRol==='cliente'){
     const calMap={economico:{label:t.cal_eco||'Económico',color:'#2E7D32'},standard:{label:t.cal_std||'Standard',color:'#1565C0'},premium:{label:t.cal_prem||'Premium',color:'#6A1B9A'}};
     return (
       <div>
@@ -1777,8 +1777,8 @@ function StatsScreen({t,perfil}) {
   );
 }
 
-function AgendaScreen({t,perfil}) {
-  if(isCliente(perfil)){
+function AgendaScreen({t,perfil,userRol}) {
+  if(isCliente(perfil)||userRol==='cliente'){
     return (
       <div>
         <div style={{background:C.navy,padding:'13px 14px'}}>
@@ -2443,9 +2443,10 @@ function ClientesScreen() {
 }
 
 const CLIENTE_HIDDEN=['rubros','agenda','presup','stats','clientes'];
-function MoreMenu({onNav,onClose,t,lang,onLang,perfil}) {
+function MoreMenu({onNav,onClose,t,lang,onLang,perfil,userRol}) {
   const allItems=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['👥','Clientes','clientes']];
-  const items=perfil==='cliente'?allItems.filter(([,,id])=>!CLIENTE_HIDDEN.includes(id)):allItems;
+  const isC=(perfil==='cliente'||userRol==='cliente');
+  const items=isC?allItems.filter(([,,id])=>!CLIENTE_HIDDEN.includes(id)):allItems;
   return (
     <div style={{position:'absolute',inset:0,zIndex:200,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
       <div onClick={onClose} style={{position:'absolute',inset:0,background:'rgba(10,22,40,.7)',backdropFilter:'blur(4px)'}}/>
@@ -2746,10 +2747,17 @@ export default function SGMApp() {
           try{
             const {data,error}=await supa.from('usuarios_autorizados').select('rol').eq('email',session.user.email).eq('activo',true).single();
             if(error||!data){setDenegadoReason('unauthorized');storeSplashResult('denegado');return;}
-            setUserRol(data.rol||'cliente');
-            const saved=localStorage.getItem('sgm-perfil');
-            if(saved)setPerfil(saved);
-            storeSplashResult(saved?'app':'onboarding');
+            const rol=data.rol||'cliente';
+            setUserRol(rol);
+            if(rol==='cliente'){
+              setPerfil('cliente');
+              localStorage.setItem('sgm-perfil','cliente');
+              storeSplashResult('app');
+            } else {
+              const saved=localStorage.getItem('sgm-perfil');
+              if(saved)setPerfil(saved);
+              storeSplashResult(saved?'app':'onboarding');
+            }
             if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){
               PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok=>{if(ok){setWebAuthnModalStatus('idle');setShowWebAuthnModal(true);}}).catch(()=>{});
             }
@@ -2958,7 +2966,7 @@ export default function SGMApp() {
   const ADMIN_SCREENS=['presup','clientes','rubros'];
   function handleNav(id,params) {
     if(id==='more'){setShowMore(true);return;}
-    if(perfil==='cliente'&&ADMIN_SCREENS.includes(id)){return;}
+    if((perfil==='cliente'||userRol==='cliente')&&ADMIN_SCREENS.includes(id)){return;}
     setScreen(id);
     setScreenParams(params||{});
     setShowMore(false);
@@ -3069,7 +3077,7 @@ export default function SGMApp() {
   if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{localStorage.setItem('sgm-perfil',p);setPerfil(p);setPhase('app');}}/></div>;
 
   const screens={
-    home:perfil==='cliente'
+    home:(perfil==='cliente'||userRol==='cliente')
       ?<ClienteHomeScreen onNav={handleNav} t={t} user={user} dolar={dolar}/>
       :<HomeScreen onNav={handleNav} t={t} user={user} perfil={perfil}/>,
     modelos:<ModelosScreen onNav={handleNav} t={t}/>,
@@ -3077,9 +3085,9 @@ export default function SGMApp() {
     chat:<ChatScreen t={t}/>,
     rubros:<RubrosScreen perfil={perfil} t={t}/>,
     faq:<FAQScreen t={t} onNav={handleNav}/>,
-    stats:<StatsScreen t={t} perfil={perfil}/>,
+    stats:<StatsScreen t={t} perfil={perfil} userRol={userRol}/>,
     presup:<PresupScreen t={t} dolar={dolar}/>,
-    agenda:<AgendaScreen t={t} perfil={perfil}/>,
+    agenda:<AgendaScreen t={t} perfil={perfil} userRol={userRol}/>,
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation}/>,
     clientes:<ClientesScreen/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
@@ -3092,8 +3100,8 @@ export default function SGMApp() {
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap} onTouchStart={e=>{touchStartXRef.current=e.touches[0].clientX;touchStartYRef.current=e.touches[0].clientY;}} onTouchEnd={e=>{const dx=e.changedTouches[0].clientX-touchStartXRef.current;const dy=Math.abs(e.changedTouches[0].clientY-touchStartYRef.current);if(touchStartXRef.current<30&&dx>80&&dy<80&&screen!=='home')handleNav('home');}}>
         {screens[screen]||screens.home}
       </div>
-      <BottomNav screen={screen} onNav={handleNav} t={t} perfil={perfil}/>
-      {showMore&&<MoreMenu onNav={handleNav} onClose={()=>setShowMore(false)} t={t} lang={lang} onLang={()=>setLang(l=>l==='es'?'en':'es')} perfil={perfil}/>}
+      <BottomNav screen={screen} onNav={handleNav} t={t} perfil={perfil} userRol={userRol}/>
+      {showMore&&<MoreMenu onNav={handleNav} onClose={()=>setShowMore(false)} t={t} lang={lang} onLang={()=>setLang(l=>l==='es'?'en':'es')} perfil={perfil} userRol={userRol}/>}
       {showAyuda&&<AyudaPanel onClose={()=>setShowAyuda(false)} t={t}/>}
       {showWebAuthnModal&&<WebAuthnModal onActivate={activateWebAuthn} onDismiss={()=>setShowWebAuthnModal(false)} status={webAuthnModalStatus}/>}
       {showPermisosModal&&(
