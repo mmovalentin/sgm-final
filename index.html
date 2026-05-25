@@ -53,6 +53,9 @@ const C = {
   bg:'var(--c-bg)',card:'var(--c-card)',off:'var(--c-off)',
   t1:'var(--c-t1)',t2:'var(--c-t2)',t3:'var(--c-t3)',
   border:'var(--c-border)',border2:'var(--c-border2)',
+  onNavy:'var(--c-on-navy)',navDim:'var(--c-nav-dim)',
+  navBorder:'var(--c-nav-border)',
+  dolorBg:'var(--c-dolar-bg)',dolorText:'var(--c-dolar-text)',
 };
 
 // Renders: fotos reales embebidas
@@ -304,18 +307,18 @@ function SGMLogo({small=false,style={}}) {
 }
 
 // ── TOPBAR
-function Topbar({screen,perfil,dolar,onAyuda,loggedIn,t,user,onSignOut,onGoogleSignIn}) {
+function Topbar({screen,perfil,dolar,onAyuda,loggedIn,t,user,onSignOut,onGoogleSignIn,theme,onThemeChange}) {
   const [showMenu,setShowMenu]=useState(false);
   const displayName=user?.user_metadata?.full_name||user?.email?.split('@')[0]||'';
   const avatarUrl=user?.user_metadata?.avatar_url;
   return (
-    <div style={{background:C.navy,padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0,position:'relative'}}>
+    <div style={{background:C.navy,padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0,position:'relative',borderBottom:`1px solid ${C.navBorder}`}}>
       <div style={{display:'flex',alignItems:'center',gap:10}}>
         <SGMLogo small/>
-        <div style={{color:'#fff',fontSize:13,fontWeight:700}}>SGI</div>
+        <div style={{color:C.onNavy,fontSize:13,fontWeight:700}}>SGI</div>
       </div>
       <div style={{display:'flex',alignItems:'center',gap:6}}>
-        <div style={{background:'rgba(100,255,218,.1)',border:'1px solid rgba(100,255,218,.2)',borderRadius:6,padding:'3px 7px',fontSize:10,fontWeight:700,color:'#64FFDA'}}>
+        <div style={{background:C.dolorBg,border:`1px solid ${C.dolorText}33`,borderRadius:6,padding:'3px 7px',fontSize:10,fontWeight:700,color:C.dolorText}}>
           ${dolar.toLocaleString('es-AR')} Blue
         </div>
         <div style={{position:'relative'}}>
@@ -341,6 +344,12 @@ function Topbar({screen,perfil,dolar,onAyuda,loggedIn,t,user,onSignOut,onGoogleS
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 3"/></svg>
                 Agregar cuenta
               </button>}
+              {onThemeChange&&(
+                <button onClick={()=>{onThemeChange(theme==='dark'?'light':'dark');setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#0F172A',cursor:'pointer',display:'flex',alignItems:'center',gap:8,borderTop:'1px solid #F1F5F9'}}>
+                  <span style={{fontSize:14}}>{theme==='dark'?'☀️':'🌙'}</span>
+                  {theme==='dark'?'Cambiar a tema claro':'Cambiar a tema oscuro'}
+                </button>
+              )}
               <button onClick={()=>{onSignOut();setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#DC2626',cursor:'pointer',display:'flex',alignItems:'center',gap:8,borderTop:'1px solid #F1F5F9'}}>
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M7 3H3v14h4M13 5l5 5-5 5M18 10H7"/></svg>
                 Cerrar sesión
@@ -368,11 +377,11 @@ function BottomNav({screen,onNav,t,perfil}) {
   const defaultItems=[{id:'home',icon:'🏠',label:t.inicio},{id:'modelos',icon:'🏘️',label:t.modelos},{id:'cot',icon:'✨',label:t.cotizar},{id:'chat',icon:'🤖',label:t.ia},{id:'more',icon:'☰',label:t.mas}];
   const items=perfil==='cliente'?clienteItems:defaultItems;
   return (
-    <div style={{display:'flex',background:C.navy,padding:'6px 0',flexShrink:0,borderTop:'1px solid rgba(255,255,255,.06)'}}>
+    <div style={{display:'flex',background:C.navy,padding:'6px 0',flexShrink:0,borderTop:`1px solid ${C.navBorder}`}}>
       {items.map(it=>(
         <button key={it.id} onClick={()=>onNav(it.id)} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'5px 2px 2px',background:'none',border:'none',cursor:'pointer'}}>
-          <span style={{fontSize:20,opacity:screen===it.id?1:0.3,transform:screen===it.id?'translateY(-1px)':'none',transition:'all .2s'}}>{it.icon}</span>
-          <span style={{fontSize:9,color:screen===it.id?C.acc:'rgba(255,255,255,.3)',fontWeight:500}}>{it.label}</span>
+          <span style={{fontSize:20,opacity:screen===it.id?1:0.45,filter:screen===it.id?'none':'grayscale(0.3)',transform:screen===it.id?'translateY(-1px)':'none',transition:'all .2s'}}>{it.icon}</span>
+          <span style={{fontSize:9,color:screen===it.id?C.acc:C.navDim,fontWeight:500}}>{it.label}</span>
         </button>
       ))}
     </div>
@@ -1947,7 +1956,7 @@ function PresupScreen({t,dolar=1415}) {
 }
 
 // ── ONBOARDING
-function Onboarding({onSelect,theme,onThemeChange}) {
+function Onboarding({onSelect}) {
   const [sel,setSel]=useState(null);
   const cards=[
     {id:'cliente',icon:'🏠',name:'Cliente',desc:'Quiero seguir el avance de mi obra'},
@@ -1957,7 +1966,6 @@ function Onboarding({onSelect,theme,onThemeChange}) {
   return (
     <div style={{position:'absolute',inset:0,background:'#07111F',display:'flex',flexDirection:'column',alignItems:'center',overflowY:'auto',zIndex:100}}>
       <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(74,159,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(74,159,255,.03) 1px,transparent 1px)',backgroundSize:'32px 32px',pointerEvents:'none'}}/>
-      {onThemeChange&&<button onClick={()=>onThemeChange(theme==='dark'?'light':'dark')} style={{position:'absolute',top:16,right:16,zIndex:2,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.2)',borderRadius:20,padding:'6px 14px',fontSize:12,color:'#F0F6FF',cursor:'pointer',fontFamily:'inherit'}}>{theme==='dark'?'☀️ Claro':'🌙 Oscuro'}</button>}
       <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',alignItems:'center',width:'100%',maxWidth:380,padding:'56px 24px 40px'}}>
         <SGMLogo/>
         <div style={{fontSize:22,fontWeight:700,color:'#F0F6FF',textAlign:'center',marginBottom:8,marginTop:24}}>¿Cómo usás SGI?</div>
@@ -2797,7 +2805,7 @@ function SGMApp() {
     </div>
   );
 
-  if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{localStorage.setItem('sgm-perfil',p);setPerfil(p);setPhase('app');}} theme={theme} onThemeChange={setTheme}/></div>;
+  if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{localStorage.setItem('sgm-perfil',p);setPerfil(p);setPhase('app');}}/></div>;
 
   const screens={
     home:perfil==='cliente'
@@ -2818,8 +2826,8 @@ function SGMApp() {
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100vh',width:'100%',background:C.card,position:'relative',overflow:'hidden',fontFamily:"system-ui,sans-serif"}}>
-      <style>{`:root{--c-navy:#0D1B2A;--c-bg:#0A1628;--c-card:#0D1B2A;--c-off:#0F2035;--c-t1:#F0F6FF;--c-t2:rgba(240,246,255,.55);--c-t3:rgba(240,246,255,.35);--c-border:rgba(255,255,255,.07);--c-border2:rgba(255,255,255,.14)}body.theme-light{--c-navy:#1E40AF;--c-bg:#F0F4F8;--c-card:#FFFFFF;--c-off:#F8FAFC;--c-t1:#0F172A;--c-t2:#475569;--c-t3:#94A3B8;--c-border:rgba(0,0,0,.08);--c-border2:rgba(0,0,0,.15)}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,button{font-family:inherit}`}</style>
-      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>handleNav('faq')} loggedIn={loggedIn} t={t} user={user} onSignOut={signOut} onGoogleSignIn={loginWithGoogle}/>
+      <style>{`:root{--c-navy:#0D1B2A;--c-bg:#0A1628;--c-card:#0D1B2A;--c-off:#0F2035;--c-t1:#F0F6FF;--c-t2:rgba(240,246,255,.55);--c-t3:rgba(240,246,255,.35);--c-border:rgba(255,255,255,.07);--c-border2:rgba(255,255,255,.14);--c-on-navy:#FFFFFF;--c-nav-dim:rgba(255,255,255,.3);--c-nav-border:rgba(255,255,255,.06);--c-dolar-bg:rgba(100,255,218,.1);--c-dolar-text:#64FFDA}body.theme-light{--c-navy:#FFFFFF;--c-bg:#F0F4F8;--c-card:#FFFFFF;--c-off:#F1F5F9;--c-t1:#0F172A;--c-t2:#475569;--c-t3:#94A3B8;--c-border:#E2E8F0;--c-border2:#CBD5E1;--c-on-navy:#0F172A;--c-nav-dim:#64748B;--c-nav-border:#E2E8F0;--c-dolar-bg:rgba(37,99,235,.08);--c-dolar-text:#2563EB}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,textarea{color:var(--c-t1)}input,select,button,textarea{font-family:inherit}`}</style>
+      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>handleNav('faq')} loggedIn={loggedIn} t={t} user={user} onSignOut={signOut} onGoogleSignIn={loginWithGoogle} theme={theme} onThemeChange={setTheme}/>
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap} onTouchStart={e=>{touchStartXRef.current=e.touches[0].clientX;touchStartYRef.current=e.touches[0].clientY;}} onTouchEnd={e=>{const dx=e.changedTouches[0].clientX-touchStartXRef.current;const dy=Math.abs(e.changedTouches[0].clientY-touchStartYRef.current);if(touchStartXRef.current<30&&dx>80&&dy<80&&screen!=='home')handleNav('home');}}>
         {screens[screen]||screens.home}
       </div>
