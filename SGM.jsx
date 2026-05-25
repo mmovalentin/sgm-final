@@ -1789,8 +1789,8 @@ function WebAuthnModal({onActivate,onDismiss,status}){
           :<>
               <div style={{textAlign:'center',marginBottom:20}}>
                 <div style={{fontSize:44,marginBottom:10}}>🔐</div>
-                <div style={{color:'#fff',fontSize:15,fontWeight:700,marginBottom:8}}>¿Querés activar Face ID?</div>
-                <div style={{color:'rgba(255,255,255,.45)',fontSize:12,lineHeight:1.6}}>Entrá más rápido con Face ID o huella dactilar sin elegir tu cuenta de Google cada vez.</div>
+                <div style={{color:'#fff',fontSize:15,fontWeight:700,marginBottom:8}}>¿Querés activar Face ID para entrar más rápido?</div>
+                <div style={{color:'rgba(255,255,255,.45)',fontSize:12,lineHeight:1.6}}>Con Face ID o huella dactilar entrás sin escribir tu contraseña cada vez.</div>
               </div>
               {status==='error'&&<div style={{color:'rgba(255,100,100,.8)',fontSize:11,textAlign:'center',marginBottom:12}}>No se pudo activar. Intentá de nuevo.</div>}
               <button onClick={onActivate} disabled={status==='activating'} style={{width:'100%',padding:13,borderRadius:12,border:'none',background:'#64FFDA',color:'#07111F',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:10,opacity:status==='activating'?0.6:1,fontFamily:'inherit'}}>
@@ -1964,12 +1964,17 @@ export default function SGMApp() {
   const [webAuthnLoginWorking,setWebAuthnLoginWorking]=useState(false);
   const [webAuthnLoginFailed,setWebAuthnLoginFailed]=useState(false);
   const [loginView,setLoginView]=useState('login');
-  const [loginEmail,setLoginEmail]=useState('');
+  const [loginEmail,setLoginEmail]=useState(()=>localStorage.getItem('sgi_remember_email')||'');
   const [loginPassword,setLoginPassword]=useState('');
   const [loginNombre,setLoginNombre]=useState('');
+  const [rememberMe,setRememberMe]=useState(()=>!!localStorage.getItem('sgi_remember_check'));
   const [authLoading,setAuthLoading]=useState(false);
   const [authError,setAuthError]=useState(null);
   const [authMessage,setAuthMessage]=useState(null);
+  const [showForgotPass,setShowForgotPass]=useState(false);
+  const [forgotEmail,setForgotEmail]=useState('');
+  const [forgotLoading,setForgotLoading]=useState(false);
+  const [forgotSent,setForgotSent]=useState(false);
   const [denegadoReason,setDenegadoReason]=useState('unauthorized');
   const [splashExiting,setSplashExiting]=useState(false);
   const pendingPhaseRef=useRef(null);
@@ -2106,9 +2111,26 @@ export default function SGMApp() {
     try{
       const {data,error}=await supa.auth.signInWithPassword({email:loginEmail.trim(),password:loginPassword});
       if(error){setAuthError(translateAuthError(error.message));return;}
+      if(rememberMe){
+        localStorage.setItem('sgi_remember_email',loginEmail.trim());
+        localStorage.setItem('sgi_remember_check','1');
+      } else {
+        localStorage.removeItem('sgi_remember_email');
+        localStorage.removeItem('sgi_remember_check');
+      }
       if(data.user)await handleAuthenticatedUser(data.user,false);
     }catch(e){setAuthError('Error al ingresar. Intentá de nuevo.');}
     finally{setAuthLoading(false);}
+  }
+
+  async function sendPasswordReset(){
+    if(!supa||!forgotEmail.trim()) return;
+    setForgotLoading(true);
+    try{
+      await supa.auth.resetPasswordForEmail(forgotEmail.trim(),{redirectTo:'https://sgm-final.vercel.app'});
+      setForgotSent(true);
+    }catch(e){}
+    finally{setForgotLoading(false);}
   }
 
   async function signUpWithEmail(){
@@ -2192,12 +2214,33 @@ export default function SGMApp() {
             <input type="text" placeholder="Nombre completo" value={loginNombre} onChange={e=>setLoginNombre(e.target.value)} onKeyDown={handleKey} style={inp} autoComplete="name"/>
           )}
           <input type="email" placeholder="Email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} onKeyDown={handleKey} style={inp} autoComplete="email"/>
-          <input type="password" placeholder="Contraseña" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} onKeyDown={handleKey} style={{...inp,marginBottom:12}} autoComplete={loginView==='login'?'current-password':'new-password'}/>
+          <input type="password" placeholder="Contraseña" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} onKeyDown={handleKey} style={{...inp,marginBottom:loginView==='login'?6:12}} autoComplete={loginView==='login'?'current-password':'new-password'}/>
+          {loginView==='login'&&(
+            <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',marginBottom:12,userSelect:'none'}}>
+              <input type="checkbox" checked={rememberMe} onChange={e=>setRememberMe(e.target.checked)} style={{accentColor:'#4A9FFF',width:15,height:15,cursor:'pointer'}}/>
+              <span style={{color:'rgba(255,255,255,.45)',fontSize:12}}>Recordarme</span>
+            </label>
+          )}
           {authError&&<div style={{color:'rgba(255,100,100,.9)',fontSize:11,marginBottom:10,textAlign:'center',lineHeight:1.5}}>{authError}</div>}
           {authMessage&&<div style={{color:'#64FFDA',fontSize:11,marginBottom:10,textAlign:'center',lineHeight:1.5}}>{authMessage}</div>}
           <button onClick={loginView==='login'?signInWithEmail:signUpWithEmail} disabled={authLoading} style={{width:'100%',padding:'13px',borderRadius:12,border:'none',background:'#4A9FFF',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',opacity:authLoading?0.6:1,fontFamily:'inherit',marginBottom:4}}>
             {authLoading?'...':(loginView==='login'?'Ingresar':'Crear cuenta')}
           </button>
+          {loginView==='login'&&(showForgotPass
+            ?<div style={{marginTop:8,padding:'12px',borderRadius:10,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)'}}>
+                {forgotSent
+                  ?<div style={{color:'#64FFDA',fontSize:12,textAlign:'center',lineHeight:1.7,padding:'4px 0'}}>Revisá tu email, te enviamos el link de recuperación ✓</div>
+                  :<>
+                    <input type="email" placeholder="Tu email" value={forgotEmail} onChange={e=>setForgotEmail(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')sendPasswordReset();}} style={{...inp,marginBottom:8}}/>
+                    <button onClick={sendPasswordReset} disabled={forgotLoading||!forgotEmail.trim()} style={{width:'100%',padding:'11px',borderRadius:10,border:'none',background:'rgba(74,159,255,.15)',color:'#4A9FFF',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:(forgotLoading||!forgotEmail.trim())?0.5:1}}>
+                      {forgotLoading?'Enviando...':'Enviar link de recuperación'}
+                    </button>
+                  </>
+                }
+                <button onClick={()=>{setShowForgotPass(false);setForgotSent(false);}} style={{background:'none',border:'none',color:'rgba(255,255,255,.3)',fontSize:11,cursor:'pointer',padding:'8px 0 0',display:'block',width:'100%',textAlign:'center',fontFamily:'inherit'}}>← Volver</button>
+              </div>
+            :<button onClick={()=>{setShowForgotPass(true);setForgotEmail(loginEmail);setForgotSent(false);}} style={{background:'none',border:'none',color:'rgba(255,255,255,.3)',fontSize:11,cursor:'pointer',padding:'6px 0',display:'block',width:'100%',textAlign:'center',fontFamily:'inherit'}}>¿Olvidaste tu contraseña?</button>
+          )}
           {sep}
           <button onClick={loginWithGoogle} style={{width:'100%',background:'#fff',color:'#1f1f1f',border:'none',borderRadius:12,padding:'13px 20px',fontSize:14,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 2px 12px rgba(0,0,0,.3)',fontFamily:'inherit'}}>
             <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
