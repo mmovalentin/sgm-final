@@ -200,15 +200,20 @@ const FAQS = [
 ];
 
 // ── SGM LOGO
-function SGMLogo({size=28}) {
+function SGMLogo({small=false,style={}}) {
+  const cSize=small?32:72;
+  const svgW=small?20:44;
+  const svgH=small?16:34;
+  const br=small?8:16;
   return (
-    <svg width={size} height={size} viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="28" height="28" rx="6" fill="#1E293B"/>
-      <rect x="4" y="4" width="20" height="4" rx="2" fill="white"/>
-      <rect x="12" y="12" width="12" height="4" rx="2" fill="#F59E0B"/>
-      <rect x="22" y="16" width="2" height="4" rx="1" fill="white"/>
-      <rect x="4" y="20" width="20" height="4" rx="2" fill="white"/>
-    </svg>
+    <div style={{width:cSize,height:cSize,borderRadius:br,background:'linear-gradient(135deg,#1E3A5F,#0D1B2A)',boxShadow:'0 4px 20px rgba(37,99,235,0.3)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,...style}}>
+      <svg width={svgW} height={svgH} viewBox="0 0 44 34" fill="none">
+        <rect x="0" y="0" width="44" height="8" rx="2" fill="white"/>
+        <rect x="0" y="13" width="27" height="8" rx="2" fill="#F59E0B"/>
+        <rect x="36" y="13" width="8" height="21" rx="2" fill="white"/>
+        <rect x="0" y="26" width="44" height="8" rx="2" fill="white"/>
+      </svg>
+    </div>
   );
 }
 
@@ -220,7 +225,7 @@ function Topbar({screen,perfil,dolar,onAyuda,onLogin,loggedIn,t,onSound,soundOn,
   return (
     <div style={{background:C.navy,padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
       <div style={{display:'flex',alignItems:'center',gap:10}}>
-        <SGMLogo size={28}/>
+        <SGMLogo small/>
         <div style={{color:'#fff',fontSize:13,fontWeight:700}}>SGI</div>
       </div>
       <div style={{display:'flex',alignItems:'center',gap:5}}>
@@ -1474,7 +1479,7 @@ function Onboarding({onSelect}) {
     <div style={{position:'absolute',inset:0,background:'#07111F',display:'flex',flexDirection:'column',alignItems:'center',overflowY:'auto',zIndex:100}}>
       <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(74,159,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(74,159,255,.03) 1px,transparent 1px)',backgroundSize:'32px 32px',pointerEvents:'none'}}/>
       <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',alignItems:'center',width:'100%',maxWidth:380,padding:'56px 24px 40px'}}>
-        <SGMLogo size={40}/>
+        <SGMLogo/>
         <div style={{fontSize:22,fontWeight:700,color:'#F0F6FF',textAlign:'center',marginBottom:8,marginTop:24}}>¿Cómo usás SGI?</div>
         <div style={{fontSize:12,color:'rgba(255,255,255,.35)',textAlign:'center',marginBottom:28,lineHeight:1.6}}>Elegí tu rol y la app se adapta a lo que necesitás.</div>
         <div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',marginBottom:28}}>
@@ -1961,9 +1966,7 @@ function SplashScreen({exiting,onExited}) {
     <div style={{position:'absolute',inset:0,background:'#0D1B2A',opacity,transition:'opacity 0.8s ease',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
       <canvas ref={canvasRef} style={{position:'absolute',inset:0,width:'100%',height:'100%'}}/>
       <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',alignItems:'center',opacity:logoVisible?1:0,transform:logoVisible?'none':'translateY(12px)',transition:'opacity 0.8s ease,transform 0.8s ease'}}>
-        <div style={{borderRadius:16,boxShadow:'0 0 40px rgba(37,99,235,0.4)',marginBottom:16,lineHeight:0}}>
-          <SGMLogo size={80}/>
-        </div>
+        <SGMLogo style={{marginBottom:16}}/>
         <div style={{fontSize:36,fontWeight:800,color:'#fff',marginBottom:6,letterSpacing:2}}>SGI</div>
         <div style={{fontSize:13,color:'#64748B',marginBottom:24}}>Gestión inteligente</div>
         <LoadingBar/>
@@ -2230,7 +2233,7 @@ export default function SGMApp() {
     const switchView=v=>{setLoginView(v);setAuthError(null);setAuthMessage(null);};
     return (
       <div style={{position:'absolute',inset:0,background:'#07111F',overflowY:'auto',display:'flex',flexDirection:'column',alignItems:'center',padding:'40px 24px 48px'}}>
-        <SGMLogo size={64}/>
+        <SGMLogo/>
         <div style={{fontSize:32,fontWeight:700,color:'#fff',marginTop:16,marginBottom:4}}>SGI</div>
         <div style={{color:'#64748B',fontSize:13,textAlign:'center',marginBottom:28}}>Gestión inteligente</div>
         <div style={{width:'100%',maxWidth:320}}>
@@ -2297,7 +2300,7 @@ export default function SGMApp() {
 
   if(phase==='denegado') return (
     <div style={{position:'absolute',inset:0,background:'#07111F',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:0,padding:32}}>
-      <SGMLogo size={52}/>
+      <SGMLogo/>
       <div style={{width:52,height:52,borderRadius:'50%',background:denegadoReason==='pending'?'rgba(255,180,0,.12)':'rgba(255,80,80,.12)',border:`1px solid ${denegadoReason==='pending'?'rgba(255,180,0,.3)':'rgba(255,80,80,.3)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,marginBottom:20,marginTop:16}}>{denegadoReason==='pending'?'⏳':'⛔'}</div>
       <div style={{color:'#fff',fontSize:16,fontWeight:700,marginBottom:8,textAlign:'center'}}>{denegadoReason==='pending'?'Cuenta pendiente de aprobación':'Acceso no autorizado'}</div>
       <div style={{color:'rgba(255,255,255,.45)',fontSize:12,textAlign:'center',maxWidth:280,lineHeight:1.6,marginBottom:32}}>
