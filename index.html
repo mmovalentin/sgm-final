@@ -2395,8 +2395,10 @@ function ClientesScreen() {
   );
 }
 
+const CLIENTE_HIDDEN=['agenda','presup','stats','clientes'];
 function MoreMenu({onNav,onClose,t,lang,onLang,perfil}) {
-  const items=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['👥','Clientes','clientes']];
+  const allItems=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['👥','Clientes','clientes']];
+  const items=perfil==='cliente'?allItems.filter(([,,id])=>!CLIENTE_HIDDEN.includes(id)):allItems;
   return (
     <div style={{position:'absolute',inset:0,zIndex:200,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
       <div onClick={onClose} style={{position:'absolute',inset:0,background:'rgba(10,22,40,.7)',backdropFilter:'blur(4px)'}}/>
@@ -2786,9 +2788,16 @@ function SGMApp() {
     try{
       const {data,error}=await supa.from('usuarios_autorizados').select('rol').eq('email',userObj.email).eq('activo',true).single();
       if(error||!data){setDenegadoReason(fromSignUp?'pending':'unauthorized');setPhase('denegado');return;}
-      setUserRol(data.rol||'cliente');
-      const saved=localStorage.getItem('sgm-perfil');
-      if(saved)setPerfil(saved);
+      const rol=data.rol||'cliente';
+      setUserRol(rol);
+      if(rol==='cliente'){
+        // Always enforce client profile — never inherit a stale admin/constructor localStorage value
+        setPerfil('cliente');
+        localStorage.setItem('sgm-perfil','cliente');
+      } else {
+        const saved=localStorage.getItem('sgm-perfil');
+        if(saved)setPerfil(saved);
+      }
       setPhase('app');
       mostrarPermisosModal();
       if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){
@@ -2899,8 +2908,10 @@ function SGMApp() {
     setPhase('login');
   }
 
+  const ADMIN_SCREENS=['stats','presup','agenda','clientes'];
   function handleNav(id,params) {
     if(id==='more'){setShowMore(true);return;}
+    if(perfil==='cliente'&&ADMIN_SCREENS.includes(id)){return;}
     setScreen(id);
     setScreenParams(params||{});
     setShowMore(false);
