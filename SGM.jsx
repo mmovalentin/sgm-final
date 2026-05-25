@@ -56,6 +56,9 @@ const MODELOS = [
   { m2:90, nombre:"Modelo 90m²", desc:"3 dorm · 2 baños · living · cochera",        prices:{economico:81000,standard:94500,premium:117000} },
 ];
 
+function isCliente(p){return p==='cliente';}
+function isAdmin(p){return p==='constructor'||p==='profesional'||p==='proveedor'||p==='admin'||p==='empresa';}
+
 const CAL = {
   economico:{ color:"#2E7D32", bg:"#E8F5E9", icon:"🪨", m2:900 },
   standard: { color:"#1565C0", bg:"#E3F2FD", icon:"🏠", m2:1050 },
@@ -118,7 +121,7 @@ const T = {
     switch_light:"Cambiar a tema claro",switch_dark:"Cambiar a tema oscuro",
     mapa_lbl:"Mapa",sin_alertas:"Sin alertas activas",
     explora_items:[
-      ['Sistemas constructivos','Steel Frame, Mampostería y más','rubros'],
+      ['Cronograma de obra','Etapas y plazos de tu proyecto','agenda'],
       ['Modelos disponibles','Ver renders y precios','modelos'],
       ['Consultá con IA','Preguntas sobre tu obra','chat'],
       ['Empresas de confianza','Proveedores verificados','mapa'],
@@ -189,7 +192,7 @@ const T = {
     switch_light:"Switch to light theme",switch_dark:"Switch to dark theme",
     mapa_lbl:"Map",sin_alertas:"No active alerts",
     explora_items:[
-      ['Construction systems','Steel Frame, Masonry and more','rubros'],
+      ['Project schedule','Stages and timeline of your project','agenda'],
       ['Available models','View renders and prices','modelos'],
       ['Chat with AI','Questions about your project','chat'],
       ['Trusted companies','Verified contractors','mapa'],
@@ -402,7 +405,7 @@ function BottomNav({screen,onNav,t,perfil}) {
 }
 
 // ── HOME
-function HomeScreen({onNav,t,user}) {
+function HomeScreen({onNav,t,user,perfil}) {
   const [lastCot,setLastCot]=useState(null);
   const [met,setMet]=useState({avance:0,presup:0,proveed:0,op:0,ingresos:0,egresos:0,ahorro:0,saldo:0});
 
@@ -442,7 +445,7 @@ function HomeScreen({onNav,t,user}) {
         </div>
       </div>
       <div style={{padding:'12px 14px'}}>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+        {!isCliente(perfil)&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
           {[[t.ingresos,fmtUSD(met.ingresos),C.green],[t.egresos,fmtUSD(met.egresos),C.red],[t.ahorro,fmtUSD(met.ahorro),C.acc],[t.saldo,fmtUSD(met.saldo),C.amber]].map(([l,v,c])=>(
             <div key={l} style={{background:C.card,borderRadius:10,padding:'10px 11px',border:`.5px solid ${C.border}`,borderLeft:`3px solid ${c}`}}>
               <div style={{fontSize:10,color:C.t3,marginBottom:2}}>{l}</div>
@@ -505,7 +508,7 @@ function ClienteHomeScreen({onNav,t,user,dolar}) {
   useEffect(()=>{const s=localStorage.getItem('sgi_last_cot');if(s)try{setLastCot(JSON.parse(s));}catch(e){};},[]);
   const calMap={economico:{label:t.cal_eco||'Económico',color:'#4CAF50'},standard:{label:t.cal_std||'Standard',color:'#2196F3'},premium:{label:t.cal_prem||'Premium',color:'#9C27B0'}};
   const exploraSvg=[
-    `<rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/>`,
+    `<rect x="3" y="2" width="14" height="16" rx="1"/><line x1="3" y1="7" x2="17" y2="7"/><line x1="7" y1="2" x2="7" y2="7"/><line x1="13" y1="2" x2="13" y2="7"/><rect x="6" y="10" width="3" height="3" rx=".5"/><rect x="11" y="10" width="3" height="3" rx=".5"/>`,
     `<rect x="2" y="3" width="16" height="13" rx="2"/><circle cx="7" cy="8" r="1.5"/><path d="M2 13l4-4 3 3 3-3 6 5"/>`,
     `<path d="M3 4h14a1 1 0 011 1v8a1 1 0 01-1 1H7l-4 3V5a1 1 0 011-1z"/>`,
     `<path d="M10 2a6 6 0 00-6 6c0 4 6 10 6 10s6-6 6-10a6 6 0 00-6-6z"/><path d="M7.5 8l2 2 3-3"/>`,
@@ -1712,7 +1715,56 @@ function FAQScreen({t,onNav}) {
 }
 
 // ── STATS / AGENDA / PRESUP simples
-function StatsScreen({t}) {
+function StatsScreen({t,perfil}) {
+  const [lastCot,setLastCot]=useState(null);
+  useEffect(()=>{try{const s=localStorage.getItem('sgi_last_cot');if(s)setLastCot(JSON.parse(s));}catch(e){};},[]);
+  if(isCliente(perfil)){
+    const calMap={economico:{label:t.cal_eco||'Económico',color:'#2E7D32'},standard:{label:t.cal_std||'Standard',color:'#1565C0'},premium:{label:t.cal_prem||'Premium',color:'#6A1B9A'}};
+    return (
+      <div>
+        <div style={{background:C.navy,padding:'13px 14px'}}>
+          <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Tu proyecto</div>
+          <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>Mi progreso</div>
+        </div>
+        {lastCot?(
+          <div style={{padding:'14px',display:'flex',flexDirection:'column',gap:10}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              {[
+                [`${lastCot.m2}m²`,t.m2lbl||'M²',C.acc],
+                [`USD ${(lastCot.total_usd||0).toLocaleString()}`,t.precio_est||'Total',calMap[lastCot.cal]?.color||C.acc],
+                [lastCot.sistema,'Sistema',C.green],
+                [`${lastCot.tiempo_meses||4} meses`,t.tiempo||'Tiempo',C.amber],
+              ].map(([v,l,c])=>(
+                <div key={l} style={{background:C.card,borderRadius:10,padding:12,border:`.5px solid ${C.border}`,borderLeft:`3px solid ${c}`}}>
+                  <div style={{fontSize:9,color:C.t3,marginBottom:4,textTransform:'uppercase',letterSpacing:.5}}>{l}</div>
+                  <div style={{fontSize:16,fontWeight:800,color:c}}>{v}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px'}}>
+              <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:6}}>{t.calidad||'Calidad'}</div>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <span style={{fontSize:20}}>{CAL[lastCot.cal]?.icon||'🏠'}</span>
+                <div>
+                  <div style={{color:C.t1,fontSize:13,fontWeight:700}}>{calMap[lastCot.cal]?.label||lastCot.cal}</div>
+                  <div style={{color:C.t3,fontSize:11}}>USD {CAL[lastCot.cal]?.m2||0}/m² · {lastCot.tipo}</div>
+                </div>
+              </div>
+            </div>
+            <div style={{fontSize:9,color:C.t3,textAlign:'center',paddingTop:4}}>
+              Cotización del {lastCot.fecha?new Date(lastCot.fecha).toLocaleDateString('es-AR'):'—'}
+            </div>
+          </div>
+        ):(
+          <div style={{padding:'48px 24px',textAlign:'center',color:C.t3}}>
+            <div style={{fontSize:44,marginBottom:14}}>📊</div>
+            <div style={{fontWeight:700,color:C.t2,fontSize:14,marginBottom:8}}>Sin proyecto activo</div>
+            <div style={{fontSize:12,lineHeight:1.6,marginBottom:20}}>Generá una cotización para ver las estadísticas de tu proyecto</div>
+          </div>
+        )}
+      </div>
+    );
+  }
   return (
     <div>
       <div style={{background:C.navy,padding:'13px 14px'}}><div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{t.empresa}</div><div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.stats_title}</div></div>
@@ -1725,7 +1777,31 @@ function StatsScreen({t}) {
   );
 }
 
-function AgendaScreen({t}) {
+function AgendaScreen({t,perfil}) {
+  if(isCliente(perfil)){
+    return (
+      <div>
+        <div style={{background:C.navy,padding:'13px 14px'}}>
+          <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Tu obra</div>
+          <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.cron_titulo||'Cronograma de obra'}</div>
+        </div>
+        <div style={{padding:'14px',display:'flex',flexDirection:'column',gap:8}}>
+          {(t.etapas||[]).map(([nombre,desc],i)=>(
+            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:12,padding:'12px',background:C.card,borderRadius:12,border:`.5px solid ${C.border}`}}>
+              <div style={{width:28,height:28,minWidth:28,borderRadius:'50%',background:'rgba(74,159,255,.12)',border:'1px solid rgba(74,159,255,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:C.acc}}>{i+1}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{color:C.t1,fontSize:12,fontWeight:700,marginBottom:2}}>{nombre}</div>
+                <div style={{color:C.t3,fontSize:11,lineHeight:1.4}}>{desc}</div>
+              </div>
+            </div>
+          ))}
+          <button onClick={()=>openWA(false,'Hola, quiero consultar sobre el cronograma y fechas de mi obra.')} style={{width:'100%',marginTop:4,padding:'12px',background:'#25D366',color:'#fff',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            💬 Consultar fechas de mi obra
+          </button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div>
       <div style={{background:C.navy,padding:'13px 14px'}}><div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>{t.agenda_title}</div></div>
@@ -2366,7 +2442,7 @@ function ClientesScreen() {
   );
 }
 
-const CLIENTE_HIDDEN=['agenda','presup','stats','clientes'];
+const CLIENTE_HIDDEN=['rubros','agenda','presup','stats','clientes'];
 function MoreMenu({onNav,onClose,t,lang,onLang,perfil}) {
   const allItems=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['👥','Clientes','clientes']];
   const items=perfil==='cliente'?allItems.filter(([,,id])=>!CLIENTE_HIDDEN.includes(id)):allItems;
@@ -2879,7 +2955,7 @@ export default function SGMApp() {
     setPhase('login');
   }
 
-  const ADMIN_SCREENS=['stats','presup','agenda','clientes'];
+  const ADMIN_SCREENS=['presup','clientes','rubros'];
   function handleNav(id,params) {
     if(id==='more'){setShowMore(true);return;}
     if(perfil==='cliente'&&ADMIN_SCREENS.includes(id)){return;}
@@ -2995,15 +3071,15 @@ export default function SGMApp() {
   const screens={
     home:perfil==='cliente'
       ?<ClienteHomeScreen onNav={handleNav} t={t} user={user} dolar={dolar}/>
-      :<HomeScreen onNav={handleNav} t={t} user={user}/>,
+      :<HomeScreen onNav={handleNav} t={t} user={user} perfil={perfil}/>,
     modelos:<ModelosScreen onNav={handleNav} t={t}/>,
     cot:<CotizadorScreen t={t} initParams={screenParams} lang={lang}/>,
     chat:<ChatScreen t={t}/>,
     rubros:<RubrosScreen perfil={perfil} t={t}/>,
     faq:<FAQScreen t={t} onNav={handleNav}/>,
-    stats:<StatsScreen t={t}/>,
+    stats:<StatsScreen t={t} perfil={perfil}/>,
     presup:<PresupScreen t={t} dolar={dolar}/>,
-    agenda:<AgendaScreen t={t}/>,
+    agenda:<AgendaScreen t={t} perfil={perfil}/>,
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation}/>,
     clientes:<ClientesScreen/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
