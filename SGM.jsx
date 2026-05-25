@@ -19,11 +19,11 @@ let supa = null;
 })();
 
 const C = {
-  navy:"#0A1628",acc:"#4A9FFF",acc2:"#64FFDA",
-  green:"#2E7D32",red:"#C62828",amber:"#E65100",
-  bg:"#F0F4FF",card:"#fff",off:"#F8FAFF",
-  t1:"#0A1628",t2:"#4A5568",t3:"#718096",
-  border:"rgba(0,0,0,.08)",border2:"rgba(0,0,0,.14)",
+  navy:'var(--c-navy)',acc:'#4A9FFF',acc2:'#64FFDA',
+  green:'#2E7D32',red:'#C62828',amber:'#E65100',
+  bg:'var(--c-bg)',card:'var(--c-card)',off:'var(--c-off)',
+  t1:'var(--c-t1)',t2:'var(--c-t2)',t3:'var(--c-t3)',
+  border:'var(--c-border)',border2:'var(--c-border2)',
 };
 
 // Renders: fotos reales embebidas
@@ -275,35 +275,54 @@ function SGMLogo({small=false,style={}}) {
 }
 
 // ── TOPBAR
-function Topbar({screen,perfil,dolar,onAyuda,onLogin,loggedIn,t,onSound,soundOn,user,onSignOut}) {
-  const labels={cliente:'🏠 Cliente',constructor:'🏗️ Constructor',proveedor:'🏪 Proveedor'};
-  const scrNames={home:'Sistema de Gestión',modelos:t.galeria,cot:'Cotizador IA',chat:t.chat_title,mapa:'Mapa SGI',rubros:t.rubros_title,stats:t.stats_title,faq:t.faq_title,agenda:t.agenda_title,presup:t.presup_title};
+function Topbar({screen,perfil,dolar,onAyuda,loggedIn,t,user,onSignOut,onGoogleSignIn}) {
+  const [showMenu,setShowMenu]=useState(false);
   const displayName=user?.user_metadata?.full_name||user?.email?.split('@')[0]||'';
+  const avatarUrl=user?.user_metadata?.avatar_url;
   return (
-    <div style={{background:C.navy,padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+    <div style={{background:C.navy,padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0,position:'relative'}}>
       <div style={{display:'flex',alignItems:'center',gap:10}}>
         <SGMLogo small/>
         <div style={{color:'#fff',fontSize:13,fontWeight:700}}>SGI</div>
       </div>
-      <div style={{display:'flex',alignItems:'center',gap:5}}>
+      <div style={{display:'flex',alignItems:'center',gap:6}}>
         <div style={{background:'rgba(100,255,218,.1)',border:'1px solid rgba(100,255,218,.2)',borderRadius:6,padding:'3px 7px',fontSize:10,fontWeight:700,color:'#64FFDA'}}>
           ${dolar.toLocaleString('es-AR')} Blue
         </div>
-        {user
-          ? <div style={{display:'flex',alignItems:'center',gap:4}}>
-              {user.user_metadata?.avatar_url
-                ? <img src={user.user_metadata.avatar_url} referrerPolicy="no-referrer" style={{width:26,height:26,borderRadius:'50%',objectFit:'cover'}}/>
-                : <div style={{width:26,height:26,borderRadius:'50%',background:C.acc,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:C.navy}}>{displayName[0]?.toUpperCase()||'U'}</div>
-              }
-              <button onClick={onSignOut} style={{background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.15)',color:'rgba(255,255,255,.7)',fontSize:9,padding:'3px 7px',borderRadius:6,cursor:'pointer',fontWeight:600}}>Salir</button>
+        <div style={{position:'relative'}}>
+          <div onClick={()=>setShowMenu(m=>!m)} style={{width:30,height:30,borderRadius:'50%',cursor:'pointer',overflow:'hidden',border:'2px solid rgba(74,159,255,.4)',flexShrink:0}}>
+            {avatarUrl
+              ? <img src={avatarUrl} referrerPolicy="no-referrer" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+              : <div style={{width:'100%',height:'100%',background:C.acc,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#0A1628'}}>{displayName?displayName[0].toUpperCase():'U'}</div>
+            }
+          </div>
+          {showMenu&&(
+            <div style={{position:'absolute',top:36,right:0,background:'#fff',borderRadius:12,border:'1px solid #E2E8F0',boxShadow:'0 8px 32px rgba(0,0,0,.15)',minWidth:200,zIndex:600,overflow:'hidden'}}>
+              {user&&(
+                <div style={{padding:'12px 14px',borderBottom:'1px solid #F1F5F9'}}>
+                  <div style={{fontSize:13,fontWeight:700,color:'#0F172A',marginBottom:2}}>{displayName||'Usuario'}</div>
+                  <div style={{fontSize:11,color:'#64748B'}}>{user.email}</div>
+                </div>
+              )}
+              <button onClick={()=>{onSignOut();setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#0F172A',cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M13 5l5 5-5 5M18 10H7"/><path d="M7 3H3v14h4"/></svg>
+                Cambiar cuenta
+              </button>
+              {onGoogleSignIn&&<button onClick={()=>{onGoogleSignIn();setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#0F172A',cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 3"/></svg>
+                Agregar cuenta
+              </button>}
+              <button onClick={()=>{onSignOut();setShowMenu(false);}} style={{width:'100%',padding:'11px 14px',border:'none',background:'none',textAlign:'left',fontSize:13,color:'#DC2626',cursor:'pointer',display:'flex',alignItems:'center',gap:8,borderTop:'1px solid #F1F5F9'}}>
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M7 3H3v14h4M13 5l5 5-5 5M18 10H7"/></svg>
+                Cerrar sesión
+              </button>
+              <button onClick={()=>setShowMenu(false)} style={{position:'absolute',top:8,right:8,background:'none',border:'none',color:'#94A3B8',fontSize:16,cursor:'pointer',lineHeight:1}}>✕</button>
             </div>
-          : loggedIn
-            ? <div style={{width:26,height:26,borderRadius:'50%',background:C.acc,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:C.navy}}>VM</div>
-            : null
-        }
-        <button onClick={onSound} style={{width:28,height:28,borderRadius:'50%',background:'rgba(255,255,255,.08)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>{soundOn?'🔊':'🔇'}</button>
+          )}
+        </div>
         <button onClick={onAyuda} style={{width:28,height:28,borderRadius:'50%',background:'rgba(74,159,255,.2)',border:'1px solid rgba(74,159,255,.4)',color:'#4A9FFF',fontSize:15,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>?</button>
       </div>
+      {showMenu&&<div onClick={()=>setShowMenu(false)} style={{position:'fixed',inset:0,zIndex:599}}/>}
     </div>
   );
 }
@@ -577,20 +596,25 @@ function EmpresaScreen({onNav,user}) {
         </div>
         <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'16px',marginBottom:12}}>
           <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Quiénes somos</div>
-          <div style={{color:'rgba(255,255,255,.8)',fontSize:13,lineHeight:1.7}}>Empresa especializada en construcción con tecnología Steel Frame en Córdoba. Ofrecemos soluciones integrales desde el diseño hasta la llave en mano, con materiales de primera calidad y tiempos garantizados.</div>
+          <div style={{color:'rgba(255,255,255,.8)',fontSize:13,lineHeight:1.7}}>SGI es una empresa constructora especializada en Steel Frame y sistemas modulares en Córdoba, Argentina. Combinamos tecnología, diseño y eficiencia para construir viviendas de alta calidad en menor tiempo. Cada proyecto es único y trabajamos junto al cliente desde el diseño hasta la entrega de llaves.</div>
         </div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
-          {[['🏗️','+20 obras','Realizadas','modelos'],['📐','+8 modelos','Modelos','modelos'],['⭐','+5 años','De experiencia',null],['📍','Córdoba','Zona de operación','mapa']].map(([ic,v,l,nav])=>(
+          {[
+            {svg:`<rect x="3" y="2" width="14" height="16" rx="1"/><line x1="3" y1="7" x2="17" y2="7"/><line x1="7" y1="2" x2="7" y2="7"/><line x1="13" y1="2" x2="13" y2="7"/><rect x="6" y="11" width="8" height="5" rx="1"/>`,v:'+20 obras',l:'Realizadas',nav:'modelos'},
+            {svg:`<rect x="3" y="2" width="14" height="16" rx="1"/><line x1="7" y1="7" x2="13" y2="7"/><line x1="7" y1="10" x2="13" y2="10"/><line x1="7" y1="13" x2="11" y2="13"/>`,v:'+8 modelos',l:'Modelos',nav:'modelos'},
+            {svg:`<circle cx="10" cy="6" r="3.5"/><path d="M6.5 10l-2 7h11l-2-7"/><line x1="10" y1="10" x2="10" y2="13"/>`,v:'+5 años',l:'De experiencia',nav:null},
+            {svg:`<path d="M10 2a6 6 0 00-6 6c0 4 6 10 6 10s6-6 6-10a6 6 0 00-6-6z"/><circle cx="10" cy="8" r="2"/>`,v:'Córdoba',l:'Zona de operación',nav:'mapa'},
+          ].map(({svg,v,l,nav})=>(
             nav
-            ? <button key={l} onClick={()=>onNav(nav)} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px',textAlign:'center',cursor:'pointer',fontFamily:'inherit',width:'100%'}}>
-                <div style={{fontSize:18,marginBottom:4}}>{ic}</div>
-                <div style={{color:'#fff',fontSize:13,fontWeight:700}}>{v}</div>
-                <div style={{color:C.t3,fontSize:10,marginTop:2}}>{l}</div>
+            ? <button key={l} onClick={()=>onNav(nav)} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px',textAlign:'center',cursor:'pointer',fontFamily:'inherit',width:'100%',display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:svg}}/>
+                <div style={{color:C.t1,fontSize:13,fontWeight:700}}>{v}</div>
+                <div style={{color:C.t3,fontSize:10}}>{l}</div>
               </button>
-            : <div key={l} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px',textAlign:'center'}}>
-                <div style={{fontSize:18,marginBottom:4}}>{ic}</div>
-                <div style={{color:'#fff',fontSize:13,fontWeight:700}}>{v}</div>
-                <div style={{color:C.t3,fontSize:10,marginTop:2}}>{l}</div>
+            : <div key={l} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px',textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:svg}}/>
+                <div style={{color:C.t1,fontSize:13,fontWeight:700}}>{v}</div>
+                <div style={{color:C.t3,fontSize:10}}>{l}</div>
               </div>
           ))}
         </div>
@@ -703,6 +727,9 @@ function CotizadorScreen({t,initParams,lang='es'}) {
   const [loading,setLoading]=useState(false);
   const [result,setResult]=useState(null);
   const [excluidas,setExcluidas]=useState([]);
+  const [showChecklist,setShowChecklist]=useState(false);
+  const [checks,setChecks]=useState({});
+  function toggleCheck(k){setChecks(c=>({...c,[k]:!c[k]}));}
 
   function toggleServicio(name){
     setSelServicios(s=>s.includes(name)?s.filter(x=>x!==name):[...s,name]);
@@ -840,11 +867,82 @@ function CotizadorScreen({t,initParams,lang='es'}) {
             ))}
           </div>
         </div>
-        {!loading&&!result&&(
-          <button onClick={generar} style={{width:'100%',background:cv.color,color:'#fff',border:'none',borderRadius:10,padding:13,fontSize:13,fontWeight:700,cursor:'pointer'}}>
+        {!loading&&!result&&!showChecklist&&(
+          <button onClick={()=>setShowChecklist(true)} style={{width:'100%',background:cv.color,color:'#fff',border:'none',borderRadius:10,padding:13,fontSize:13,fontWeight:700,cursor:'pointer'}}>
             ✨ {t.cotBtn}
           </button>
         )}
+        {showChecklist&&!result&&!loading&&(()=>{
+          const secA=[
+            {k:'a1',label:'Tengo definida la ubicación del terreno'},
+            {k:'a2',label:'Sé los m² aproximados que quiero construir'},
+            {k:'a3',label:'Tengo un presupuesto estimado en mente'},
+            {k:'a4',label:'Conozco el sistema constructivo que prefiero'},
+          ];
+          const secB=[
+            {k:'b1',label:'Tengo el título de propiedad del terreno'},
+            {k:'b2',label:'Tengo el número de partida/boleta del terreno'},
+            {k:'b3',label:'Conozco las medidas y límites del terreno'},
+          ];
+          const secC=[
+            {k:'c1',label:'Tengo planos existentes del terreno o vecindad'},
+            {k:'c2',label:'Ya hice (o tengo) un estudio de suelo'},
+          ];
+          const needsDocWA=secB.some(i=>!checks[i.k]);
+          const needsPlanosWA=secC.some(i=>!checks[i.k]);
+          function Section({title,items}){
+            return (
+              <div style={{marginBottom:14}}>
+                <div style={{fontSize:10,fontWeight:800,color:C.acc,textTransform:'uppercase',letterSpacing:.8,marginBottom:8}}>{title}</div>
+                {items.map(item=>(
+                  <div key={item.k} onClick={()=>toggleCheck(item.k)} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',borderRadius:9,background:checks[item.k]?'rgba(74,159,255,.08)':C.off,border:`.5px solid ${checks[item.k]?'rgba(74,159,255,.3)':C.border2}`,marginBottom:6,cursor:'pointer'}}>
+                    <div style={{width:18,height:18,borderRadius:5,border:`2px solid ${checks[item.k]?C.acc:C.border2}`,background:checks[item.k]?C.acc:'transparent',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      {checks[item.k]&&<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg>}
+                    </div>
+                    <div style={{fontSize:12,color:C.t1,lineHeight:1.4}}>{item.label}</div>
+                  </div>
+                ))}
+              </div>
+            );
+          }
+          return (
+            <div>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14}}>
+                <button onClick={()=>setShowChecklist(false)} style={{background:'none',border:'none',color:C.acc,fontSize:12,fontWeight:700,cursor:'pointer',padding:0,display:'flex',alignItems:'center',gap:4}}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="10,3 5,8 10,13"/></svg>
+                  Volver
+                </button>
+                <div style={{fontSize:13,fontWeight:700,color:C.t1}}>Checklist antes de cotizar</div>
+              </div>
+              <Section title="A · Sobre tu proyecto" items={secA}/>
+              <Section title="B · Documentación del terreno" items={secB}/>
+              <Section title="C · Planos y estudios" items={secC}/>
+              {needsDocWA&&(
+                <div style={{background:'rgba(37,211,102,.08)',border:'1px solid rgba(37,211,102,.25)',borderRadius:10,padding:'10px 12px',marginBottom:10,display:'flex',alignItems:'center',gap:10}}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#25D366" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="14" height="14" rx="3"/><line x1="7" y1="7" x2="13" y2="7"/><line x1="7" y1="10" x2="13" y2="10"/><line x1="7" y1="13" x2="10" y2="13"/></svg>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#25D366',marginBottom:2}}>¿Necesitás ayuda con la documentación?</div>
+                    <div style={{fontSize:10,color:C.t2,lineHeight:1.4}}>Te asesoramos para conseguir la documentación del terreno.</div>
+                  </div>
+                  <button onClick={()=>openWA(false,'Hola, necesito ayuda con la documentación de mi terreno para cotizar una obra.')} style={{background:'#25D366',border:'none',borderRadius:8,padding:'6px 10px',fontSize:10,fontWeight:700,color:'#fff',cursor:'pointer',whiteSpace:'nowrap'}}>💬 WA</button>
+                </div>
+              )}
+              {needsPlanosWA&&(
+                <div style={{background:'rgba(124,58,237,.08)',border:'1px solid rgba(124,58,237,.25)',borderRadius:10,padding:'10px 12px',marginBottom:10,display:'flex',alignItems:'center',gap:10}}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="17" x2="17" y2="3"/><line x1="3" y1="3" x2="17" y2="17"/><circle cx="10" cy="10" r="3"/></svg>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#7C3AED',marginBottom:2}}>¿Necesitás planos o estudio de suelo?</div>
+                    <div style={{fontSize:10,color:C.t2,lineHeight:1.4}}>Ofrecemos estos servicios profesionales.</div>
+                  </div>
+                  <button onClick={()=>openWA(false,'Hola, necesito cotizar planos o estudio de suelo para mi obra.')} style={{background:'#7C3AED',border:'none',borderRadius:8,padding:'6px 10px',fontSize:10,fontWeight:700,color:'#fff',cursor:'pointer',whiteSpace:'nowrap'}}>💬 WA</button>
+                </div>
+              )}
+              <button onClick={()=>{setShowChecklist(false);generar();}} style={{width:'100%',background:cv.color,color:'#fff',border:'none',borderRadius:10,padding:13,fontSize:13,fontWeight:700,cursor:'pointer',marginTop:4}}>
+                Ver mi cotización →
+              </button>
+            </div>
+          );
+        })()}
         {loading&&(
           <div style={{textAlign:'center',padding:24,background:C.navy,borderRadius:12}}>
             <div style={{fontSize:28,marginBottom:8}}>⚙️</div>
@@ -1820,7 +1918,7 @@ function PresupScreen({t,dolar=1415}) {
 }
 
 // ── ONBOARDING
-function Onboarding({onSelect}) {
+function Onboarding({onSelect,theme,onThemeChange}) {
   const [sel,setSel]=useState(null);
   const cards=[
     {id:'cliente',icon:'🏠',name:'Cliente',desc:'Quiero seguir el avance de mi obra'},
@@ -1830,6 +1928,7 @@ function Onboarding({onSelect}) {
   return (
     <div style={{position:'absolute',inset:0,background:'#07111F',display:'flex',flexDirection:'column',alignItems:'center',overflowY:'auto',zIndex:100}}>
       <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(74,159,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(74,159,255,.03) 1px,transparent 1px)',backgroundSize:'32px 32px',pointerEvents:'none'}}/>
+      {onThemeChange&&<button onClick={()=>onThemeChange(theme==='dark'?'light':'dark')} style={{position:'absolute',top:16,right:16,zIndex:2,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.2)',borderRadius:20,padding:'6px 14px',fontSize:12,color:'#F0F6FF',cursor:'pointer',fontFamily:'inherit'}}>{theme==='dark'?'☀️ Claro':'🌙 Oscuro'}</button>}
       <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',alignItems:'center',width:'100%',maxWidth:380,padding:'56px 24px 40px'}}>
         <SGMLogo/>
         <div style={{fontSize:22,fontWeight:700,color:'#F0F6FF',textAlign:'center',marginBottom:8,marginTop:24}}>¿Cómo usás SGI?</div>
@@ -2373,9 +2472,12 @@ export default function SGMApp() {
   const [forgotSent,setForgotSent]=useState(false);
   const [denegadoReason,setDenegadoReason]=useState('unauthorized');
   const [splashExiting,setSplashExiting]=useState(false);
+  const [theme,setTheme]=useState(()=>localStorage.getItem('sgi_theme')||'dark');
   const pendingPhaseRef=useRef(null);
   const splashResultRef=useRef(null);
   const splashMinReadyRef=useRef(false);
+  const touchStartXRef=useRef(0);
+  const touchStartYRef=useRef(0);
   const t=T[lang];
   function exitSplash(next){pendingPhaseRef.current=next;setSplashExiting(true);}
   function storeSplashResult(next){
@@ -2438,6 +2540,7 @@ export default function SGMApp() {
   },[]);
 
   useEffect(()=>{fetch('https://dolarapi.com/v1/dolares/blue').then(r=>r.json()).then(d=>setDolar(d.venta||1390)).catch(()=>{});},[]);
+  useEffect(()=>{localStorage.setItem('sgi_theme',theme);if(theme==='light')document.body.classList.add('theme-light');else document.body.classList.remove('theme-light');},[theme]);
 
   async function handleAuthenticatedUser(userObj,fromSignUp=false){
     setUser(userObj);setLoggedIn(true);
@@ -2665,7 +2768,7 @@ export default function SGMApp() {
     </div>
   );
 
-  if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{localStorage.setItem('sgm-perfil',p);setPerfil(p);setPhase('app');}}/></div>;
+  if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{localStorage.setItem('sgm-perfil',p);setPerfil(p);setPhase('app');}} theme={theme} onThemeChange={setTheme}/></div>;
 
   const screens={
     home:perfil==='cliente'
@@ -2686,9 +2789,9 @@ export default function SGMApp() {
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100vh',width:'100%',background:C.card,position:'relative',overflow:'hidden',fontFamily:"system-ui,sans-serif"}}>
-      <style>{`*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,button{font-family:inherit}`}</style>
-      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>handleNav('faq')} onLogin={()=>setLoggedIn(true)} loggedIn={loggedIn} t={t} onSound={()=>{setSoundOn(s=>!s);playTap();}} soundOn={soundOn} user={user} userRol={userRol} onSignOut={signOut}/>
-      <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap}>
+      <style>{`:root{--c-navy:#0D1B2A;--c-bg:#0A1628;--c-card:#0D1B2A;--c-off:#0F2035;--c-t1:#F0F6FF;--c-t2:rgba(240,246,255,.55);--c-t3:rgba(240,246,255,.35);--c-border:rgba(255,255,255,.07);--c-border2:rgba(255,255,255,.14)}body.theme-light{--c-navy:#1E40AF;--c-bg:#F0F4F8;--c-card:#FFFFFF;--c-off:#F8FAFC;--c-t1:#0F172A;--c-t2:#475569;--c-t3:#94A3B8;--c-border:rgba(0,0,0,.08);--c-border2:rgba(0,0,0,.15)}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,button{font-family:inherit}`}</style>
+      <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>handleNav('faq')} loggedIn={loggedIn} t={t} user={user} onSignOut={signOut} onGoogleSignIn={loginWithGoogle}/>
+      <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap} onTouchStart={e=>{touchStartXRef.current=e.touches[0].clientX;touchStartYRef.current=e.touches[0].clientY;}} onTouchEnd={e=>{const dx=e.changedTouches[0].clientX-touchStartXRef.current;const dy=Math.abs(e.changedTouches[0].clientY-touchStartYRef.current);if(touchStartXRef.current<30&&dx>80&&dy<80&&screen!=='home')handleNav('home');}}>
         {screens[screen]||screens.home}
       </div>
       <BottomNav screen={screen} onNav={handleNav} t={t} perfil={perfil}/>

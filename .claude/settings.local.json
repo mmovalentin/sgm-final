@@ -10,7 +10,26 @@
       "Bash(dir C:\\\\Users\\\\Usuario\\\\sgm-final\\\\api *)",
       "Bash(sed -n '360,380p' SGM.jsx)",
       "Bash(sed -n '505,520p' SGM.jsx)",
-      "Bash(sed -n '670,685p' SGM.jsx)"
+      "Bash(sed -n '670,685p' SGM.jsx)",
+      "Bash(sed -n '328,345p' SGM.jsx)",
+      "Bash(sed -n '390,400p' SGM.jsx)",
+      "Bash(sed -n '432,450p' SGM.jsx)",
+      "Bash(sed -n '480,520p' SGM.jsx)",
+      "Bash(sed -n '360,385p' SGM.jsx)",
+      "Bash(sed -n '505,516p' SGM.jsx)",
+      "Bash(sed -n '670,683p' SGM.jsx)",
+      "Bash(sed -n '328,350p' SGM.jsx)",
+      "Bash(sed -n '382,402p' SGM.jsx)",
+      "Bash(sed -n '438,470p' SGM.jsx)",
+      "Bash(sed -n '88,100p' SGM.jsx)",
+      "Bash(sed -n '143,155p' SGM.jsx)",
+      "Bash(sed -n '1,10p' SGM.jsx)",
+      "Bash(sed -n '845,920p' SGM.jsx)",
+      "Bash(grep -n \"perfil,onLogin\\\\|tc:dolar\\\\|dolar=1415\\\\|dolar={dolar}\\\\|perfil={perfil}\\\\|Quiero sumarme\\\\|Login para guardar\" SGM.jsx)",
+      "Bash(sed -n '925,946p' SGM.jsx)",
+      "Bash(sed -n '795,830p' SGM.jsx)",
+      "Bash(grep -n \"Comparar proveedores\\\\|showComparar\\\\|abrirComparar\\\\|\\);$\" SGM.jsx)",
+      "Bash(npx vercel *)"
     ]
   }
 }
