@@ -464,7 +464,7 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
               </div>
               <div style={{textAlign:'right'}}>
                 <div style={{color:C.acc,fontSize:16,fontWeight:800}}>{fmtUSD(lastCot.total_usd||0)}</div>
-                <button onClick={()=>onNav('cot')} style={{fontSize:11,color:C.acc,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit'}}>{t.ver_detalle||'Ver detalle →'}</button>
+                <button onClick={()=>onNav('detalle_cot',{cot:lastCot,estadoProyecto:null})} style={{fontSize:11,color:C.acc,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit'}}>{t.ver_detalle||'Ver detalle →'}</button>
               </div>
             </div>
           </div>
