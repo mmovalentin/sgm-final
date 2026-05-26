@@ -2997,7 +2997,7 @@ function AvanceObraAdminScreen({userRol}) {
 
   useEffect(()=>{
     if(!supa) return;
-    supa.from('profiles').select('id,email').eq('role','cliente')
+    supa.from('perfiles').select('id,email').eq('rol','cliente')
       .order('email',{ascending:true}).then(({data})=>setClientes(data||[]));
   },[]);
 
@@ -3399,12 +3399,12 @@ export default function SGMApp() {
         if(session?.user){
           setUser(session.user);setLoggedIn(true);
           try{
-            await supa.from('profiles').upsert(
-              {id:session.user.id,email:session.user.email,role:'cliente'},
+            await supa.from('perfiles').upsert(
+              {id:session.user.id,email:session.user.email,rol:'cliente'},
               {onConflict:'id',ignoreDuplicates:true}
             );
-            const {data}=await supa.from('profiles').select('role').eq('id',session.user.id).single();
-            const rol=ADMIN_EMAILS.includes(session.user.email)?'admin':(data?.role||'cliente');
+            const {data}=await supa.from('perfiles').select('rol').eq('id',session.user.id).single();
+            const rol=ADMIN_EMAILS.includes(session.user.email)?'admin':(data?.rol||'cliente');
             console.log('[SGI splash] user=',session.user.email,' role=',rol,' raw=',data);
             setUserRol(rol);
             if(isAdmin(rol)){
@@ -3505,12 +3505,12 @@ export default function SGMApp() {
     setUser(userObj);setLoggedIn(true);
     try{
       // Auto-register Google users: insert 'cliente' role only if no profile exists
-      await supa.from('profiles').upsert(
-        {id:userObj.id,email:userObj.email,role:'cliente'},
+      await supa.from('perfiles').upsert(
+        {id:userObj.id,email:userObj.email,rol:'cliente'},
         {onConflict:'id',ignoreDuplicates:true}
       );
-      const {data}=await supa.from('profiles').select('role').eq('id',userObj.id).single();
-      const rol=ADMIN_EMAILS.includes(userObj.email)?'admin':(data?.role||'cliente');
+      const {data}=await supa.from('perfiles').select('rol').eq('id',userObj.id).single();
+      const rol=ADMIN_EMAILS.includes(userObj.email)?'admin':(data?.rol||'cliente');
       console.log('[SGI auth] user=',userObj.email,' role=',rol,' raw=',data);
       setUserRol(rol);
       if(isAdmin(rol)){
