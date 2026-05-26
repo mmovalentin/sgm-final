@@ -56,8 +56,9 @@ const MODELOS = [
   { m2:90, nombre:"Modelo 90m²", desc:"3 dorm · 2 baños · living · cochera",        prices:{economico:81000,standard:94500,premium:117000} },
 ];
 
-function isAdmin(p){return p==='admin'||p==='empresa';}
-function isCliente(p){return !isAdmin(p);}
+const ADMIN_EMAILS=['mmovalentin@gmail.com'];
+function isAdmin(p,email=''){return p==='admin'||p==='empresa'||ADMIN_EMAILS.includes(email);}
+function isCliente(p,email=''){return !isAdmin(p,email);}
 
 const CAL = {
   economico:{ color:"#2E7D32", bg:"#E8F5E9", icon:"🪨", m2:900 },
@@ -3348,7 +3349,7 @@ export default function SGMApp() {
               {onConflict:'id',ignoreDuplicates:true}
             );
             const {data}=await supa.from('profiles').select('role').eq('id',session.user.id).single();
-            const rol=data?.role||'cliente';
+            const rol=ADMIN_EMAILS.includes(session.user.email)?'admin':(data?.role||'cliente');
             console.log('[SGI splash] user=',session.user.email,' role=',rol,' raw=',data);
             setUserRol(rol);
             if(isAdmin(rol)){
@@ -3454,7 +3455,7 @@ export default function SGMApp() {
         {onConflict:'id',ignoreDuplicates:true}
       );
       const {data}=await supa.from('profiles').select('role').eq('id',userObj.id).single();
-      const rol=data?.role||'cliente';
+      const rol=ADMIN_EMAILS.includes(userObj.email)?'admin':(data?.role||'cliente');
       console.log('[SGI auth] user=',userObj.email,' role=',rol,' raw=',data);
       setUserRol(rol);
       if(isAdmin(rol)){
