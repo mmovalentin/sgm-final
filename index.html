@@ -703,14 +703,19 @@ function ClienteHomeScreen({onNav,t,user}) {
   const banner=estadoProyecto?ESTADO_BANNER[estadoProyecto]:null;
 
   async function guardarDescripcion(){
-    if(!user?.id){alert('Debés estar logueado para guardar.');return;}
+    if(!user?.id)return;
     setSavingDesc(true);setDescError(null);
-    const{error}=await supa.from('proyecto_cliente')
-      .update({descripcion:editDescText}).eq('user_id',user.id);
-    setSavingDesc(false);
-    if(error){setDescError('Error al guardar: '+error.message);return;}
-    setDescripcion(editDescText);setEditDesc(false);
-    setDescSaved(true);setTimeout(()=>setDescSaved(false),2000);
+    try{
+      const{error}=await supa.from('cotizaciones')
+        .update({descripcion:editDescText}).eq('user_id',user.id);
+      if(error)throw error;
+      setDescripcion(editDescText);setEditDesc(false);
+      setDescSaved(true);setTimeout(()=>setDescSaved(false),2000);
+    }catch(e){
+      setDescError('Error al guardar: '+e.message);
+    }finally{
+      setSavingDesc(false);
+    }
   }
 
   return (
