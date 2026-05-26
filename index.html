@@ -657,9 +657,24 @@ function ClienteHomeScreen({onNav,t,user}) {
   const [proyectoId,setProyectoId]=useState(null);
 
   useEffect(()=>{
-    let cot=null;
-    try{const s=localStorage.getItem('sgi_last_cot');if(s){cot=JSON.parse(s);setLastCot(cot);}}catch(e){}
+    let localCot=null;
+    try{const s=localStorage.getItem('sgi_last_cot');if(s){localCot=JSON.parse(s);setLastCot(localCot);}}catch(e){}
     if(!supa||!user) return;
+    // Cargar cotización real desde Supabase (tiene prioridad sobre localStorage)
+    supa.from('cotizaciones').select('*').eq('user_id',user.id)
+      .order('created_at',{ascending:false}).limit(1).single()
+      .then(({data:dbCot})=>{
+        if(dbCot){
+          const normalized={
+            ...dbCot,
+            cal:dbCot.calidad,
+            fecha:dbCot.created_at,
+            tiempo_meses:localCot?.tiempo_meses||Math.round((dbCot.m2||80)/15),
+          };
+          setLastCot(normalized);
+          try{localStorage.setItem('sgi_last_cot',JSON.stringify(normalized));}catch(e){}
+        }
+      });
     supa.from('proyecto_cliente').select('*').eq('user_id',user.id).single()
       .then(async({data})=>{
         if(data){
@@ -667,12 +682,12 @@ function ClienteHomeScreen({onNav,t,user}) {
           setEstadoProyecto(data.estado_proyecto||'pendiente');
           setDescripcion(data.descripcion||'');
           setProyectoId(data.id);
-        } else if(cot){
+        } else if(localCot){
           const{data:nd}=await supa.from('proyecto_cliente').upsert({
             user_id:user.id,email:user.email,
             nombre_cliente:user.user_metadata?.full_name||user.email,
             estado_proyecto:'pendiente',
-            m2_totales:cot.m2,sistema:cot.sistema,tipo:cot.tipo,
+            m2_totales:localCot.m2,sistema:localCot.sistema,tipo:localCot.tipo,
             descripcion:'',etapas:[],proveedores:[],
           },{onConflict:'user_id'}).select().single();
           if(nd){setEstadoProyecto('pendiente');setProyectoId(nd.id);}
@@ -3018,15 +3033,18 @@ function AvanceObraAdminScreen({userRol}) {
 
   useEffect(()=>{
     if(!supa) return;
-    Promise.all([
-      supa.from('perfiles').select('id,email').eq('rol','cliente'),
-      supa.from('proyecto_cliente').select('user_id,email,nombre_cliente'),
-    ]).then(([{data:perfs},{data:projs}])=>{
-      const map=new Map();
-      (perfs||[]).forEach(p=>map.set(p.id,{id:p.id,label:p.email}));
-      (projs||[]).forEach(p=>{if(p.user_id)map.set(p.user_id,{id:p.user_id,label:p.nombre_cliente||p.email});});
-      setClientes([...map.values()].sort((a,b)=>a.label.localeCompare(b.label)));
-    });
+    supa.from('cotizaciones').select('user_id,tipo,m2,sistema').order('created_at',{ascending:false})
+      .then(async({data:cots})=>{
+        const uids=[...new Set((cots||[]).filter(c=>c.user_id).map(c=>c.user_id))];
+        if(!uids.length){setClientes([]);return;}
+        const{data:perfs}=await supa.from('perfiles').select('id,email').in('id',uids);
+        const emailMap=Object.fromEntries((perfs||[]).map(p=>[p.id,p.email]));
+        const entries=uids.map(uid=>({
+          id:uid,
+          label:emailMap[uid]||`Usuario ${uid.slice(0,6)}`,
+        })).sort((a,b)=>a.label.localeCompare(b.label));
+        setClientes(entries);
+      });
   },[]);
 
   async function loadEtapas(uid){
