@@ -27,7 +27,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:#07111F}
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">﻿import { useState, useEffect, useRef } from "react";
+<script type="text/babel">const { useState, useEffect, useRef } = React;
 const SGM_VERSION = '2.4';
 // Cliente Supabase: se inicializa desde /api/config (env vars de Vercel).
 // Fallback a valores hardcodeados si el endpoint no está disponible.
