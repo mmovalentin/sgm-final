@@ -6,7 +6,7 @@
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'API key not configured' });
 
-  const { tipo, m2, sistema, cal } = req.body;
+  const { tipo, m2, sistema, cal, user_id, user_email } = req.body;
   if (!tipo || !m2 || !sistema || !cal) return res.status(400).json({ error: 'Faltan campos requeridos' });
 
   const PRICES = { economico: 850, standard: 1100, premium: 1500 };
@@ -61,12 +61,12 @@ Devuelve SOLO este JSON (los pct deben sumar 100, adapta rubros al sistema ${sis
     result.anticipo_usd = anticipo_usd;
     if (!result.tiempo_meses) result.tiempo_meses = tiempo_meses;
 
-    // Guardar cotización en Supabase si las env vars están configuradas
+    // Guardar cotización en Supabase
     const sbUrl = process.env.SUPABASE_URL;
-    const sbKey = process.env.SUPABASE_ANON_KEY;
+    const sbKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
     if (sbUrl && sbKey) {
       try {
-        const sbRes = await fetch(`${sbUrl}/rest/v1/presupuestos`, {
+        const sbRes = await fetch(`${sbUrl}/rest/v1/cotizaciones`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -75,8 +75,16 @@ Devuelve SOLO este JSON (los pct deben sumar 100, adapta rubros al sistema ${sis
             'Prefer': 'return=minimal',
           },
           body: JSON.stringify({
-            archivo_nombre: `${tipo} ${superficie}m2 ${cal}`,
+            user_id: user_id || null,
+            email: user_email || null,
+            tipo,
+            m2: superficie,
+            sistema,
+            cal,
             total_usd: result.total_usd,
+            anticipo_usd: result.anticipo_usd,
+            tiempo_meses: result.tiempo_meses,
+            rubros: result.rubros || [],
             fecha: new Date().toISOString().split('T')[0],
           }),
         });

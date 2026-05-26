@@ -1204,7 +1204,7 @@ function ModelosScreen({onNav,t}) {
 const ETAPAS_BASE=[3,4,5,4,5,6,2,1];
 
 const ETAPAS_PCT=[7,6,26,17,17,15,6,6];
-function CotizadorScreen({t,initParams,lang='es'}) {
+function CotizadorScreen({t,initParams,lang='es',user}) {
   const [cotTab,setCotTab]=useState('obra');
   const [selServicios,setSelServicios]=useState([]);
   const [tipo,setTipo]=useState('Casa habitacion');
@@ -1255,7 +1255,7 @@ function CotizadorScreen({t,initParams,lang='es'}) {
     const total=parseInt(m2||80)*priceM2;
     const anticipo=Math.round(total*0.6);
     try{
-      const r=await fetch('/api/cotizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo,m2,sistema,cal,priceM2,total,anticipo})});
+      const r=await fetch('/api/cotizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo,m2,sistema,cal,priceM2,total,anticipo,user_id:user?.id||null,user_email:user?.email||null})});
       const data=await r.json();
       if(data.error) setResult({error:true,msg:data.error,raw:data.raw});
       else { setExcluidas([]); setResult(data); try{localStorage.setItem('sgi_last_cot',JSON.stringify({tipo,m2:parseInt(m2)||80,sistema,cal,total_usd:data.total_usd||parseInt(m2||80)*CAL[cal].m2,tiempo_meses:data.tiempo_meses||4,fecha:new Date().toISOString()}));}catch(e){} }
@@ -2621,6 +2621,9 @@ function ClientesScreen({perfil,userRol}) {
   const [showProyectos,setShowProyectos]=useState(false);
   const [proyectosWeb,setProyectosWeb]=useState([]);
   const [loadingProy,setLoadingProy]=useState(false);
+  const [showCotizaciones,setShowCotizaciones]=useState(false);
+  const [cotizacionesWeb,setCotizacionesWeb]=useState([]);
+  const [loadingCot,setLoadingCot]=useState(false);
   const [aprobando,setAprobando]=useState(null);
 
   const selCliente=clientes.find(c=>c.id===selId)||null;
@@ -2639,6 +2642,13 @@ function ClientesScreen({perfil,userRol}) {
     setProyectosWeb(data||[]);
     setLoadingProy(false);
   }
+  async function fetchCotizaciones(){
+    if(!supa) return;
+    setLoadingCot(true);
+    const {data}=await supa.from('cotizaciones').select('*').order('created_at',{ascending:false}).limit(100);
+    setCotizacionesWeb(data||[]);
+    setLoadingCot(false);
+  }
   async function cambiarEstadoProyecto(proyId,nuevoEstado){
     if(!supa) return;
     setAprobando(proyId);
@@ -2646,7 +2656,7 @@ function ClientesScreen({perfil,userRol}) {
     await fetchProyectos();
     setAprobando(null);
   }
-  useEffect(()=>{fetchClientes();fetchProyectos();},[]);
+  useEffect(()=>{fetchClientes();fetchProyectos();fetchCotizaciones();},[]);
 
   async function agregarCliente(){
     if(!form.nombre.trim()) return;
@@ -2716,6 +2726,46 @@ function ClientesScreen({perfil,userRol}) {
     {id:'en_obra',label:'En obra',color:'#22C55E'},
   ];
 
+  if(showCotizaciones) return(
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div style={{background:C.navy,padding:'13px 14px',flexShrink:0,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          <div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>Cotizaciones Web</div>
+          <div style={{color:C.t3,fontSize:10,marginTop:2}}>{cotizacionesWeb.length} cotizaciones totales</div>
+        </div>
+        <button onClick={()=>setShowCotizaciones(false)} style={{background:'none',border:`.5px solid ${C.border2}`,color:C.acc,borderRadius:8,padding:'6px 11px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>← Pipeline</button>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
+        {loadingCot&&<div style={{textAlign:'center',color:C.t3,fontSize:12,padding:20}}>Cargando...</div>}
+        {!loadingCot&&cotizacionesWeb.length===0&&<div style={{textAlign:'center',color:C.t3,fontSize:12,padding:20}}>Sin cotizaciones aún</div>}
+        {cotizacionesWeb.map((c,i)=>{
+          const esAnonima=!c.user_id;
+          const fmtFecha=c.created_at?new Date(c.created_at).toLocaleDateString('es-AR'):(c.fecha||'—');
+          return(
+            <div key={c.id||i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:C.t1}}>{c.email||c.nombre_cliente||'Anónimo'}</div>
+                  <div style={{fontSize:10,color:C.t3,marginTop:2}}>{fmtFecha}</div>
+                </div>
+                <div style={{display:'flex',gap:5,alignItems:'center'}}>
+                  {esAnonima&&<span style={{fontSize:9,fontWeight:700,color:'#F59E0B',background:'rgba(245,158,11,.1)',border:'1px solid rgba(245,158,11,.2)',borderRadius:6,padding:'2px 6px'}}>Sin cuenta</span>}
+                  <span style={{fontSize:12,fontWeight:800,color:C.acc}}>USD {(c.total_usd||0).toLocaleString()}</span>
+                </div>
+              </div>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap',fontSize:10,color:C.t2}}>
+                {c.m2&&<span>📐 {c.m2}m²</span>}
+                {c.sistema&&<span>🏗️ {c.sistema}</span>}
+                {c.tipo&&<span>🏠 {c.tipo}</span>}
+                {c.cal&&<span>⭐ {c.cal}</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   if(showProyectos) return(
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <div style={{background:C.navy,padding:'13px 14px',flexShrink:0,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -2772,9 +2822,14 @@ function ClientesScreen({perfil,userRol}) {
           <div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>Pipeline de Clientes</div>
           <div style={{color:C.t3,fontSize:10,marginTop:2}}>{clientes.length} clientes en seguimiento</div>
         </div>
-        <button onClick={()=>setShowProyectos(true)} style={{background:'none',border:`.5px solid ${C.border2}`,color:C.acc,borderRadius:8,padding:'6px 11px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',position:'relative'}}>
-          🌐 Web{proyectosWeb.filter(p=>!p.estado_proyecto||p.estado_proyecto==='pendiente').length>0&&<span style={{position:'absolute',top:-4,right:-4,background:'#F59E0B',color:'#fff',borderRadius:8,fontSize:9,fontWeight:700,padding:'1px 4px'}}>{proyectosWeb.filter(p=>!p.estado_proyecto||p.estado_proyecto==='pendiente').length}</span>}
-        </button>
+        <div style={{display:'flex',gap:6}}>
+          <button onClick={()=>setShowCotizaciones(true)} style={{background:'none',border:`.5px solid ${C.border2}`,color:C.t2,borderRadius:8,padding:'6px 11px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+            📋 Cot.{cotizacionesWeb.length>0&&<span style={{marginLeft:4,background:C.border2,color:C.t1,borderRadius:8,fontSize:9,fontWeight:700,padding:'1px 4px'}}>{cotizacionesWeb.length}</span>}
+          </button>
+          <button onClick={()=>setShowProyectos(true)} style={{background:'none',border:`.5px solid ${C.border2}`,color:C.acc,borderRadius:8,padding:'6px 11px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',position:'relative'}}>
+            🌐 Web{proyectosWeb.filter(p=>!p.estado_proyecto||p.estado_proyecto==='pendiente').length>0&&<span style={{position:'absolute',top:-4,right:-4,background:'#F59E0B',color:'#fff',borderRadius:8,fontSize:9,fontWeight:700,padding:'1px 4px'}}>{proyectosWeb.filter(p=>!p.estado_proyecto||p.estado_proyecto==='pendiente').length}</span>}
+          </button>
+        </div>
       </div>
 
       {/* Tabs etapas */}
@@ -3699,7 +3754,7 @@ export default function SGMApp() {
       ?<ClienteHomeScreen onNav={handleNav} t={t} user={user} dolar={dolar}/>
       :<HomeScreen onNav={handleNav} t={t} user={user} perfil={perfil} userRol={userRol}/>,
     modelos:<ModelosScreen onNav={handleNav} t={t}/>,
-    cot:<CotizadorScreen t={t} initParams={screenParams} lang={lang}/>,
+    cot:<CotizadorScreen t={t} initParams={screenParams} lang={lang} user={user}/>,
     chat:<ChatScreen t={t}/>,
     rubros:<RubrosScreen perfil={perfil} t={t}/>,
     faq:<FAQScreen t={t} onNav={handleNav}/>,
