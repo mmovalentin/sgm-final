@@ -674,14 +674,12 @@ function ClienteHomeScreen({onNav,t,user}) {
   const banner=estadoProyecto?ESTADO_BANNER[estadoProyecto]:null;
 
   async function guardarDescripcion(){
-    if(!supa||!user){setDescError('Sin conexión con el servidor');return;}
+    if(!user?.id){alert('Debés estar logueado para guardar.');return;}
     setSavingDesc(true);setDescError(null);
-    const op=proyectoId
-      ?supa.from('proyecto_cliente').update({descripcion:editDescText}).eq('id',proyectoId)
-      :supa.from('proyecto_cliente').upsert({user_id:user.id,descripcion:editDescText},{onConflict:'user_id'});
-    const{error}=await op;
+    const{error}=await supa.from('proyecto_cliente')
+      .update({descripcion:editDescText}).eq('user_id',user.id);
     setSavingDesc(false);
-    if(error){setDescError(error.message||'Error al guardar. Intentá de nuevo.');return;}
+    if(error){setDescError('Error al guardar: '+error.message);return;}
     setDescripcion(editDescText);setEditDesc(false);
     setDescSaved(true);setTimeout(()=>setDescSaved(false),2000);
   }
