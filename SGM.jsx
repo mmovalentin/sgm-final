@@ -501,20 +501,68 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
 }
 
 // ── CLIENTE HOME (dashboard orientado a su obra)
+const ESTADO_BANNER={
+  pendiente:{color:'#F59E0B',bg:'rgba(245,158,11,.08)',border:'rgba(245,158,11,.2)',icon:'🟡',label:'En revisión',msg:'Tu proyecto está siendo revisado por nuestro equipo. Te contactaremos pronto.'},
+  verificando:{color:'#3B82F6',bg:'rgba(59,130,246,.08)',border:'rgba(59,130,246,.2)',icon:'🔵',label:'En verificación',msg:'Tu proyecto fue recibido y está en verificación. En breve recibirás confirmación.'},
+  aprobado:{color:'#22C55E',bg:'rgba(34,197,94,.08)',border:'rgba(34,197,94,.2)',icon:'🟢',label:'Aprobado',msg:'¡Tu proyecto fue aprobado! Ya podemos comenzar a planificar tu obra.'},
+  en_obra:{color:'#22C55E',bg:'rgba(34,197,94,.08)',border:'rgba(34,197,94,.2)',icon:'🏗️',label:'En obra',msg:'Tu obra está en marcha. ¡Vamos!'},
+};
+
 function ClienteHomeScreen({onNav,t,user}) {
   const nombre=user?.user_metadata?.full_name?.split(' ')[0]||user?.email?.split('@')[0]||null;
   const [lastCot,setLastCot]=useState(null);
   const [obraData,setObraData]=useState(null);
+  const [estadoProyecto,setEstadoProyecto]=useState(null);
+  const [descripcion,setDescripcion]=useState('');
+  const [editDesc,setEditDesc]=useState(false);
+  const [editDescText,setEditDescText]=useState('');
+  const [savingDesc,setSavingDesc]=useState(false);
+  const [proyectoId,setProyectoId]=useState(null);
+
   useEffect(()=>{
-    try{const s=localStorage.getItem('sgi_last_cot');if(s)setLastCot(JSON.parse(s));}catch(e){}
+    let cot=null;
+    try{const s=localStorage.getItem('sgi_last_cot');if(s){cot=JSON.parse(s);setLastCot(cot);}}catch(e){}
     try{const s=localStorage.getItem('sgi_obra_data');if(s)setObraData(JSON.parse(s));}catch(e){}
-  },[]);
-  const avance=obraData?.avance||0;
-  const etapaActual=obraData?.etapa_actual||null;
+    if(!supa||!user) return;
+    supa.from('proyecto_cliente').select('*').eq('user_id',user.id).single()
+      .then(async({data})=>{
+        if(data){
+          setObraData(data);
+          setEstadoProyecto(data.estado_proyecto||'pendiente');
+          setDescripcion(data.descripcion||'');
+          setProyectoId(data.id);
+        } else if(cot){
+          const{data:nd}=await supa.from('proyecto_cliente').upsert({
+            user_id:user.id,email:user.email,
+            nombre_cliente:user.user_metadata?.full_name||user.email,
+            estado_proyecto:'pendiente',
+            m2_totales:cot.m2,sistema:cot.sistema,tipo:cot.tipo,
+            descripcion:'',etapas:[],proveedores:[],
+          },{onConflict:'user_id'}).select().single();
+          if(nd){setEstadoProyecto('pendiente');setProyectoId(nd.id);}
+        }
+      });
+  },[user]);
+
   const etapas=obraData?.etapas||[];
   const etapasOk=etapas.filter(e=>e.estado==='completada').length;
-  const m2=lastCot?.m2||0;
+  const totalEtapas=etapas.length>0?etapas.length:8;
+  const avance=obraData?.avance||(etapas.length?Math.round(etapasOk/totalEtapas*100):0);
+  const etapaActual=obraData?.etapa_actual||null;
+  const m2=obraData?.m2_totales||lastCot?.m2||0;
+  const diasEstimados=lastCot?.tiempo_meses
+    ?Math.round(lastCot.tiempo_meses*30)
+    :(m2>0?(lastCot?.sistema?.toLowerCase().includes('mampost')?Math.round(m2*3):Math.round(m2*2.25)):180);
   const hoy=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  const banner=estadoProyecto?ESTADO_BANNER[estadoProyecto]:null;
+
+  async function guardarDescripcion(){
+    if(!supa||!proyectoId)return;
+    setSavingDesc(true);
+    await supa.from('proyecto_cliente').update({descripcion:editDescText}).eq('id',proyectoId);
+    setDescripcion(editDescText);setEditDesc(false);setSavingDesc(false);
+  }
+
   return (
     <div style={{background:C.bg,minHeight:'100%',paddingBottom:16}}>
 
@@ -528,6 +576,17 @@ function ClienteHomeScreen({onNav,t,user}) {
         <div style={{color:C.t3,fontSize:12}}>Tu obra avanza</div>
       </div>
 
+      {/* ── BANNER ESTADO ── */}
+      {banner&&(
+        <div style={{margin:'12px 16px 0',background:banner.bg,border:`1px solid ${banner.border}`,borderRadius:12,padding:'12px 14px',display:'flex',alignItems:'flex-start',gap:10}}>
+          <span style={{fontSize:22,flexShrink:0,lineHeight:1}}>{banner.icon}</span>
+          <div style={{flex:1}}>
+            <div style={{color:banner.color,fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:.5,marginBottom:3}}>{banner.label}</div>
+            <div style={{color:C.t2,fontSize:12,lineHeight:1.5}}>{banner.msg}</div>
+          </div>
+        </div>
+      )}
+
       {/* ── 2. PROGRESO ── */}
       <div style={{margin:'12px 16px 0',background:C.card,borderRadius:16,border:`.5px solid ${C.border}`,padding:'16px'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
@@ -538,7 +597,7 @@ function ClienteHomeScreen({onNav,t,user}) {
           <div style={{textAlign:'right'}}>
             <div style={{color:C.t3,fontSize:10,marginBottom:6}}>Etapa actual</div>
             <div style={{background:'rgba(74,159,255,.12)',border:'1px solid rgba(74,159,255,.25)',borderRadius:8,padding:'5px 11px',color:C.acc,fontSize:11,fontWeight:700}}>
-              {etapaActual||'Sin datos'}
+              {etapaActual||'Planificación'}
             </div>
           </div>
         </div>
@@ -559,8 +618,8 @@ function ClienteHomeScreen({onNav,t,user}) {
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
           {[
             [m2?`${m2}m²`:'—','Superficie'],
-            [`${etapasOk}/${etapas.length||'?'}`,'Etapas'],
-            ['—','Días'],
+            [`${etapasOk}/${totalEtapas}`,'Etapas'],
+            [diasEstimados?`${diasEstimados}d`:'—','Días est.'],
           ].map(([v,l])=>(
             <div key={l} style={{background:C.card,borderRadius:12,padding:'12px 8px',border:`.5px solid ${C.border}`,textAlign:'center'}}>
               <div style={{color:C.acc,fontSize:17,fontWeight:800}}>{v}</div>
@@ -570,7 +629,30 @@ function ClienteHomeScreen({onNav,t,user}) {
         </div>
       </div>
 
-      {/* ── 4. ÚLTIMA COTIZACIÓN ── */}
+      {/* ── 4. DESCRIPCIÓN ── */}
+      <div style={{padding:'12px 16px 0'}}>
+        <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Tu descripción</div>
+        <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'13px 15px'}}>
+          {editDesc?(
+            <>
+              <textarea value={editDescText} onChange={e=>setEditDescText(e.target.value)} rows={4} placeholder="Describí tu proyecto, preferencias, consultas..." style={{width:'100%',background:C.off,border:`.5px solid ${C.border2}`,borderRadius:8,padding:'8px 10px',fontSize:12,color:C.t1,resize:'none',outline:'none',fontFamily:'inherit',marginBottom:8}}/>
+              <div style={{display:'flex',gap:6}}>
+                <button onClick={()=>{setEditDesc(false);setEditDescText(descripcion);}} style={{flex:1,padding:'8px',borderRadius:8,background:'none',border:`.5px solid ${C.border}`,color:C.t2,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+                <button onClick={guardarDescripcion} disabled={savingDesc} style={{flex:2,padding:'8px',borderRadius:8,background:C.acc,border:'none',color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{savingDesc?'⏳ Guardando...':'✓ Guardar'}</button>
+              </div>
+            </>
+          ):(
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10}}>
+              <div style={{flex:1,fontSize:12,color:descripcion?C.t2:C.t3,lineHeight:1.5,fontStyle:descripcion?'normal':'italic'}}>
+                {descripcion||'Sin descripción. Podés editar tu proyecto para agregar detalles.'}
+              </div>
+              <button onClick={()=>{setEditDescText(descripcion);setEditDesc(true);}} style={{flexShrink:0,padding:'5px 10px',borderRadius:8,background:'none',border:`.5px solid ${C.border2}`,color:C.acc,fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Editar</button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── 5. ÚLTIMA COTIZACIÓN ── */}
       {lastCot&&(
         <div style={{padding:'12px 16px 0'}}>
           <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Tu cotización</div>
@@ -590,7 +672,7 @@ function ClienteHomeScreen({onNav,t,user}) {
         </div>
       )}
 
-      {/* ── 5. ACCESO RÁPIDO ── */}
+      {/* ── 6. ACCESO RÁPIDO ── */}
       <div style={{padding:'12px 16px 16px'}}>
         <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Acceso rápido</div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
@@ -2392,6 +2474,10 @@ function ClientesScreen({perfil,userRol}) {
   const [notifMensaje,setNotifMensaje]=useState('');
   const [sendingNotif,setSendingNotif]=useState(false);
   const [notifSent,setNotifSent]=useState(false);
+  const [showProyectos,setShowProyectos]=useState(false);
+  const [proyectosWeb,setProyectosWeb]=useState([]);
+  const [loadingProy,setLoadingProy]=useState(false);
+  const [aprobando,setAprobando]=useState(null);
 
   const selCliente=clientes.find(c=>c.id===selId)||null;
 
@@ -2402,7 +2488,21 @@ function ClientesScreen({perfil,userRol}) {
     setClientes(data||[]);
     setLoading(false);
   }
-  useEffect(()=>{fetchClientes();},[]);
+  async function fetchProyectos(){
+    if(!supa) return;
+    setLoadingProy(true);
+    const {data}=await supa.from('proyecto_cliente').select('*').order('created_at',{ascending:false});
+    setProyectosWeb(data||[]);
+    setLoadingProy(false);
+  }
+  async function cambiarEstadoProyecto(proyId,nuevoEstado){
+    if(!supa) return;
+    setAprobando(proyId);
+    await supa.from('proyecto_cliente').update({estado_proyecto:nuevoEstado}).eq('id',proyId);
+    await fetchProyectos();
+    setAprobando(null);
+  }
+  useEffect(()=>{fetchClientes();fetchProyectos();},[]);
 
   async function agregarCliente(){
     if(!form.nombre.trim()) return;
@@ -2465,11 +2565,72 @@ function ClientesScreen({perfil,userRol}) {
     );
   }
 
+  const PROY_ESTADOS=[
+    {id:'pendiente',label:'Pendiente',color:'#F59E0B'},
+    {id:'verificando',label:'Verificando',color:'#3B82F6'},
+    {id:'aprobado',label:'Aprobado',color:'#22C55E'},
+    {id:'en_obra',label:'En obra',color:'#22C55E'},
+  ];
+
+  if(showProyectos) return(
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div style={{background:C.navy,padding:'13px 14px',flexShrink:0,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          <div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>Proyectos Web</div>
+          <div style={{color:C.t3,fontSize:10,marginTop:2}}>{proyectosWeb.length} proyectos registrados</div>
+        </div>
+        <button onClick={()=>setShowProyectos(false)} style={{background:'none',border:`.5px solid ${C.border2}`,color:C.acc,borderRadius:8,padding:'6px 11px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>← Pipeline</button>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>
+        {loadingProy&&<div style={{textAlign:'center',padding:24,color:C.t3,fontSize:13}}>⏳ Cargando...</div>}
+        {!loadingProy&&proyectosWeb.length===0&&(
+          <div style={{textAlign:'center',padding:32,color:C.t3,fontSize:13}}>
+            <div style={{fontSize:36,marginBottom:8}}>🏗️</div>
+            Sin proyectos web registrados aún.<br/>Aparecen cuando un cliente logueado completa una cotización.
+          </div>
+        )}
+        {proyectosWeb.map(p=>{
+          const est=ESTADO_BANNER[p.estado_proyecto]||ESTADO_BANNER.pendiente;
+          const isAprob=aprobando===p.id;
+          return(
+            <div key={p.id} style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,borderLeft:`3px solid ${est.color}`,padding:'13px 14px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:C.t1}}>{p.nombre_cliente||p.email||'Cliente'}</div>
+                  {p.email&&<div style={{fontSize:10,color:C.t3,marginTop:1}}>{p.email}</div>}
+                </div>
+                <span style={{fontSize:10,fontWeight:700,color:est.color,background:est.bg,border:`1px solid ${est.border}`,borderRadius:8,padding:'3px 8px'}}>{est.label}</span>
+              </div>
+              <div style={{display:'flex',gap:12,fontSize:11,color:C.t2,marginBottom:10}}>
+                {p.m2_totales&&<span>📐 {p.m2_totales}m²</span>}
+                {p.sistema&&<span>🏗️ {p.sistema}</span>}
+                {p.tipo&&<span>🏠 {p.tipo}</span>}
+              </div>
+              {p.descripcion&&<div style={{fontSize:11,color:C.t3,fontStyle:'italic',marginBottom:10,lineHeight:1.4}}>"{p.descripcion}"</div>}
+              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                {PROY_ESTADOS.filter(e=>e.id!==p.estado_proyecto).map(e=>(
+                  <button key={e.id} onClick={()=>cambiarEstadoProyecto(p.id,e.id)} disabled={isAprob} style={{padding:'6px 11px',borderRadius:8,border:`1px solid ${e.color}`,background:'transparent',color:e.color,fontSize:11,fontWeight:700,cursor:'pointer',opacity:isAprob?0.5:1}}>
+                    {isAprob?'⏳':e.id==='aprobado'?'✅ Aprobar':e.id==='en_obra'?'🏗️ En obra':e.id==='verificando'?'🔵 Verificar':'🟡 Pendiente'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%',position:'relative'}}>
-      <div style={{background:C.navy,padding:'13px 14px',flexShrink:0}}>
-        <div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>Pipeline de Clientes</div>
-        <div style={{color:C.t3,fontSize:10,marginTop:2}}>{clientes.length} clientes en seguimiento</div>
+      <div style={{background:C.navy,padding:'13px 14px',flexShrink:0,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          <div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>Pipeline de Clientes</div>
+          <div style={{color:C.t3,fontSize:10,marginTop:2}}>{clientes.length} clientes en seguimiento</div>
+        </div>
+        <button onClick={()=>setShowProyectos(true)} style={{background:'none',border:`.5px solid ${C.border2}`,color:C.acc,borderRadius:8,padding:'6px 11px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',position:'relative'}}>
+          🌐 Web{proyectosWeb.filter(p=>!p.estado_proyecto||p.estado_proyecto==='pendiente').length>0&&<span style={{position:'absolute',top:-4,right:-4,background:'#F59E0B',color:'#fff',borderRadius:8,fontSize:9,fontWeight:700,padding:'1px 4px'}}>{proyectosWeb.filter(p=>!p.estado_proyecto||p.estado_proyecto==='pendiente').length}</span>}
+        </button>
       </div>
 
       {/* Tabs etapas */}
