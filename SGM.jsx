@@ -617,52 +617,56 @@ function ClienteHomeScreen({onNav,t,user}) {
 function MiObraScreen({t,user}) {
   const [lastCot,setLastCot]=useState(null);
   const [obraData,setObraData]=useState(null);
+  const [loading,setLoading]=useState(false);
   useEffect(()=>{
     try{const s=localStorage.getItem('sgi_last_cot');if(s)setLastCot(JSON.parse(s));}catch(e){}
     try{const s=localStorage.getItem('sgi_obra_data');if(s)setObraData(JSON.parse(s));}catch(e){}
-  },[]);
-  const avance=obraData?.avance||0;
+    if(supa&&user){
+      setLoading(true);
+      supa.from('proyecto_cliente').select('*').eq('user_id',user.id).single()
+        .then(({data})=>{
+          if(data) setObraData(data);
+          setLoading(false);
+        })
+        .catch(()=>setLoading(false));
+    }
+  },[user]);
   const etapas=obraData?.etapas||[];
   const proveedores=obraData?.proveedores||[];
-  const m2Total=lastCot?.m2||0;
+  const m2Total=obraData?.m2_totales||lastCot?.m2||0;
+  const m2Construidos=obraData?.m2_construidos||0;
   const etapasOk=etapas.filter(e=>e.estado==='completada').length;
-  const estadoStyle={completada:['✅',C.green],en_curso:['🔄',C.acc],pendiente:['⏳',C.t3]};
+  const avance=obraData?.avance||(etapas.length?Math.round(etapasOk/etapas.length*100):0);
+  const etapaPct={completada:100,en_curso:50,pendiente:0};
+  const etapaBar={completada:'#22C55E',en_curso:C.acc,pendiente:C.border2};
+  const estadoLabel={completada:['✅','Completada',C.green],en_curso:['🔄','En curso',C.acc],pendiente:['⏳','Pendiente',C.t3]};
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <div style={{background:C.navy,padding:'13px 14px',flexShrink:0}}>
         <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Mi proyecto</div>
         <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>Cronograma de obra</div>
       </div>
+      {loading&&<div style={{padding:'20px',textAlign:'center',color:C.t3,fontSize:12}}>Cargando...</div>}
       <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:14}}>
 
-        {/* BARRA DE AVANCE */}
-        <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'14px'}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-            <span style={{fontSize:12,fontWeight:700,color:C.t1}}>Avance general</span>
-            <span style={{fontSize:20,fontWeight:900,color:C.acc}}>{avance}%</span>
-          </div>
-          <div style={{background:C.border,borderRadius:5,height:10,overflow:'hidden'}}>
-            <div style={{background:'linear-gradient(90deg,#4A9FFF,#64FFDA)',width:`${avance}%`,height:'100%',borderRadius:5}}/>
-          </div>
-        </div>
-
-        {/* ESTADÍSTICAS CON BARRAS CSS */}
-        <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'14px'}}>
-          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:12}}>Estadísticas del proyecto</div>
-          {[
-            ['M² construidos',Math.round(m2Total*avance/100),m2Total,'m²',C.acc],
-            ['Etapas completadas',etapasOk,Math.max(etapas.length,1),'',C.green],
-          ].map(([label,val,max,unit,color])=>(
-            <div key={label} style={{marginBottom:12}}>
-              <div style={{display:'flex',justifyContent:'space-between',marginBottom:5,fontSize:11}}>
-                <span style={{color:C.t2}}>{label}</span>
-                <span style={{fontWeight:700,color}}>{val}{unit} <span style={{color:C.t3,fontWeight:400}}>/ {max}{unit}</span></span>
-              </div>
-              <div style={{background:C.border,borderRadius:3,height:7}}>
-                <div style={{background:color,width:`${max?Math.round(val/max*100):0}%`,height:'100%',borderRadius:3,transition:'width .4s'}}/>
-              </div>
+        {/* BARRA DE AVANCE GENERAL */}
+        <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'16px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <div>
+              <div style={{color:C.t3,fontSize:10,textTransform:'uppercase',letterSpacing:.5,marginBottom:2}}>Avance general</div>
+              <div style={{color:C.acc,fontSize:36,fontWeight:900,lineHeight:1}}>{avance}<span style={{fontSize:18}}>%</span></div>
             </div>
-          ))}
+            <div style={{textAlign:'right',color:C.t3,fontSize:11}}>
+              <div>{etapasOk} de {etapas.length||'?'} etapas</div>
+              {m2Total>0&&<div style={{marginTop:4}}>{m2Construidos||'—'} / {m2Total} m²</div>}
+            </div>
+          </div>
+          <div style={{background:C.border,borderRadius:6,height:12,overflow:'hidden'}}>
+            <div style={{background:'linear-gradient(90deg,#4A9FFF,#64FFDA)',width:`${avance}%`,height:'100%',borderRadius:6,transition:'width .6s ease'}}/>
+          </div>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:C.t3,marginTop:5}}>
+            <span>Inicio</span><span>Entrega estimada</span>
+          </div>
         </div>
 
         {/* CRONOGRAMA DE ETAPAS */}
@@ -672,25 +676,57 @@ function MiObraScreen({t,user}) {
             <div style={{textAlign:'center',padding:'28px 20px',background:C.card,borderRadius:14,border:`.5px solid ${C.border}`}}>
               <div style={{fontSize:36,marginBottom:8}}>📋</div>
               <div style={{color:C.t2,fontSize:13,fontWeight:600,marginBottom:4}}>Sin etapas cargadas</div>
-              <div style={{color:C.t3,fontSize:12}}>Tu obra aún no tiene etapas cargadas</div>
+              <div style={{color:C.t3,fontSize:12,marginBottom:8}}>Tu obra aún no tiene etapas cargadas</div>
+              <div style={{color:C.t3,fontSize:10,fontStyle:'italic',opacity:.7,lineHeight:1.5}}>
+                Las etapas se cargan desde el panel admin en<br/>Agenda de obra → asignar al cliente
+              </div>
             </div>
           ):(
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
               {etapas.map((e,i)=>{
-                const [icon,borderColor]=estadoStyle[e.estado]||['⏳',C.t3];
+                const pct=etapaPct[e.estado]??0;
+                const barColor=etapaBar[e.estado]??C.border2;
+                const [icon,label,textColor]=estadoLabel[e.estado]||['⏳','Pendiente',C.t3];
                 return(
-                  <div key={i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,borderLeft:`3px solid ${borderColor}`,padding:'12px 14px'}}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:e.inicio||e.fin?4:0}}>
+                  <div key={i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,borderLeft:`3px solid ${barColor}`,padding:'12px 14px'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
                       <div style={{fontWeight:700,fontSize:13,color:C.t1}}>{e.nombre}</div>
-                      <span style={{fontSize:16}}>{icon}</span>
+                      <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0,marginLeft:8}}>
+                        <span style={{fontSize:13}}>{icon}</span>
+                        <span style={{fontSize:10,color:textColor,fontWeight:600}}>{label}</span>
+                      </div>
                     </div>
-                    {(e.inicio||e.fin)&&<div style={{fontSize:11,color:C.t3}}>{e.inicio||'?'} → {e.fin||'?'}</div>}
+                    {(e.inicio||e.fin)&&<div style={{fontSize:11,color:C.t3,marginBottom:7}}>{e.inicio||'?'} → {e.fin||'?'}</div>}
+                    <div style={{background:C.border,borderRadius:3,height:5,overflow:'hidden'}}>
+                      <div style={{background:barColor,width:`${pct}%`,height:'100%',borderRadius:3,transition:'width .4s'}}/>
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
         </div>
+
+        {/* ESTADÍSTICAS */}
+        {etapas.length>0&&(
+          <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'14px'}}>
+            <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:12}}>Estadísticas del proyecto</div>
+            {[
+              ['M² construidos',m2Construidos||Math.round(m2Total*avance/100),m2Total,'m²',C.acc],
+              ['Etapas completadas',etapasOk,Math.max(etapas.length,1),'',C.green],
+            ].map(([label,val,max,unit,color])=>(
+              <div key={label} style={{marginBottom:12}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:5,fontSize:11}}>
+                  <span style={{color:C.t2}}>{label}</span>
+                  <span style={{fontWeight:700,color}}>{val}{unit} <span style={{color:C.t3,fontWeight:400}}>/ {max}{unit}</span></span>
+                </div>
+                <div style={{background:C.border,borderRadius:3,height:7}}>
+                  <div style={{background:color,width:`${max?Math.round(val/max*100):0}%`,height:'100%',borderRadius:3,transition:'width .4s'}}/>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* MIS PROVEEDORES */}
         <div>
@@ -699,7 +735,10 @@ function MiObraScreen({t,user}) {
             <div style={{textAlign:'center',padding:'28px 20px',background:C.card,borderRadius:14,border:`.5px solid ${C.border}`}}>
               <div style={{fontSize:36,marginBottom:8}}>🏪</div>
               <div style={{color:C.t2,fontSize:13,fontWeight:600,marginBottom:4}}>Sin proveedores asignados</div>
-              <div style={{color:C.t3,fontSize:12}}>Aún no hay proveedores asignados a tu obra</div>
+              <div style={{color:C.t3,fontSize:12,marginBottom:8}}>Aún no hay proveedores asignados a tu obra</div>
+              <div style={{color:C.t3,fontSize:10,fontStyle:'italic',opacity:.7,lineHeight:1.5}}>
+                Los proveedores se asignan desde el panel admin en<br/>Rubros de obra → asignar proveedor al cliente
+              </div>
             </div>
           ):(
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
@@ -1298,7 +1337,7 @@ function MapaScreen({t,perfil,onLogin,userLocation}) {
   const mapRef=useRef(null);
   const mapInst=useRef(null);
   const markersRef=useRef([]);
-  const [filtroMapa,setFiltroMapa]=useState(null);
+  const [filtroMapa,setFiltroMapa]=useState('constructor');
   const [dbProveedores,setDbProveedores]=useState([]);
   const [sinUbicacion,setSinUbicacion]=useState([]);
   const [refreshTick,setRefreshTick]=useState(0);
