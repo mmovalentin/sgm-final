@@ -3026,8 +3026,15 @@ function AvanceObraAdminScreen({userRol}) {
 
   useEffect(()=>{
     if(!supa) return;
-    supa.from('perfiles').select('id,email').eq('rol','cliente')
-      .order('email',{ascending:true}).then(({data})=>setClientes(data||[]));
+    Promise.all([
+      supa.from('perfiles').select('id,email').eq('rol','cliente'),
+      supa.from('proyecto_cliente').select('user_id,email,nombre_cliente'),
+    ]).then(([{data:perfs},{data:projs}])=>{
+      const map=new Map();
+      (perfs||[]).forEach(p=>map.set(p.id,{id:p.id,label:p.email}));
+      (projs||[]).forEach(p=>{if(p.user_id)map.set(p.user_id,{id:p.user_id,label:p.nombre_cliente||p.email});});
+      setClientes([...map.values()].sort((a,b)=>a.label.localeCompare(b.label)));
+    });
   },[]);
 
   async function loadEtapas(uid){
@@ -3081,10 +3088,10 @@ function AvanceObraAdminScreen({userRol}) {
           <select value={selUserId} onChange={e=>loadEtapas(e.target.value)} style={{width:'100%',padding:'9px 11px',borderRadius:8,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:12,outline:'none',fontFamily:'inherit'}}>
             <option value=''>— Seleccioná un cliente —</option>
             {clientes.map(c=>(
-              <option key={c.id} value={c.id}>{c.email}</option>
+              <option key={c.id} value={c.id}>{c.label}</option>
             ))}
           </select>
-          {selInfo&&<div style={{fontSize:10,color:C.t3,marginTop:6}}>{selInfo.email}</div>}
+          {selInfo&&<div style={{fontSize:10,color:C.t3,marginTop:6}}>{selInfo.label}</div>}
         </div>
 
         {/* ETAPAS */}
