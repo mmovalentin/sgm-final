@@ -2954,8 +2954,8 @@ function AvanceObraAdminScreen({userRol}) {
 
   useEffect(()=>{
     if(!supa) return;
-    supa.from('proyecto_cliente').select('user_id,email,nombre_cliente,m2_totales,sistema')
-      .order('created_at',{ascending:false}).then(({data})=>setClientes(data||[]));
+    supa.from('profiles').select('id,email').eq('role','cliente')
+      .order('email',{ascending:true}).then(({data})=>setClientes(data||[]));
   },[]);
 
   async function loadEtapas(uid){
@@ -2981,6 +2981,7 @@ function AvanceObraAdminScreen({userRol}) {
       completada:!!(e.completada||(Number(e.porcentaje)>=100)),
       fecha_inicio:e.fecha_inicio||null,
       fecha_fin:e.fecha_fin||null,
+      monto_certificado:e.monto_certificado!=null&&e.monto_certificado!==''?Number(e.monto_certificado):null,
       notas:e.notas||'',
     }));
     const{error}=await supa.from('avance_obra').upsert(rows,{onConflict:'user_id,etapa_numero'});
@@ -2993,7 +2994,7 @@ function AvanceObraAdminScreen({userRol}) {
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%',color:C.t3,fontSize:13}}>🔒 Solo para admin</div>
   );
 
-  const selInfo=clientes.find(c=>c.user_id===selUserId);
+  const selInfo=clientes.find(c=>c.id===selUserId);
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <div style={{background:C.navy,padding:'13px 14px',flexShrink:0}}>
@@ -3008,10 +3009,10 @@ function AvanceObraAdminScreen({userRol}) {
           <select value={selUserId} onChange={e=>loadEtapas(e.target.value)} style={{width:'100%',padding:'9px 11px',borderRadius:8,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:12,outline:'none',fontFamily:'inherit'}}>
             <option value=''>— Seleccioná un cliente —</option>
             {clientes.map(c=>(
-              <option key={c.user_id} value={c.user_id}>{c.nombre_cliente||c.email}{c.m2_totales?` (${c.m2_totales}m²)`:''}</option>
+              <option key={c.id} value={c.id}>{c.email}</option>
             ))}
           </select>
-          {selInfo&&<div style={{fontSize:10,color:C.t3,marginTop:6}}>{selInfo.email}{selInfo.sistema?` · ${selInfo.sistema}`:''}</div>}
+          {selInfo&&<div style={{fontSize:10,color:C.t3,marginTop:6}}>{selInfo.email}</div>}
         </div>
 
         {/* ETAPAS */}
@@ -3035,6 +3036,7 @@ function AvanceObraAdminScreen({userRol}) {
                   <input type='date' value={e.fecha_inicio||''} onChange={ev=>updEtapa(i,'fecha_inicio',ev.target.value)} placeholder='Inicio' style={{padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
                   <input type='date' value={e.fecha_fin||''} onChange={ev=>updEtapa(i,'fecha_fin',ev.target.value)} placeholder='Fin' style={{padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
                 </div>
+                <input type='number' min={0} value={e.monto_certificado??''} onChange={ev=>updEtapa(i,'monto_certificado',ev.target.value)} placeholder='Monto certificado $' style={{width:'100%',padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit',marginBottom:6}}/>
                 <input value={e.notas||''} onChange={ev=>updEtapa(i,'notas',ev.target.value)} placeholder='Notas opcionales...' style={{width:'100%',padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
               </div>
             ))}
