@@ -632,15 +632,15 @@ function ClienteHomeScreen({onNav,t,user}) {
     try{const s=localStorage.getItem('sgi_last_cot');if(s){localCot=JSON.parse(s);setLastCot(localCot);}}catch(e){}
     if(!supa||!user) return;
     // Cargar cotización real desde Supabase (tiene prioridad sobre localStorage)
-    supa.from('cotizaciones').select('*').eq('user_id',user.id)
+    supa.from('presupuestos').select('*').eq('user_id',user.id)
       .order('created_at',{ascending:false}).limit(1).single()
-      .then(({data:dbCot})=>{
-        if(dbCot){
+      .then(({data:dbPres})=>{
+        if(dbPres){
           const normalized={
-            ...dbCot,
-            cal:dbCot.calidad,
-            fecha:dbCot.created_at,
-            tiempo_meses:localCot?.tiempo_meses||Math.round((dbCot.m2||80)/15),
+            ...dbPres,
+            cal:localCot?.cal||null,
+            fecha:dbPres.created_at,
+            tiempo_meses:localCot?.tiempo_meses||Math.round((dbPres.m2||80)/15),
           };
           setLastCot(normalized);
           try{localStorage.setItem('sgi_last_cot',JSON.stringify(normalized));}catch(e){}
@@ -2652,9 +2652,14 @@ function ClientesScreen({perfil,userRol}) {
   async function fetchCotizaciones(){
     if(!supa) return;
     setLoadingCot(true);
-    const {data}=await supa.from('cotizaciones').select('*').order('created_at',{ascending:false}).limit(100);
+    const {data}=await supa.from('presupuestos').select('*').order('created_at',{ascending:false}).limit(100);
     setCotizacionesWeb(data||[]);
     setLoadingCot(false);
+  }
+  async function aprobarPresupuesto(id){
+    if(!supa) return;
+    await supa.from('presupuestos').update({estado:'aprobado'}).eq('id',id);
+    fetchCotizaciones();
   }
   async function cambiarEstadoProyecto(proyId,nuevoEstado){
     if(!supa) return;
@@ -2737,34 +2742,38 @@ function ClientesScreen({perfil,userRol}) {
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <div style={{background:C.navy,padding:'13px 14px',flexShrink:0,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div>
-          <div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>Cotizaciones Web</div>
-          <div style={{color:C.t3,fontSize:10,marginTop:2}}>{cotizacionesWeb.length} cotizaciones totales</div>
+          <div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>Presupuestos Web</div>
+          <div style={{color:C.t3,fontSize:10,marginTop:2}}>{cotizacionesWeb.length} presupuestos totales</div>
         </div>
         <button onClick={()=>setShowCotizaciones(false)} style={{background:'none',border:`.5px solid ${C.border2}`,color:C.acc,borderRadius:8,padding:'6px 11px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>← Pipeline</button>
       </div>
       <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
         {loadingCot&&<div style={{textAlign:'center',color:C.t3,fontSize:12,padding:20}}>Cargando...</div>}
-        {!loadingCot&&cotizacionesWeb.length===0&&<div style={{textAlign:'center',color:C.t3,fontSize:12,padding:20}}>Sin cotizaciones aún</div>}
+        {!loadingCot&&cotizacionesWeb.length===0&&<div style={{textAlign:'center',color:C.t3,fontSize:12,padding:20}}>Sin presupuestos aún</div>}
         {cotizacionesWeb.map((c,i)=>{
           const esAnonima=!c.user_id;
+          const aprobado=c.estado==='aprobado';
           const fmtFecha=c.created_at?new Date(c.created_at).toLocaleDateString('es-AR'):(c.fecha||'—');
           return(
-            <div key={c.id||i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px'}}>
+            <div key={c.id||i} style={{background:C.card,borderRadius:12,border:`.5px solid ${aprobado?'#22C55E':C.border}`,padding:'12px 14px'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
-                <div>
-                  <div style={{fontSize:12,fontWeight:700,color:C.t1}}>{c.email||c.nombre_cliente||'Anónimo'}</div>
-                  <div style={{fontSize:10,color:C.t3,marginTop:2}}>{fmtFecha}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.t1,marginBottom:1}}>{c.archivo_nombre||`${c.tipo||'Obra'} ${c.m2||''}m²`}</div>
+                  <div style={{fontSize:10,color:C.t3}}>{fmtFecha}</div>
                 </div>
-                <div style={{display:'flex',gap:5,alignItems:'center'}}>
+                <div style={{display:'flex',gap:5,alignItems:'center',flexShrink:0,marginLeft:8}}>
                   {esAnonima&&<span style={{fontSize:9,fontWeight:700,color:'#F59E0B',background:'rgba(245,158,11,.1)',border:'1px solid rgba(245,158,11,.2)',borderRadius:6,padding:'2px 6px'}}>Sin cuenta</span>}
-                  <span style={{fontSize:12,fontWeight:800,color:C.acc}}>USD {(c.total_usd||0).toLocaleString()}</span>
+                  {aprobado
+                    ?<span style={{fontSize:9,fontWeight:700,color:'#22C55E',background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.2)',borderRadius:6,padding:'2px 6px'}}>✓ Aprobado</span>
+                    :<button onClick={()=>aprobarPresupuesto(c.id)} style={{fontSize:9,fontWeight:700,color:'#fff',background:C.acc,border:'none',borderRadius:6,padding:'3px 8px',cursor:'pointer'}}>Aprobar</button>
+                  }
                 </div>
               </div>
-              <div style={{display:'flex',gap:8,flexWrap:'wrap',fontSize:10,color:C.t2}}>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap',fontSize:10,color:C.t2,marginBottom:4}}>
                 {c.m2&&<span>📐 {c.m2}m²</span>}
                 {c.sistema&&<span>🏗️ {c.sistema}</span>}
                 {c.tipo&&<span>🏠 {c.tipo}</span>}
-                {c.cal&&<span>⭐ {c.cal}</span>}
+                <span style={{fontWeight:700,color:C.acc}}>USD {(c.total_usd||0).toLocaleString()}</span>
               </div>
             </div>
           );
@@ -3004,16 +3013,13 @@ function AvanceObraAdminScreen({userRol}) {
 
   useEffect(()=>{
     if(!supa) return;
-    supa.from('cotizaciones').select('user_id,tipo,m2,sistema').order('created_at',{ascending:false})
-      .then(async({data:cots})=>{
-        const uids=[...new Set((cots||[]).filter(c=>c.user_id).map(c=>c.user_id))];
-        if(!uids.length){setClientes([]);return;}
-        const{data:perfs}=await supa.from('perfiles').select('id,email').in('id',uids);
-        const emailMap=Object.fromEntries((perfs||[]).map(p=>[p.id,p.email]));
-        const entries=uids.map(uid=>({
-          id:uid,
-          label:emailMap[uid]||`Usuario ${uid.slice(0,6)}`,
-        })).sort((a,b)=>a.label.localeCompare(b.label));
+    supa.from('presupuestos').select('id,archivo_nombre,total_usd,user_id,tipo,sistema,m2')
+      .order('created_at',{ascending:false})
+      .then(({data:presups})=>{
+        const entries=(presups||[]).map(p=>({
+          id:p.user_id||null,
+          label:`${p.archivo_nombre||`${p.tipo||''} ${p.m2||''}m²`} — USD ${(p.total_usd||0).toLocaleString()} — ${p.user_id?'con cuenta':'anónimo'}`,
+        }));
         setClientes(entries);
       });
   },[]);
@@ -3537,6 +3543,11 @@ export default function SGMApp() {
         setPerfil('cliente');
         localStorage.setItem('sgm-perfil','cliente');
       }
+      // Vincular presupuestos anónimos recientes (últimas 24h)
+      supa.from('presupuestos').update({user_id:userObj.id})
+        .is('user_id',null)
+        .gte('created_at',new Date(Date.now()-24*60*60*1000).toISOString())
+        .catch(()=>{});
       setPhase('app');
       mostrarPermisosModal();
       if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){

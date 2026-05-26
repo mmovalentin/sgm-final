@@ -66,7 +66,7 @@ Devuelve SOLO este JSON (los pct deben sumar 100, adapta rubros al sistema ${sis
     const sbKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
     if (sbUrl && sbKey) {
       try {
-        const sbRes = await fetch(`${sbUrl}/rest/v1/cotizaciones`, {
+        const sbRes = await fetch(`${sbUrl}/rest/v1/presupuestos`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -75,17 +75,15 @@ Devuelve SOLO este JSON (los pct deben sumar 100, adapta rubros al sistema ${sis
             'Prefer': 'return=minimal',
           },
           body: JSON.stringify({
-            user_id: user_id || null,
-            email: user_email || null,
-            tipo,
-            m2: superficie,
-            sistema,
-            cal,
+            archivo_nombre: `${tipo} ${superficie}m2 ${cal}`,
             total_usd: result.total_usd,
-            anticipo_usd: result.anticipo_usd,
-            tiempo_meses: result.tiempo_meses,
-            rubros: result.rubros || [],
             fecha: new Date().toISOString().split('T')[0],
+            vigencia_dias: 30,
+            user_id: user_id || null,
+            estado: 'pendiente',
+            tipo,
+            sistema,
+            m2: superficie,
           }),
         });
         result.saved_to_db = sbRes.ok;
