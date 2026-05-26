@@ -676,29 +676,12 @@ function ClienteHomeScreen({onNav,t,user}) {
   async function guardarDescripcion(){
     if(!supa||!user){setDescError('Sin conexión con el servidor');return;}
     setSavingDesc(true);setDescError(null);
-    console.log('guardando descripcion:',editDescText,'user:',user?.id,'proyectoId:',proyectoId);
-    let error;
-    if(proyectoId){
-      ({error}=await supa.from('proyecto_cliente').update({descripcion:editDescText}).eq('id',proyectoId));
-    } else {
-      const{data:existing}=await supa.from('proyecto_cliente').select('id').eq('user_id',user.id).single();
-      if(existing){
-        setProyectoId(existing.id);
-        ({error}=await supa.from('proyecto_cliente').update({descripcion:editDescText}).eq('id',existing.id));
-      } else {
-        const{data:nd,error:e}=await supa.from('proyecto_cliente').insert({
-          user_id:user.id,email:user.email,
-          nombre_cliente:user.user_metadata?.full_name||user.email,
-          estado_proyecto:'pendiente',descripcion:editDescText,
-          etapas:[],proveedores:[],
-        }).select().single();
-        error=e;
-        if(nd) setProyectoId(nd.id);
-      }
-    }
-    console.log('resultado guardar:',error);
+    const op=proyectoId
+      ?supa.from('proyecto_cliente').update({descripcion:editDescText}).eq('id',proyectoId)
+      :supa.from('proyecto_cliente').upsert({user_id:user.id,descripcion:editDescText},{onConflict:'user_id'});
+    const{error}=await op;
     setSavingDesc(false);
-    if(error){setDescError(error.message||'Error al guardar. Verificá la conexión.');return;}
+    if(error){setDescError(error.message||'Error al guardar. Intentá de nuevo.');return;}
     setDescripcion(editDescText);setEditDesc(false);
     setDescSaved(true);setTimeout(()=>setDescSaved(false),2000);
   }
@@ -865,7 +848,6 @@ function MiObraScreen({t,user}) {
   const m2Total=proyData?.m2_totales||lastCot?.m2||0;
   const m2Construidos=avance>0?Math.round(m2Total*avance/100):0;
   const etapaLbl=avanceLabel(avance,hasAvance);
-  const [lockTooltip,setLockTooltip]=useState(null);
 
   function barColor(e){
     if(e.completada||e.porcentaje>=100)return'#22C55E';
@@ -916,18 +898,12 @@ function MiObraScreen({t,user}) {
               return(
                 <div key={i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,borderLeft:`3px solid ${bc}`,padding:'12px 14px'}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:5}}>
-                    <div style={{fontWeight:700,fontSize:13,color:C.t1,flex:1}}>{e.etapa_nombre||e.nombre}</div>
-                    <div style={{display:'flex',alignItems:'center',gap:5,flexShrink:0,marginLeft:8}}>
+                    <div style={{fontWeight:700,fontSize:13,color:C.t1}}>{e.etapa_nombre||e.nombre}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0,marginLeft:8}}>
                       {done?<span style={{fontSize:12}}>✅</span>:pct>0?<span style={{fontSize:12}}>🔄</span>:<span style={{fontSize:12}}>⏳</span>}
                       <span style={{fontSize:11,fontWeight:700,color:bc}}>{pct}%</span>
-                      <span onClick={()=>setLockTooltip(lockTooltip===i?null:i)} style={{fontSize:12,cursor:'pointer',opacity:.5,userSelect:'none'}}>🔒</span>
                     </div>
                   </div>
-                  {lockTooltip===i&&(
-                    <div style={{fontSize:10,color:C.t3,background:C.off,borderRadius:6,padding:'5px 8px',marginBottom:6,lineHeight:1.4}}>
-                      Solo el administrador puede actualizar el avance de las etapas.
-                    </div>
-                  )}
                   {(e.fecha_inicio||e.fecha_fin)&&(
                     <div style={{fontSize:11,color:C.t3,marginBottom:5}}>{e.fecha_inicio||'?'} → {e.fecha_fin||'?'}</div>
                   )}
@@ -2605,7 +2581,7 @@ const ETAPAS=[
   {id:'Perdido',color:'#C62828',icon:'❌'},
 ];
 
-function ClientesScreen({perfil,userRol,onNav}) {
+function ClientesScreen({perfil,userRol}) {
   const [clientes,setClientes]=useState([]);
   const [loading,setLoading]=useState(false);
   const [etapaActiva,setEtapaActiva]=useState('Interesado');
@@ -2901,9 +2877,6 @@ function ClientesScreen({perfil,userRol,onNav}) {
               </div>
             ):(
               <button onClick={()=>{setShowNotif(true);setNotifSent(false);}} style={{width:'100%',padding:10,borderRadius:8,border:'none',background:'#7C3AED',color:'#fff',cursor:'pointer',fontSize:12,fontWeight:700,marginBottom:8}}>🔔 Notificar cliente</button>
-            {onNav&&selCliente.email&&(
-              <button onClick={()=>{setSelId(null);onNav('avance_admin',{email:selCliente.email});}} style={{width:'100%',padding:10,borderRadius:8,border:'none',background:'#0F4C8A',color:'#fff',cursor:'pointer',fontSize:12,fontWeight:700,marginBottom:8}}>🏗️ Actualizar avance de obra</button>
-            )}
             )}
 
             {selCliente.telefono&&(()=>{const wa=selCliente.telefono.replace(/\D/g,'');return(
@@ -2939,7 +2912,7 @@ function ClientesScreen({perfil,userRol,onNav}) {
 }
 
 // ── AVANCE OBRA ADMIN
-function AvanceObraAdminScreen({userRol,initEmail}) {
+function AvanceObraAdminScreen({userRol}) {
   const [clientes,setClientes]=useState([]);
   const [selUserId,setSelUserId]=useState('');
   const [etapas,setEtapas]=useState(ETAPAS_OBRA_DEFAULT.map(e=>({...e})));
@@ -2950,14 +2923,8 @@ function AvanceObraAdminScreen({userRol,initEmail}) {
   useEffect(()=>{
     if(!supa) return;
     supa.from('proyecto_cliente').select('user_id,email,nombre_cliente,m2_totales,sistema')
-      .order('created_at',{ascending:false}).then(({data})=>{
-        setClientes(data||[]);
-        if(initEmail&&data){
-          const match=data.find(c=>c.email===initEmail);
-          if(match) loadEtapas(match.user_id);
-        }
-      });
-  },[initEmail]);
+      .order('created_at',{ascending:false}).then(({data})=>setClientes(data||[]));
+  },[]);
 
   async function loadEtapas(uid){
     setSelUserId(uid);setSaved(false);setSaveError(null);
@@ -2982,7 +2949,6 @@ function AvanceObraAdminScreen({userRol,initEmail}) {
       completada:!!(e.completada||(Number(e.porcentaje)>=100)),
       fecha_inicio:e.fecha_inicio||null,
       fecha_fin:e.fecha_fin||null,
-      monto_certificado:Number(e.monto_certificado)||0,
       notas:e.notas||'',
     }));
     const{error}=await supa.from('avance_obra').upsert(rows,{onConflict:'user_id,etapa_numero'});
@@ -3034,14 +3000,10 @@ function AvanceObraAdminScreen({userRol,initEmail}) {
                   <span style={{width:34,textAlign:'right',fontSize:12,fontWeight:700,color:C.acc}}>{e.porcentaje||0}%</span>
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:6}}>
-                  <input type='date' value={e.fecha_inicio||''} onChange={ev=>updEtapa(i,'fecha_inicio',ev.target.value)} style={{padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
-                  <input type='date' value={e.fecha_fin||''} onChange={ev=>updEtapa(i,'fecha_fin',ev.target.value)} style={{padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
+                  <input type='date' value={e.fecha_inicio||''} onChange={ev=>updEtapa(i,'fecha_inicio',ev.target.value)} placeholder='Inicio' style={{padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
+                  <input type='date' value={e.fecha_fin||''} onChange={ev=>updEtapa(i,'fecha_fin',ev.target.value)} placeholder='Fin' style={{padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
                 </div>
-                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
-                  <span style={{fontSize:10,color:C.t3,whiteSpace:'nowrap'}}>💰 Monto cert. USD</span>
-                  <input type='number' min={0} value={e.monto_certificado||''} onChange={ev=>updEtapa(i,'monto_certificado',ev.target.value)} placeholder='0' style={{flex:1,padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
-                </div>
-                <input value={e.notas||''} onChange={ev=>updEtapa(i,'notas',ev.target.value)} placeholder='Notas internas...' style={{width:'100%',padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
+                <input value={e.notas||''} onChange={ev=>updEtapa(i,'notas',ev.target.value)} placeholder='Notas opcionales...' style={{width:'100%',padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
               </div>
             ))}
 
@@ -3725,8 +3687,8 @@ export default function SGMApp() {
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation}/>,
     miobrascreen:<MiObraScreen t={t} user={user}/>,
     detalle_cot:<DetalleCotizacionScreen cot={screenParams.cot} estadoProyecto={screenParams.estadoProyecto} onNav={handleNav}/>,
-    avance_admin:<AvanceObraAdminScreen userRol={userRol} initEmail={screenParams.email||''}/>,
-    clientes:<ClientesScreen perfil={perfil} userRol={userRol} onNav={handleNav}/>,
+    avance_admin:<AvanceObraAdminScreen userRol={userRol}/>,
+    clientes:<ClientesScreen perfil={perfil} userRol={userRol}/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
   };
 
