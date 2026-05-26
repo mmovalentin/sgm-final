@@ -500,6 +500,98 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
   );
 }
 
+// ── DETALLE COTIZACIÓN CLIENTE
+function DetalleCotizacionScreen({cot,estadoProyecto,onNav}) {
+  if(!cot) return(
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',padding:32,textAlign:'center'}}>
+      <div style={{fontSize:48,marginBottom:12}}>📄</div>
+      <div style={{color:C.t2,fontSize:14,fontWeight:600,marginBottom:8}}>Sin cotización guardada</div>
+      <button onClick={()=>onNav('home')} style={{marginTop:8,padding:'10px 22px',borderRadius:10,background:'none',border:`1px solid ${C.border2}`,color:C.acc,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>← Volver</button>
+    </div>
+  );
+  const est=estadoProyecto?(ESTADO_BANNER[estadoProyecto]||ESTADO_BANNER.pendiente):ESTADO_BANNER.pendiente;
+  const calMap={economico:'Económico',standard:'Standard',premium:'Premium'};
+  const diasEstimados=cot.tiempo_meses
+    ?Math.round(cot.tiempo_meses*30)
+    :(cot.m2>0?(cot.sistema?.toLowerCase().includes('mampost')?Math.round(cot.m2*3):Math.round(cot.m2*2.25)):180);
+  const waMsg=encodeURIComponent(`Hola! Consulto por mi proyecto:\n• ${cot.tipo} ${cot.m2}m²\n• ${cot.sistema}\n• Presupuesto: USD ${(cot.total_usd||0).toLocaleString()}\n¿Podemos avanzar?`);
+  return(
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      {/* HEADER */}
+      <div style={{background:C.navy,padding:'13px 14px',flexShrink:0,display:'flex',alignItems:'center',gap:10}}>
+        <button onClick={()=>onNav('home')} style={{background:'none',border:'none',color:C.t2,fontSize:13,fontWeight:600,cursor:'pointer',padding:0,fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>← Mi proyecto</button>
+        <div style={{flex:1}}>
+          <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Cotización</div>
+          <div style={{color:C.onNavy,fontSize:14,fontWeight:700}}>{cot.tipo} · {cot.m2}m²</div>
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'14px',display:'flex',flexDirection:'column',gap:12}}>
+
+        {/* BANNER ESTADO */}
+        <div style={{background:est.bg,border:`1px solid ${est.border}`,borderRadius:12,padding:'12px 14px',display:'flex',alignItems:'flex-start',gap:10}}>
+          <span style={{fontSize:22,flexShrink:0,lineHeight:1}}>{est.icon}</span>
+          <div>
+            <div style={{color:est.color,fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:.5,marginBottom:3}}>{est.label}</div>
+            <div style={{color:C.t2,fontSize:12,lineHeight:1.5}}>{est.msg}</div>
+          </div>
+        </div>
+
+        {/* DATOS PRINCIPALES */}
+        <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'16px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:14}}>
+            <div>
+              <div style={{color:C.t3,fontSize:10,textTransform:'uppercase',letterSpacing:.5,marginBottom:4}}>Presupuesto total</div>
+              <div style={{color:C.acc,fontSize:30,fontWeight:900,lineHeight:1}}>USD {(cot.total_usd||0).toLocaleString()}</div>
+            </div>
+            <div style={{textAlign:'right'}}>
+              <div style={{color:C.t3,fontSize:10,marginBottom:4}}>Calidad</div>
+              <div style={{background:'rgba(74,159,255,.12)',border:'1px solid rgba(74,159,255,.25)',borderRadius:8,padding:'4px 10px',color:C.acc,fontSize:11,fontWeight:700}}>{calMap[cot.cal]||cot.cal||'—'}</div>
+            </div>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            {[
+              ['🏠','Tipo',cot.tipo||'—'],
+              ['📐','Superficie',cot.m2?`${cot.m2} m²`:'—'],
+              ['🏗️','Sistema',cot.sistema||'—'],
+              ['📅','Fecha',cot.fecha?new Date(cot.fecha).toLocaleDateString('es-AR'):'—'],
+              ['⏱️','Tiempo est.',cot.tiempo_meses?`${cot.tiempo_meses} meses`:'—'],
+              ['📆','Días est.',diasEstimados?`${diasEstimados} días`:'—'],
+            ].map(([icon,label,val])=>(
+              <div key={label} style={{background:C.off,borderRadius:10,padding:'10px 12px',border:`.5px solid ${C.border}`}}>
+                <div style={{fontSize:14,marginBottom:4}}>{icon}</div>
+                <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:.5,marginBottom:2}}>{label}</div>
+                <div style={{color:C.t1,fontSize:12,fontWeight:700}}>{val}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ANTICIPO */}
+        {cot.total_usd>0&&(
+          <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'14px'}}>
+            <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:10}}>Estructura de pago</div>
+            {[['Anticipo (60%)',Math.round(cot.total_usd*0.6),'#4A9FFF'],['Saldo (40%)',Math.round(cot.total_usd*0.4),C.t3]].map(([l,v,color])=>(
+              <div key={l} style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                <span style={{fontSize:12,color:C.t2}}>{l}</span>
+                <span style={{fontSize:13,fontWeight:700,color}}>USD {v.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ACCIONES */}
+        <button onClick={()=>window.open(`https://wa.me/5493517618232?text=${waMsg}`,'_blank')} style={{width:'100%',padding:'13px',background:'#25D366',color:'#fff',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          💬 Consultar por WhatsApp
+        </button>
+        <button onClick={()=>onNav('cot')} style={{width:'100%',padding:'11px',background:'none',border:`1px solid ${C.border2}`,borderRadius:12,color:C.acc,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+          ✨ Nueva cotización
+        </button>
+
+      </div>
+    </div>
+  );
+}
+
 // ── CLIENTE HOME (dashboard orientado a su obra)
 const ESTADO_BANNER={
   pendiente:{color:'#F59E0B',bg:'rgba(245,158,11,.08)',border:'rgba(245,158,11,.2)',icon:'🟡',label:'En revisión',msg:'Tu proyecto está siendo revisado por nuestro equipo. Te contactaremos pronto.'},
@@ -665,7 +757,7 @@ function ClienteHomeScreen({onNav,t,user}) {
               <div style={{color:C.acc,fontSize:16,fontWeight:800}}>USD {(lastCot.total_usd||0).toLocaleString()}</div>
             </div>
             <div style={{display:'flex',gap:6}}>
-              <button onClick={()=>onNav('cot')} style={{flex:1,padding:'8px',borderRadius:9,background:'none',border:`1px solid ${C.border2}`,color:C.acc,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Ver detalle</button>
+              <button onClick={()=>onNav('detalle_cot',{cot:lastCot,estadoProyecto})} style={{flex:1,padding:'8px',borderRadius:9,background:'none',border:`1px solid ${C.border2}`,color:C.acc,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Ver detalle</button>
               <button onClick={()=>{localStorage.removeItem('sgi_last_cot');setLastCot(null);}} style={{padding:'8px 13px',borderRadius:9,background:'none',border:'1px solid rgba(255,80,80,.3)',color:'#FF5252',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>✕</button>
             </div>
           </div>
@@ -3453,6 +3545,7 @@ export default function SGMApp() {
     agenda:<AgendaScreen t={t} perfil={perfil} userRol={userRol}/>,
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation}/>,
     miobrascreen:<MiObraScreen t={t} user={user}/>,
+    detalle_cot:<DetalleCotizacionScreen cot={screenParams.cot} estadoProyecto={screenParams.estadoProyecto} onNav={handleNav}/>,
     clientes:<ClientesScreen perfil={perfil} userRol={userRol}/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
   };
