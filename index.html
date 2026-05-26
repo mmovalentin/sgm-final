@@ -27,7 +27,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:#07111F}
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">const { useState, useEffect, useRef } = React;
+<script type="text/babel">﻿const { useState, useEffect, useRef } = React;
 const SGM_VERSION = '2.4';
 // Cliente Supabase: se inicializa desde /api/config (env vars de Vercel).
 // Fallback a valores hardcodeados si el endpoint no está disponible.
@@ -413,11 +413,11 @@ function Topbar({screen,perfil,dolar,onAyuda,loggedIn,t,user,onSignOut,onGoogleS
 // ── BOTTOM NAV
 function BottomNav({screen,onNav,t,perfil,userRol}) {
   const clienteItems=[
-    {id:'home',icon:'🏠',label:t.inicio},
-    {id:'cot',icon:'✨',label:t.cotizar},
-    {id:'modelos',icon:'🏘️',label:t.modelos},
-    {id:'chat',icon:'🤖',label:t.ia},
-    {id:'mapa',icon:'📍',label:t.mapa_lbl},
+    {id:'home',icon:'🏠',label:t.inicio||'Inicio'},
+    {id:'miobrascreen',icon:'🏗️',label:'Mi Obra'},
+    {id:'chat',icon:'🤖',label:t.ia||'IA'},
+    {id:'mapa',icon:'📍',label:t.mapa_lbl||'Mapa'},
+    {id:'more',icon:'☰',label:t.mas||'Más'},
   ];
   const defaultItems=[{id:'home',icon:'🏠',label:t.inicio},{id:'modelos',icon:'🏘️',label:t.modelos},{id:'cot',icon:'✨',label:t.cotizar},{id:'chat',icon:'🤖',label:t.ia},{id:'more',icon:'☰',label:t.mas}];
   const items=isAdmin(userRol)?defaultItems:clienteItems;
@@ -529,89 +529,228 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
   );
 }
 
-// ── CLIENTE HOME
-function ClienteHomeScreen({onNav,t,user,dolar}) {
+// ── CLIENTE HOME (dashboard orientado a su obra)
+function ClienteHomeScreen({onNav,t,user}) {
   const nombre=user?.user_metadata?.full_name?.split(' ')[0]||user?.email?.split('@')[0]||null;
-  const initials=nombre?nombre.charAt(0).toUpperCase():null;
   const [lastCot,setLastCot]=useState(null);
-  useEffect(()=>{const s=localStorage.getItem('sgi_last_cot');if(s)try{setLastCot(JSON.parse(s));}catch(e){};},[]);
-  const calMap={economico:{label:t.cal_eco||'Económico',color:'#4CAF50'},standard:{label:t.cal_std||'Standard',color:'#2196F3'},premium:{label:t.cal_prem||'Premium',color:'#9C27B0'}};
-  const exploraSvg=[
-    `<rect x="3" y="2" width="14" height="16" rx="1"/><line x1="3" y1="7" x2="17" y2="7"/><line x1="7" y1="2" x2="7" y2="7"/><line x1="13" y1="2" x2="13" y2="7"/><rect x="6" y="10" width="3" height="3" rx=".5"/><rect x="11" y="10" width="3" height="3" rx=".5"/>`,
-    `<rect x="2" y="3" width="16" height="13" rx="2"/><circle cx="7" cy="8" r="1.5"/><path d="M2 13l4-4 3 3 3-3 6 5"/>`,
-    `<path d="M3 4h14a1 1 0 011 1v8a1 1 0 01-1 1H7l-4 3V5a1 1 0 011-1z"/>`,
-    `<path d="M10 2a6 6 0 00-6 6c0 4 6 10 6 10s6-6 6-10a6 6 0 00-6-6z"/><path d="M7.5 8l2 2 3-3"/>`,
-    `<rect x="3" y="3" width="14" height="15" rx="1"/><line x1="3" y1="8" x2="17" y2="8"/><line x1="7" y1="3" x2="7" y2="8"/><line x1="13" y1="3" x2="13" y2="8"/><rect x="7" y="12" width="6" height="6"/>`,
-  ];
-  const explora=(t.explora_items||[]).map(([title,desc,nav],i)=>({svg:exploraSvg[i],title,desc,nav}));
+  const [obraData,setObraData]=useState(null);
+  useEffect(()=>{
+    try{const s=localStorage.getItem('sgi_last_cot');if(s)setLastCot(JSON.parse(s));}catch(e){}
+    try{const s=localStorage.getItem('sgi_obra_data');if(s)setObraData(JSON.parse(s));}catch(e){}
+  },[]);
+  const avance=obraData?.avance||0;
+  const etapaActual=obraData?.etapa_actual||null;
+  const etapas=obraData?.etapas||[];
+  const etapasOk=etapas.filter(e=>e.estado==='completada').length;
+  const m2=lastCot?.m2||0;
+  const hoy=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
   return (
-    <div style={{background:C.bg,minHeight:'100%',paddingBottom:8}}>
-      <div style={{padding:'20px 16px 0',background:C.bg}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
+    <div style={{background:C.bg,minHeight:'100%',paddingBottom:16}}>
+
+      {/* ── 1. HEADER ── */}
+      <div style={{background:C.navy,padding:'20px 16px 22px',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',top:-50,right:-30,width:130,height:130,background:'rgba(74,159,255,.06)',borderRadius:'50%',pointerEvents:'none'}}/>
+        <div style={{color:C.t3,fontSize:11,marginBottom:6,textTransform:'capitalize'}}>{hoy}</div>
+        <div style={{color:C.onNavy,fontSize:21,fontWeight:800,lineHeight:1.2,marginBottom:3}}>
+          {nombre?`¡Hola ${nombre}! 🏗️`:'¡Bienvenido! 🏗️'}
+        </div>
+        <div style={{color:C.t3,fontSize:12}}>Tu obra avanza</div>
+      </div>
+
+      {/* ── 2. PROGRESO ── */}
+      <div style={{margin:'12px 16px 0',background:C.card,borderRadius:16,border:`.5px solid ${C.border}`,padding:'16px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
           <div>
-            <div style={{color:C.t3,fontSize:11,marginBottom:2}}>{t.bienvenido_sgi}</div>
-            <div style={{color:C.t1,fontSize:22,fontWeight:800}}>{nombre?`${t.hola_prefix||'Hola,'} ${nombre} 👋`:t.hola||'¡Hola!'}</div>
+            <div style={{color:C.t3,fontSize:10,textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Avance general</div>
+            <div style={{color:C.t1,fontSize:34,fontWeight:900,lineHeight:1}}>{avance}<span style={{fontSize:18,fontWeight:700}}>%</span></div>
           </div>
-          <div style={{width:44,height:44,borderRadius:'50%',background:'linear-gradient(135deg,#2563EB,#1E3A5F)',display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid rgba(74,159,255,.3)',flexShrink:0}}>
-            {initials
-              ? <span style={{fontSize:18,fontWeight:800,color:'#fff'}}>{initials}</span>
-              : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.75)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-            }
+          <div style={{textAlign:'right'}}>
+            <div style={{color:C.t3,fontSize:10,marginBottom:6}}>Etapa actual</div>
+            <div style={{background:'rgba(74,159,255,.12)',border:'1px solid rgba(74,159,255,.25)',borderRadius:8,padding:'5px 11px',color:C.acc,fontSize:11,fontWeight:700}}>
+              {etapaActual||'Sin datos'}
+            </div>
           </div>
         </div>
-        <div style={{borderRadius:20,background:'linear-gradient(135deg,#1E3A5F,#0D2A4A)',border:'1px solid rgba(74,159,255,.2)',padding:'22px 18px',position:'relative',overflow:'hidden',marginBottom:20}}>
-          <div style={{position:'absolute',top:-24,right:-24,width:110,height:110,background:'rgba(74,159,255,.08)',borderRadius:'50%',pointerEvents:'none'}}/>
-          <div style={{position:'absolute',bottom:-20,left:'40%',width:70,height:70,background:'rgba(245,158,11,.06)',borderRadius:'50%',pointerEvents:'none'}}/>
-          <div style={{color:'rgba(255,255,255,.45)',fontSize:11,marginBottom:4}}>{t.empeza_proyecto}</div>
-          <div style={{color:'#fff',fontSize:20,fontWeight:800,marginBottom:3,lineHeight:1.2}}>{t.que_queres}</div>
-          <div style={{color:'rgba(255,255,255,.35)',fontSize:12,marginBottom:18}}>{t.presup_segundos}</div>
-          <button onClick={()=>onNav('cot')} style={{width:'100%',padding:'13px',borderRadius:12,background:'#4A9FFF',border:'none',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:8,fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:`<rect x="4" y="2" width="12" height="16" rx="2"/><line x1="7" y1="6" x2="13" y2="6"/><line x1="7" y1="10" x2="9" y2="10"/><line x1="11" y1="10" x2="13" y2="10"/><line x1="7" y1="14" x2="9" y2="14"/><line x1="11" y1="14" x2="13" y2="14"/>`}}/>
-            {t.cotizar_obra}
-          </button>
-          <button onClick={()=>onNav('modelos')} style={{width:'100%',padding:'11px',borderRadius:12,background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',color:'rgba(255,255,255,.65)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(255,255,255,.65)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:`<path d="M2 10L10 2l8 8"/><path d="M4 9.5V18h4v-5h4V9.5"/>`}}/>
-            {t.ver_modelos_btn}
-          </button>
+        <div style={{background:C.border,borderRadius:6,height:10,overflow:'hidden',marginBottom:5}}>
+          <div style={{background:'linear-gradient(90deg,#4A9FFF,#64FFDA)',width:`${avance}%`,height:'100%',borderRadius:6,transition:'width .6s ease'}}/>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:C.t3,marginBottom:12}}>
+          <span>Inicio</span><span>Entrega</span>
+        </div>
+        <button onClick={()=>onNav('miobrascreen')} style={{width:'100%',padding:'10px',background:'none',border:`1px solid ${C.border2}`,borderRadius:10,color:C.acc,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+          📅 Ver cronograma completo →
+        </button>
+      </div>
+
+      {/* ── 3. STATS ── */}
+      <div style={{padding:'12px 16px 0'}}>
+        <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Mi proyecto</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+          {[
+            [m2?`${m2}m²`:'—','Superficie'],
+            [`${etapasOk}/${etapas.length||'?'}`,'Etapas'],
+            ['—','Días'],
+          ].map(([v,l])=>(
+            <div key={l} style={{background:C.card,borderRadius:12,padding:'12px 8px',border:`.5px solid ${C.border}`,textAlign:'center'}}>
+              <div style={{color:C.acc,fontSize:17,fontWeight:800}}>{v}</div>
+              <div style={{color:C.t3,fontSize:9,marginTop:3}}>{l}</div>
+            </div>
+          ))}
         </div>
       </div>
+
+      {/* ── 4. ÚLTIMA COTIZACIÓN ── */}
       {lastCot&&(
-        <div style={{padding:'0 16px 16px'}}>
-          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>{t.ultima_cot}</div>
-          <div style={{background:C.card,borderRadius:16,border:`.5px solid ${C.border}`,padding:'14px 16px'}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+        <div style={{padding:'12px 16px 0'}}>
+          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Tu cotización</div>
+          <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'13px 15px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
               <div>
-                <div style={{color:C.t1,fontSize:14,fontWeight:700}}>{lastCot.tipo} · {lastCot.m2}m²</div>
+                <div style={{color:C.t1,fontSize:13,fontWeight:700}}>{lastCot.tipo} · {lastCot.m2}m²</div>
                 <div style={{color:C.t3,fontSize:11,marginTop:2}}>{lastCot.sistema} · {new Date(lastCot.fecha).toLocaleDateString('es-AR')}</div>
               </div>
-              <div style={{textAlign:'right'}}>
-                <div style={{color:calMap[lastCot.cal]?.color||C.acc,fontSize:17,fontWeight:800}}>USD {(lastCot.total_usd||0).toLocaleString()}</div>
-                <div style={{fontSize:10,color:C.t3,marginTop:1}}>{calMap[lastCot.cal]?.label||lastCot.cal}</div>
-              </div>
+              <div style={{color:C.acc,fontSize:16,fontWeight:800}}>USD {(lastCot.total_usd||0).toLocaleString()}</div>
             </div>
-            <div style={{display:'flex',gap:6,marginTop:0}}>
-              <button onClick={()=>onNav('cot')} style={{flex:1,padding:'9px',borderRadius:10,background:'none',border:`1px solid ${C.border2}`,color:C.acc,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{t.ver_detalle}</button>
-              <button onClick={()=>{localStorage.removeItem('sgi_last_cot');setLastCot(null);}} style={{padding:'9px 14px',borderRadius:10,background:'none',border:'1px solid rgba(255,80,80,.3)',color:'#FF5252',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{t.eliminar}</button>
+            <div style={{display:'flex',gap:6}}>
+              <button onClick={()=>onNav('cot')} style={{flex:1,padding:'8px',borderRadius:9,background:'none',border:`1px solid ${C.border2}`,color:C.acc,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Ver detalle</button>
+              <button onClick={()=>{localStorage.removeItem('sgi_last_cot');setLastCot(null);}} style={{padding:'8px 13px',borderRadius:9,background:'none',border:'1px solid rgba(255,80,80,.3)',color:'#FF5252',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>✕</button>
             </div>
           </div>
         </div>
       )}
-      <div style={{padding:'0 16px 16px'}}>
-        <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>{t.explora_lbl}</div>
-        <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          {explora.map((e,i)=>(
-            <button key={i} onClick={()=>onNav(e.nav)} style={{display:'flex',alignItems:'center',gap:12,padding:'14px',borderRadius:14,background:C.card,border:`.5px solid ${C.border}`,cursor:'pointer',textAlign:'left',width:'100%',fontFamily:'inherit'}}>
-              <div style={{width:44,height:44,borderRadius:12,background:C.off,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${C.border}`}}>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:e.svg}}/>
-              </div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{color:C.t1,fontSize:13,fontWeight:700}}>{e.title}</div>
-                <div style={{color:C.t3,fontSize:11,marginTop:2}}>{e.desc}</div>
-              </div>
-              <span style={{color:C.t3,fontSize:18,flexShrink:0}}>›</span>
+
+      {/* ── 5. ACCESO RÁPIDO ── */}
+      <div style={{padding:'12px 16px 16px'}}>
+        <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Acceso rápido</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {[
+            ['✨','#0A1628','cot',t.cotizar_obra||'Cotizar mi obra',t.presup_usd||'Presupuesto en USD'],
+            ['🤖','#1B5E20','chat',t.ia||'Asistente IA',t.consulta_obra||'Consultá tu obra'],
+            ['🏘️','#1A3A6B','modelos',t.modelos||'Modelos','Ver renders y precios'],
+            ['💬','#006339','wa','WhatsApp','Consultar directo'],
+          ].map(([ic,bg,id,n,s])=>(
+            <button key={id} onClick={()=>id==='wa'?openWA():onNav(id)} style={{background:bg,border:'none',borderRadius:12,padding:'14px 12px',cursor:'pointer',textAlign:'left',color:'#fff',fontFamily:'inherit'}}>
+              <div style={{fontSize:22,marginBottom:6}}>{ic}</div>
+              <div style={{fontSize:12,fontWeight:700}}>{n}</div>
+              <div style={{fontSize:9,opacity:.55,marginTop:2}}>{s}</div>
             </button>
           ))}
         </div>
+      </div>
+
+    </div>
+  );
+}
+
+// ── MI OBRA (cronograma + stats + proveedores)
+function MiObraScreen({t,user}) {
+  const [lastCot,setLastCot]=useState(null);
+  const [obraData,setObraData]=useState(null);
+  useEffect(()=>{
+    try{const s=localStorage.getItem('sgi_last_cot');if(s)setLastCot(JSON.parse(s));}catch(e){}
+    try{const s=localStorage.getItem('sgi_obra_data');if(s)setObraData(JSON.parse(s));}catch(e){}
+  },[]);
+  const avance=obraData?.avance||0;
+  const etapas=obraData?.etapas||[];
+  const proveedores=obraData?.proveedores||[];
+  const m2Total=lastCot?.m2||0;
+  const etapasOk=etapas.filter(e=>e.estado==='completada').length;
+  const estadoStyle={completada:['✅',C.green],en_curso:['🔄',C.acc],pendiente:['⏳',C.t3]};
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div style={{background:C.navy,padding:'13px 14px',flexShrink:0}}>
+        <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Mi proyecto</div>
+        <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>Cronograma de obra</div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:14}}>
+
+        {/* BARRA DE AVANCE */}
+        <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'14px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+            <span style={{fontSize:12,fontWeight:700,color:C.t1}}>Avance general</span>
+            <span style={{fontSize:20,fontWeight:900,color:C.acc}}>{avance}%</span>
+          </div>
+          <div style={{background:C.border,borderRadius:5,height:10,overflow:'hidden'}}>
+            <div style={{background:'linear-gradient(90deg,#4A9FFF,#64FFDA)',width:`${avance}%`,height:'100%',borderRadius:5}}/>
+          </div>
+        </div>
+
+        {/* ESTADÍSTICAS CON BARRAS CSS */}
+        <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'14px'}}>
+          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:12}}>Estadísticas del proyecto</div>
+          {[
+            ['M² construidos',Math.round(m2Total*avance/100),m2Total,'m²',C.acc],
+            ['Etapas completadas',etapasOk,Math.max(etapas.length,1),'',C.green],
+          ].map(([label,val,max,unit,color])=>(
+            <div key={label} style={{marginBottom:12}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:5,fontSize:11}}>
+                <span style={{color:C.t2}}>{label}</span>
+                <span style={{fontWeight:700,color}}>{val}{unit} <span style={{color:C.t3,fontWeight:400}}>/ {max}{unit}</span></span>
+              </div>
+              <div style={{background:C.border,borderRadius:3,height:7}}>
+                <div style={{background:color,width:`${max?Math.round(val/max*100):0}%`,height:'100%',borderRadius:3,transition:'width .4s'}}/>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* CRONOGRAMA DE ETAPAS */}
+        <div>
+          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:10}}>Cronograma de etapas</div>
+          {etapas.length===0?(
+            <div style={{textAlign:'center',padding:'28px 20px',background:C.card,borderRadius:14,border:`.5px solid ${C.border}`}}>
+              <div style={{fontSize:36,marginBottom:8}}>📋</div>
+              <div style={{color:C.t2,fontSize:13,fontWeight:600,marginBottom:4}}>Sin etapas cargadas</div>
+              <div style={{color:C.t3,fontSize:12}}>Tu obra aún no tiene etapas cargadas</div>
+            </div>
+          ):(
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {etapas.map((e,i)=>{
+                const [icon,borderColor]=estadoStyle[e.estado]||['⏳',C.t3];
+                return(
+                  <div key={i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,borderLeft:`3px solid ${borderColor}`,padding:'12px 14px'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:e.inicio||e.fin?4:0}}>
+                      <div style={{fontWeight:700,fontSize:13,color:C.t1}}>{e.nombre}</div>
+                      <span style={{fontSize:16}}>{icon}</span>
+                    </div>
+                    {(e.inicio||e.fin)&&<div style={{fontSize:11,color:C.t3}}>{e.inicio||'?'} → {e.fin||'?'}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* MIS PROVEEDORES */}
+        <div>
+          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:10}}>Mis proveedores</div>
+          {proveedores.length===0?(
+            <div style={{textAlign:'center',padding:'28px 20px',background:C.card,borderRadius:14,border:`.5px solid ${C.border}`}}>
+              <div style={{fontSize:36,marginBottom:8}}>🏪</div>
+              <div style={{color:C.t2,fontSize:13,fontWeight:600,marginBottom:4}}>Sin proveedores asignados</div>
+              <div style={{color:C.t3,fontSize:12}}>Aún no hay proveedores asignados a tu obra</div>
+            </div>
+          ):(
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {proveedores.map((p,i)=>(
+                <div key={i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px',display:'flex',alignItems:'center',gap:12}}>
+                  <div style={{width:42,height:42,borderRadius:12,background:C.off,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0,border:`1px solid ${C.border}`}}>🏗️</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{color:C.t1,fontSize:13,fontWeight:700}}>{p.nombre}</div>
+                    {p.rubro&&<div style={{color:C.t3,fontSize:11,marginTop:1}}>{p.rubro}</div>}
+                  </div>
+                  {p.contacto&&<button onClick={()=>window.open(`https://wa.me/${p.contacto.replace(/\D/g,'')}?text=${encodeURIComponent(`Hola ${p.nombre}, soy cliente de SGI`)}`,'_blank')} style={{background:'#25D366',border:'none',borderRadius:8,padding:'7px 10px',color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',flexShrink:0}}>💬</button>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* CONSULTAR */}
+        <button onClick={()=>openWA(false,'Hola, quiero consultar sobre el avance de mi obra.')} style={{width:'100%',padding:'13px',background:'#25D366',color:'#fff',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          💬 Consultar sobre mi obra
+        </button>
+
       </div>
     </div>
   );
@@ -1188,7 +1327,7 @@ function MapaScreen({t,perfil,onLogin,userLocation}) {
   const mapRef=useRef(null);
   const mapInst=useRef(null);
   const markersRef=useRef([]);
-  const [filtroActivo,setFiltroActivo]=useState(null);
+  const [filtroMapa,setFiltroMapa]=useState(null);
   const [dbProveedores,setDbProveedores]=useState([]);
   const [sinUbicacion,setSinUbicacion]=useState([]);
   const [refreshTick,setRefreshTick]=useState(0);
@@ -1256,21 +1395,21 @@ function MapaScreen({t,perfil,onLogin,userLocation}) {
     });
     dbMarkersRef.current=newDb;
     markersRef.current=[...markersRef.current.filter(m=>!m.fromDb),...newDb];
-    const hasActive=!filtroActivo||filtroActivo==='proveedor';
+    const hasActive=!filtroMapa||filtroMapa==='proveedor';
     newDb.forEach(({marker})=>{if(!hasActive)mapInst.current.removeLayer(marker);});
   },[dbProveedores]);
 
   useEffect(()=>{
     if(!mapInst.current) return;
     markersRef.current.forEach(({marker,tipo})=>{
-      if(!filtroActivo||filtroActivo===tipo) mapInst.current.addLayer(marker);
+      if(!filtroMapa||filtroMapa===tipo) mapInst.current.addLayer(marker);
       else mapInst.current.removeLayer(marker);
     });
-  },[filtroActivo]);
+  },[filtroMapa]);
 
-  const toggle=id=>setFiltroActivo(prev=>prev===id?null:id);
+  const toggle=id=>setFiltroMapa(prev=>prev===id?null:id);
 
-  const visibles=filtroActivo?allMarkers.filter(m=>m.tipo===filtroActivo):allMarkers;
+  const visibles=filtroMapa?allMarkers.filter(m=>m.tipo===filtroMapa):allMarkers;
 
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
@@ -1282,7 +1421,7 @@ function MapaScreen({t,perfil,onLogin,userLocation}) {
       <div style={{background:C.card,padding:'10px 14px',flexShrink:0,borderBottom:`.5px solid ${C.border}`}}>
         <div style={{display:'flex',gap:8}}>
           {MAPA_CHIPS.map(ch=>{
-            const on=filtroActivo===ch.id;
+            const on=filtroMapa===ch.id;
             return(
               <button key={ch.id} onClick={()=>toggle(ch.id)} style={{
                 padding:'5px 13px',borderRadius:20,fontSize:11,fontWeight:700,cursor:'pointer',
@@ -3142,6 +3281,7 @@ function SGMApp() {
     presup:<PresupScreen t={t} dolar={dolar}/>,
     agenda:<AgendaScreen t={t} perfil={perfil} userRol={userRol}/>,
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation}/>,
+    miobrascreen:<MiObraScreen t={t} user={user}/>,
     clientes:<ClientesScreen perfil={perfil} userRol={userRol}/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
   };
