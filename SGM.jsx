@@ -661,7 +661,7 @@ function ClienteHomeScreen({onNav,t,user}) {
   },[user]);
 
   const hasAvance=avanceRows.length>0;
-  const avance=hasAvance?Math.round(avanceRows.reduce((s,e)=>s+(e.porcentaje||0),0)/avanceRows.length):0;
+  const avance=hasAvance?Math.round(avanceRows.reduce((s,e)=>s+(e.porcentaje||0),0)/8):0;
   const etapasOk=hasAvance?avanceRows.filter(e=>e.completada||e.porcentaje>=100).length:0;
   const totalEtapas=hasAvance?avanceRows.length:8;
   const etapaLabel=avanceLabel(avance,hasAvance);
@@ -857,7 +857,7 @@ function MiObraScreen({t,user}) {
 
   const hasAvance=avanceRows.length>0;
   const etapas=hasAvance?avanceRows:ETAPAS_OBRA_DEFAULT;
-  const avance=hasAvance?Math.round(avanceRows.reduce((s,e)=>s+(e.porcentaje||0),0)/avanceRows.length):0;
+  const avance=hasAvance?Math.round(avanceRows.reduce((s,e)=>s+(e.porcentaje||0),0)/8):0;
   const etapasOk=etapas.filter(e=>e.completada||e.porcentaje>=100).length;
   const proveedores=proyData?.proveedores||[];
   const m2Total=proyData?.m2_totales||lastCot?.m2||0;
