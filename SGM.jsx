@@ -889,9 +889,14 @@ function MiObraScreen({t,user}) {
 
         {/* ETAPAS */}
         <div>
-          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:10}}>
-            Cronograma de etapas
-            {!hasAvance&&<span style={{fontWeight:400,color:C.t3,marginLeft:6,fontSize:9}}>(sin datos del admin aún)</span>}
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5}}>
+              Cronograma de etapas
+              {!hasAvance&&<span style={{fontWeight:400,color:C.t3,marginLeft:6,fontSize:9}}>(sin datos del admin aún)</span>}
+            </div>
+            <div style={{fontSize:9,color:C.t3,display:'flex',alignItems:'center',gap:3,marginTop:3}}>
+              🔒 Solo el administrador puede actualizar el avance
+            </div>
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             {etapas.map((e,i)=>{
@@ -910,7 +915,6 @@ function MiObraScreen({t,user}) {
                   {(e.fecha_inicio||e.fecha_fin)&&(
                     <div style={{fontSize:11,color:C.t3,marginBottom:5}}>{e.fecha_inicio||'?'} → {e.fecha_fin||'?'}</div>
                   )}
-                  {e.notas&&<div style={{fontSize:11,color:C.t3,fontStyle:'italic',marginBottom:5}}>"{e.notas}"</div>}
                   <div style={{background:C.border,borderRadius:3,height:5,overflow:'hidden'}}>
                     <div style={{background:bc,width:`${pct}%`,height:'100%',borderRadius:3,transition:'width .5s'}}/>
                   </div>
