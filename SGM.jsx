@@ -446,14 +446,6 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
         </div>
       </div>
       <div style={{padding:'12px 14px'}}>
-        {isAdmin(userRol)&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
-          {[[t.ingresos,fmtUSD(met.ingresos),C.green],[t.egresos,fmtUSD(met.egresos),C.red],[t.ahorro,fmtUSD(met.ahorro),C.acc],[t.saldo,fmtUSD(met.saldo),C.amber]].map(([l,v,c])=>(
-            <div key={l} style={{background:C.card,borderRadius:10,padding:'10px 11px',border:`.5px solid ${C.border}`,borderLeft:`3px solid ${c}`}}>
-              <div style={{fontSize:10,color:C.t3,marginBottom:2}}>{l}</div>
-              <div style={{fontSize:16,fontWeight:700,color:c}}>{v}</div>
-            </div>
-          ))}
-        </div>}
         {lastCot&&(
           <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px',marginBottom:12}}>
             <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>{t.ultima_cot||'Última cotización'}</div>
