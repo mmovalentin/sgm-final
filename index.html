@@ -3359,7 +3359,10 @@ function ClientesScreen({perfil,userRol}) {
 }
 
 // ── AVANCE OBRA ADMIN
-function AvanceObraAdminScreen({userRol}) {
+function AvanceObraAdminScreen({userRol,user}) {
+  const admin=isAdmin(userRol,user?.email);
+  const [viewEtapas,setViewEtapas]=useState(ETAPAS_OBRA_DEFAULT.map(e=>({...e})));
+  const [loadingView,setLoadingView]=useState(false);
   const [clientes,setClientes]=useState([]);
   const [loadingClientes,setLoadingClientes]=useState(false);
   const [selUserId,setSelUserId]=useState('');
@@ -3369,24 +3372,31 @@ function AvanceObraAdminScreen({userRol}) {
   const [saveError,setSaveError]=useState(null);
 
   useEffect(()=>{
-    if(!supa) return;
+    if(admin||!supa||!user) return;
+    setLoadingView(true);
+    const safety=setTimeout(()=>setLoadingView(false),8000);
+    supa.from('avance_obra').select('*').eq('user_id',user.id).order('etapa_numero',{ascending:true})
+      .then(({data})=>{if(data&&data.length>0)setViewEtapas(data.map(e=>({...e})));})
+      .catch(()=>{})
+      .finally(()=>{clearTimeout(safety);setLoadingView(false);});
+  },[user,admin]);
+
+  useEffect(()=>{
+    if(!admin||!supa) return;
     setLoadingClientes(true);
     supa.from('presupuestos').select('id,archivo_nombre,total_usd,user_id,tipo,sistema,m2')
       .order('created_at',{ascending:false})
       .then(({data:presups,error})=>{
         if(error||!presups){setClientes([]);return;}
-        const entries=presups
-          .filter(p=>p.user_id)
-          .map(p=>({
-            id:p.user_id,
-            label:`${p.archivo_nombre||`${p.tipo||''} ${p.m2||''}m²`} — USD ${(p.total_usd||0).toLocaleString()}`,
-          }));
-        const unique=entries.filter((e,i,a)=>a.findIndex(x=>x.id===e.id)===i);
-        setClientes(unique);
+        const entries=presups.filter(p=>p.user_id).map(p=>({
+          id:p.user_id,
+          label:`${p.archivo_nombre||`${p.tipo||''} ${p.m2||''}m²`} — USD ${(p.total_usd||0).toLocaleString()}`,
+        }));
+        setClientes(entries.filter((e,i,a)=>a.findIndex(x=>x.id===e.id)===i));
       })
       .catch(()=>setClientes([]))
       .finally(()=>setLoadingClientes(false));
-  },[]);
+  },[admin]);
 
   async function loadEtapas(uid){
     setSelUserId(uid);setSaved(false);setSaveError(null);
@@ -3401,7 +3411,7 @@ function AvanceObraAdminScreen({userRol}) {
   }
 
   async function guardarAvance(){
-    if(!supa||!selUserId)return;
+    if(!supa||!selUserId) return;
     setSaving(true);setSaveError(null);setSaved(false);
     const rows=etapas.map(e=>({
       user_id:selUserId,
@@ -3420,11 +3430,71 @@ function AvanceObraAdminScreen({userRol}) {
     setSaved(true);setTimeout(()=>setSaved(false),3000);
   }
 
-  if(!isAdmin(userRol)) return(
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%',color:C.t3,fontSize:13}}>🔒 Solo para admin</div>
-  );
+  function etapaBarColor(e){
+    if(e.completada||e.porcentaje>=100) return '#22C55E';
+    if(e.porcentaje>0) return C.acc;
+    return C.border2;
+  }
 
-  const selInfo=clientes.find(c=>c.id===selUserId);
+  if(!admin){
+    const avance=Math.round(viewEtapas.reduce((s,e)=>s+(e.porcentaje||0),0)/viewEtapas.length);
+    const hasData=viewEtapas.some(e=>(e.porcentaje||0)>0);
+    return(
+      <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+        <div style={{background:C.navy,padding:'13px 14px',flexShrink:0}}>
+          <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Mi proyecto</div>
+          <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>Avance de obra</div>
+        </div>
+        {loadingView&&<div style={{padding:'20px',textAlign:'center',color:C.t3,fontSize:12}}>Cargando...</div>}
+        <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:12}}>
+          <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'16px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+              <div>
+                <div style={{color:C.t3,fontSize:10,textTransform:'uppercase',letterSpacing:.5,marginBottom:2}}>Avance general</div>
+                <div style={{color:C.acc,fontSize:36,fontWeight:900,lineHeight:1}}>{avance}<span style={{fontSize:18}}>%</span></div>
+                <div style={{color:C.t3,fontSize:10,marginTop:3}}>{avanceLabel(avance,hasData)}</div>
+              </div>
+              <div style={{textAlign:'right',color:C.t3,fontSize:11}}>
+                <div>{viewEtapas.filter(e=>e.completada||e.porcentaje>=100).length} de {viewEtapas.length} etapas</div>
+              </div>
+            </div>
+            <div style={{background:C.border,borderRadius:6,height:12,overflow:'hidden'}}>
+              <div style={{background:'linear-gradient(90deg,#4A9FFF,#64FFDA)',width:`${avance}%`,height:'100%',borderRadius:6,transition:'width .6s ease'}}/>
+            </div>
+          </div>
+          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5}}>Cronograma de etapas</div>
+          {viewEtapas.map((e,i)=>{
+            const pct=e.porcentaje||0;
+            const done=e.completada||pct>=100;
+            const bc=etapaBarColor(e);
+            return(
+              <div key={i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,borderLeft:`3px solid ${bc}`,padding:'12px 14px'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:5}}>
+                  <div>
+                    <div style={{fontSize:10,color:C.t3,marginBottom:1}}>{e.etapa_numero}.</div>
+                    <div style={{fontWeight:700,fontSize:13,color:C.t1}}>{e.etapa_nombre}</div>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0,marginLeft:8}}>
+                    {done?<span style={{fontSize:12}}>✅</span>:pct>0?<span style={{fontSize:12}}>🔄</span>:<span style={{fontSize:12}}>⏳</span>}
+                    <span style={{fontSize:11,fontWeight:700,color:bc}}>{pct}%</span>
+                  </div>
+                </div>
+                <div style={{fontSize:11,color:bc,fontWeight:600,marginBottom:5}}>{done?'Completada':pct>0?'En curso':'Pendiente'}</div>
+                {(e.fecha_inicio||e.fecha_fin)&&(
+                  <div style={{fontSize:11,color:C.t3,marginBottom:5}}>{e.fecha_inicio||'?'} → {e.fecha_fin||'?'}</div>
+                )}
+                <div style={{background:C.border,borderRadius:3,height:5,overflow:'hidden'}}>
+                  <div style={{background:bc,width:`${pct}%`,height:'100%',borderRadius:3,transition:'width .5s'}}/>
+                </div>
+              </div>
+            );
+          })}
+          {!user&&<div style={{textAlign:'center',padding:'12px',fontSize:11,color:C.t3,fontStyle:'italic'}}>Iniciá sesión para ver el avance real de tu proyecto</div>}
+        </div>
+      </div>
+    );
+  }
+
   return(
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <div style={{background:C.navy,padding:'13px 14px',flexShrink:0}}>
@@ -3432,8 +3502,6 @@ function AvanceObraAdminScreen({userRol}) {
         <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>Actualizar avance de obra</div>
       </div>
       <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:12}}>
-
-        {/* SELECTOR CLIENTE */}
         <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'13px'}}>
           <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Seleccionar cliente</div>
           {loadingClientes
@@ -3446,8 +3514,6 @@ function AvanceObraAdminScreen({userRol}) {
               </select>
           }
         </div>
-
-        {/* ETAPAS */}
         {selUserId&&(
           <>
             <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5}}>Etapas</div>
@@ -3472,7 +3538,6 @@ function AvanceObraAdminScreen({userRol}) {
                 <input value={e.notas||''} onChange={ev=>updEtapa(i,'notas',ev.target.value)} placeholder='Notas opcionales...' style={{width:'100%',padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
               </div>
             ))}
-
             {saveError&&<div style={{fontSize:11,color:'#FF5252',padding:'8px 12px',background:'rgba(255,82,82,.1)',borderRadius:8}}>⚠ {saveError}</div>}
             {saved&&<div style={{fontSize:12,color:'#22C55E',fontWeight:700,textAlign:'center',padding:'8px'}}>✅ Avance guardado correctamente</div>}
             <button onClick={guardarAvance} disabled={saving} style={{width:'100%',padding:'13px',background:saving?C.border:C.acc,color:'#fff',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:saving?'default':'pointer'}}>
@@ -3480,7 +3545,6 @@ function AvanceObraAdminScreen({userRol}) {
             </button>
           </>
         )}
-
       </div>
     </div>
   );
@@ -4034,7 +4098,6 @@ function SGMApp() {
   function handleNav(id,params) {
     if(id==='more'){setShowMore(true);return;}
     if(!isAdmin(userRol)&&ADMIN_SCREENS.includes(id)){return;}
-    if(id==='avance_admin'&&!isAdmin(userRol)){setScreen('miobrascreen');setShowMore(false);return;}
     setScreen(id);
     setScreenParams(params||{});
     setShowMore(false);
@@ -4159,7 +4222,7 @@ function SGMApp() {
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation} userRol={userRol} user={user}/>,
     miobrascreen:<MiObraScreen t={t} user={user}/>,
     detalle_cot:<DetalleCotizacionScreen cot={screenParams.cot} estadoProyecto={screenParams.estadoProyecto} onNav={handleNav} userRol={userRol} user={user}/>,
-    avance_admin:<AvanceObraAdminScreen userRol={userRol}/>,
+    avance_admin:<AvanceObraAdminScreen userRol={userRol} user={user}/>,
     clientes:<ClientesScreen perfil={perfil} userRol={userRol}/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
   };
