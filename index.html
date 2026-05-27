@@ -358,6 +358,9 @@ function Topbar({screen,perfil,dolar,onAyuda,loggedIn,t,user,onSignOut,onGoogleS
         <div style={{color:C.onNavy,fontSize:13,fontWeight:700}}>SGI</div>
       </div>
       <div style={{display:'flex',alignItems:'center',gap:6}}>
+        <button onClick={()=>onLang&&onLang(lang==='es'?'en':'es')} style={{background:'none',border:`1px solid rgba(255,255,255,.15)`,borderRadius:6,padding:'3px 8px',fontSize:10,fontWeight:700,color:C.t2,cursor:'pointer',fontFamily:'inherit',letterSpacing:.5}}>
+          {lang==='es'?'EN':'ES'}
+        </button>
         <div style={{background:C.dolorBg,border:`1px solid ${C.dolorText}33`,borderRadius:6,padding:'3px 7px',fontSize:10,fontWeight:700,color:C.dolorText}}>
           ${dolar.toLocaleString('es-AR')} Blue
         </div>
@@ -3349,6 +3352,7 @@ function ClientesScreen({perfil,userRol}) {
 // ── AVANCE OBRA ADMIN
 function AvanceObraAdminScreen({userRol}) {
   const [clientes,setClientes]=useState([]);
+  const [loadingClientes,setLoadingClientes]=useState(false);
   const [selUserId,setSelUserId]=useState('');
   const [etapas,setEtapas]=useState(ETAPAS_OBRA_DEFAULT.map(e=>({...e})));
   const [saving,setSaving]=useState(false);
@@ -3357,15 +3361,22 @@ function AvanceObraAdminScreen({userRol}) {
 
   useEffect(()=>{
     if(!supa) return;
+    setLoadingClientes(true);
     supa.from('presupuestos').select('id,archivo_nombre,total_usd,user_id,tipo,sistema,m2')
       .order('created_at',{ascending:false})
-      .then(({data:presups})=>{
-        const entries=(presups||[]).map(p=>({
-          id:p.user_id||null,
-          label:`${p.archivo_nombre||`${p.tipo||''} ${p.m2||''}m²`} — USD ${(p.total_usd||0).toLocaleString()} — ${p.user_id?'con cuenta':'anónimo'}`,
-        }));
-        setClientes(entries);
-      });
+      .then(({data:presups,error})=>{
+        if(error||!presups){setClientes([]);return;}
+        const entries=presups
+          .filter(p=>p.user_id)
+          .map(p=>({
+            id:p.user_id,
+            label:`${p.archivo_nombre||`${p.tipo||''} ${p.m2||''}m²`} — USD ${(p.total_usd||0).toLocaleString()}`,
+          }));
+        const unique=entries.filter((e,i,a)=>a.findIndex(x=>x.id===e.id)===i);
+        setClientes(unique);
+      })
+      .catch(()=>setClientes([]))
+      .finally(()=>setLoadingClientes(false));
   },[]);
 
   async function loadEtapas(uid){
@@ -3416,13 +3427,15 @@ function AvanceObraAdminScreen({userRol}) {
         {/* SELECTOR CLIENTE */}
         <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'13px'}}>
           <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Seleccionar cliente</div>
-          <select value={selUserId} onChange={e=>loadEtapas(e.target.value)} style={{width:'100%',padding:'9px 11px',borderRadius:8,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:12,outline:'none',fontFamily:'inherit'}}>
-            <option value=''>— Seleccioná un cliente —</option>
-            {clientes.map(c=>(
-              <option key={c.id} value={c.id}>{c.label}</option>
-            ))}
-          </select>
-          {selInfo&&<div style={{fontSize:10,color:C.t3,marginTop:6}}>{selInfo.label}</div>}
+          {loadingClientes
+            ?<div style={{textAlign:'center',padding:'10px 0',fontSize:12,color:C.t3}}>⏳ Cargando clientes...</div>
+            :clientes.length===0
+              ?<div style={{padding:'12px 0',fontSize:12,color:C.t3,textAlign:'center'}}>No hay presupuestos con cuenta de usuario cargados aún.</div>
+              :<select value={selUserId} onChange={e=>loadEtapas(e.target.value)} style={{width:'100%',padding:'9px 11px',borderRadius:8,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:12,outline:'none',fontFamily:'inherit'}}>
+                <option value=''>— Seleccioná un cliente —</option>
+                {clientes.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+          }
         </div>
 
         {/* ETAPAS */}
@@ -4012,6 +4025,7 @@ function SGMApp() {
   function handleNav(id,params) {
     if(id==='more'){setShowMore(true);return;}
     if(!isAdmin(userRol)&&ADMIN_SCREENS.includes(id)){return;}
+    if(id==='avance_admin'&&!isAdmin(userRol)){setScreen('miobrascreen');setShowMore(false);return;}
     setScreen(id);
     setScreenParams(params||{});
     setShowMore(false);
