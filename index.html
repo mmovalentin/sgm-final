@@ -1849,7 +1849,7 @@ function MapaScreen({t,perfil,onLogin,userLocation,userRol,user}) {
         <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>SGI</div>
         <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>Mapa SGI</div>
       </div>
-      <div ref={mapRef} style={{height:240,flexShrink:0}}/>
+      <div ref={mapRef} style={{height:'40vh',minHeight:200,width:'100%',flexShrink:0}}/>
       <div style={{background:C.card,padding:'10px 14px',flexShrink:0,borderBottom:`.5px solid ${C.border}`}}>
         <div style={{display:'flex',gap:8}}>
           {MAPA_CHIPS.map(ch=>{
@@ -1916,7 +1916,7 @@ function MapaScreen({t,perfil,onLogin,userLocation,userRol,user}) {
               🏪 Quiero sumarme como proveedor
             </button>
           )}
-          {perfil==='cliente'&&(!user||!isAdmin(userRol,user?.email))&&(
+          {perfil==='cliente'&&!user&&(
             <button onClick={onLogin} style={{width:'100%',background:'#2563EB',color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
               🔐 Login para guardar mis cotizaciones
             </button>
