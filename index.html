@@ -883,16 +883,16 @@ function MiObraScreen({t,user}) {
   const [loading,setLoading]=useState(false);
   useEffect(()=>{
     try{const s=localStorage.getItem('sgi_last_cot');if(s)setLastCot(JSON.parse(s));}catch(e){}
-    if(!supa||!user) return;
+    if(!supa||!user){setLoading(false);return;}
     setLoading(true);
+    const safety=setTimeout(()=>setLoading(false),8000);
     Promise.all([
       supa.from('proyecto_cliente').select('*').eq('user_id',user.id).single(),
       supa.from('avance_obra').select('*').eq('user_id',user.id).order('etapa_numero',{ascending:true}),
     ]).then(([{data:proy},{data:avance}])=>{
       if(proy) setProyData(proy);
       if(avance&&avance.length>0) setAvanceRows(avance);
-      setLoading(false);
-    }).catch(()=>setLoading(false));
+    }).catch(()=>{}).finally(()=>{clearTimeout(safety);setLoading(false);});
   },[user]);
 
   const hasAvance=avanceRows.length>0;
@@ -1818,13 +1818,17 @@ function ChatScreen({t}) {
   }
 
   async function fetchBiblioteca(){
-    if(!supa) return;
+    if(!supa){setLoadingBib(false);return;}
     setLoadingBib(true);
-    const {data}=await supa.from('consultas_guardadas').select('*').order('fecha',{ascending:false});
-    setBiblioteca(data||[]);
-    setLoadingBib(false);
+    try{
+      const{data,error}=await supa.from('consultas_guardadas').select('*').order('fecha',{ascending:false});
+      if(error) throw error;
+      setBiblioteca(data||[]);
+    }catch(e){setBiblioteca([]);}
+    finally{setLoadingBib(false);}
   }
   useEffect(()=>{if(tab==='biblioteca') fetchBiblioteca();},[tab]);
+  useEffect(()=>{const t=setTimeout(()=>setLoadingBib(false),8000);return()=>clearTimeout(t);},[]);
 
   async function guardarRespuesta(idx,pregunta,respuesta){
     if(!supa) return;
@@ -1988,22 +1992,25 @@ function RubrosScreen({perfil,t}) {
   },[sel]);
 
   async function abrirComparar(){
-    if(!supa) return;
+    if(!supa){setLoadingCompara(false);return;}
     setLoadingCompara(true);
     setShowComparar(true);
     setCompraStatus({});
     const rubroName=RUBROS[sel]?.name||'';
-    const {data}=await supa.from('materiales').select('item,precio_pesos,precio_usd,rubro,proveedor_id,proveedores(nombre,contacto)').eq('rubro',rubroName).order('item');
-    if(data){
-      const grouped={};
-      data.forEach(m=>{
-        const key=m.item||'Sin nombre';
-        if(!grouped[key]) grouped[key]=[];
-        grouped[key].push({nombre:m.proveedores?.nombre||'Sin proveedor',contacto:m.proveedores?.contacto||'',precio_usd:m.precio_usd||0,precio_pesos:m.precio_pesos||0,proveedor_id:m.proveedor_id||null,rubro:m.rubro||rubroName});
-      });
-      setComparaData(Object.entries(grouped).map(([item,provs])=>({item,provs:provs.sort((a,b)=>a.precio_usd-b.precio_usd)})));
-    }
-    setLoadingCompara(false);
+    try{
+      const{data,error}=await supa.from('materiales').select('item,precio_pesos,precio_usd,rubro,proveedor_id,proveedores(nombre,contacto)').eq('rubro',rubroName).order('item');
+      if(error) throw error;
+      if(data){
+        const grouped={};
+        data.forEach(m=>{
+          const key=m.item||'Sin nombre';
+          if(!grouped[key]) grouped[key]=[];
+          grouped[key].push({nombre:m.proveedores?.nombre||'Sin proveedor',contacto:m.proveedores?.contacto||'',precio_usd:m.precio_usd||0,precio_pesos:m.precio_pesos||0,proveedor_id:m.proveedor_id||null,rubro:m.rubro||rubroName});
+        });
+        setComparaData(Object.entries(grouped).map(([item,provs])=>({item,provs:provs.sort((a,b)=>a.precio_usd-b.precio_usd)})));
+      } else {setComparaData([]);}
+    }catch(e){setComparaData([]);}
+    finally{setLoadingCompara(false);}
   }
 
   if(sel!==null){
@@ -2228,8 +2235,11 @@ function AgendaScreen({t,perfil,userRol,user}) {
     supa.from('avance_obra')
       .select('etapa_nombre,fecha_inicio,fecha_fin,porcentaje,completada')
       .eq('user_id',user.id)
-      .then(({data})=>{setEtapas(data||[]);setLoadingEtapas(false);});
+      .then(({data,error})=>{setEtapas(error?[]:(data||[]));})
+      .catch(()=>setEtapas([]))
+      .finally(()=>setLoadingEtapas(false));
   },[user,userRol]);
+  useEffect(()=>{const t=setTimeout(()=>setLoadingEtapas(false),8000);return()=>clearTimeout(t);},[]);
 
   const año=mesActual.getFullYear();
   const mes=mesActual.getMonth();
@@ -2387,22 +2397,28 @@ function PresupScreen({t,dolar=1415,user,userRol}) {
   const fileRef=useRef(null);
 
   async function fetchCompras(){
-    if(!supa) return;
+    if(!supa){setLoadingCompras(false);return;}
     setLoadingCompras(true);
-    const {data}=await supa.from('compras').select('*').order('fecha',{ascending:false}).limit(20);
-    setCompras(data||[]);
-    setLoadingCompras(false);
+    try{
+      const{data,error}=await supa.from('compras').select('*').order('fecha',{ascending:false}).limit(20);
+      if(error) throw error;
+      setCompras(data||[]);
+    }catch(e){setCompras([]);}
+    finally{setLoadingCompras(false);}
   }
 
   async function fetchSaved(){
-    if(!supa) return;
+    if(!supa){setLoadingSaved(false);return;}
     setLoadingSaved(true);
-    const {data}=await supa.from('presupuestos')
-      .select('id,archivo_nombre,total_usd,created_at,vigencia_dias,estado,proveedores(nombre)')
-      .order('created_at',{ascending:false})
-      .limit(30);
-    setSavedList(data||[]);
-    setLoadingSaved(false);
+    try{
+      const{data,error}=await supa.from('presupuestos')
+        .select('id,archivo_nombre,total_usd,created_at,vigencia_dias,estado,proveedores(nombre)')
+        .order('created_at',{ascending:false})
+        .limit(30);
+      if(error) throw error;
+      setSavedList(data||[]);
+    }catch(e){setSavedList([]);}
+    finally{setLoadingSaved(false);}
   }
   async function updateEstadoPresupuesto(id,nuevoEstado){
     if(!supa) return;
@@ -2411,6 +2427,7 @@ function PresupScreen({t,dolar=1415,user,userRol}) {
   }
 
   useEffect(()=>{fetchSaved();fetchCompras();},[]);
+  useEffect(()=>{const t=setTimeout(()=>{setLoadingSaved(false);setLoadingCompras(false);},8000);return()=>clearTimeout(t);},[]);
 
   async function agregarAlMapa(){
     if(!supa||!result?.data) return;
@@ -2785,25 +2802,34 @@ function ClientesScreen({perfil,userRol}) {
   const selCliente=clientes.find(c=>c.id===selId)||null;
 
   async function fetchClientes(){
-    if(!supa) return;
+    if(!supa){setLoading(false);return;}
     setLoading(true);
-    const {data}=await supa.from('clientes').select('*').order('ultimo_contacto',{ascending:false});
-    setClientes(data||[]);
-    setLoading(false);
+    try{
+      const{data,error}=await supa.from('clientes').select('*').order('ultimo_contacto',{ascending:false});
+      if(error) throw error;
+      setClientes(data||[]);
+    }catch(e){setClientes([]);}
+    finally{setLoading(false);}
   }
   async function fetchProyectos(){
-    if(!supa) return;
+    if(!supa){setLoadingProy(false);return;}
     setLoadingProy(true);
-    const {data}=await supa.from('proyecto_cliente').select('*').order('created_at',{ascending:false});
-    setProyectosWeb(data||[]);
-    setLoadingProy(false);
+    try{
+      const{data,error}=await supa.from('proyecto_cliente').select('*').order('created_at',{ascending:false});
+      if(error) throw error;
+      setProyectosWeb(data||[]);
+    }catch(e){setProyectosWeb([]);}
+    finally{setLoadingProy(false);}
   }
   async function fetchCotizaciones(){
-    if(!supa) return;
+    if(!supa){setLoadingCot(false);return;}
     setLoadingCot(true);
-    const {data}=await supa.from('presupuestos').select('*').order('created_at',{ascending:false}).limit(100);
-    setCotizacionesWeb(data||[]);
-    setLoadingCot(false);
+    try{
+      const{data,error}=await supa.from('presupuestos').select('*').order('created_at',{ascending:false}).limit(100);
+      if(error) throw error;
+      setCotizacionesWeb(data||[]);
+    }catch(e){setCotizacionesWeb([]);}
+    finally{setLoadingCot(false);}
   }
   async function aprobarPresupuesto(id){
     if(!supa) return;
@@ -2818,6 +2844,7 @@ function ClientesScreen({perfil,userRol}) {
     setAprobando(null);
   }
   useEffect(()=>{fetchClientes();fetchProyectos();fetchCotizaciones();},[]);
+  useEffect(()=>{const t=setTimeout(()=>{setLoading(false);setLoadingProy(false);setLoadingCot(false);},8000);return()=>clearTimeout(t);},[]);
 
   async function agregarCliente(){
     if(!form.nombre.trim()) return;
