@@ -619,13 +619,15 @@ function DetalleCotizacionScreen({cot,estadoProyecto,onNav,userRol,user}) {
               }
             </div>
           ):(
-            <div style={{background:estBanner.bg,border:`1px solid ${estBanner.border}`,borderRadius:12,padding:'12px 14px',display:'flex',alignItems:'flex-start',gap:10}}>
-              <span style={{fontSize:22,flexShrink:0,lineHeight:1}}>{estBanner.icon}</span>
-              <div>
-                <div style={{color:estBanner.color,fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:.5,marginBottom:3}}>{estBanner.label}</div>
-                <div style={{color:C.t2,fontSize:12,lineHeight:1.5}}>{estBanner.msg}</div>
+            user&&cot?.user_id&&cot.user_id===user.id?(
+              <div style={{background:estBanner.bg,border:`1px solid ${estBanner.border}`,borderRadius:12,padding:'12px 14px',display:'flex',alignItems:'flex-start',gap:10}}>
+                <span style={{fontSize:22,flexShrink:0,lineHeight:1}}>{estBanner.icon}</span>
+                <div>
+                  <div style={{color:estBanner.color,fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:.5,marginBottom:3}}>{estBanner.label}</div>
+                  <div style={{color:C.t2,fontSize:12,lineHeight:1.5}}>{estBanner.msg}</div>
+                </div>
               </div>
-            </div>
+            ):null
           )
         }
 
