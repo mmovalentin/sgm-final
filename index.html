@@ -1598,7 +1598,7 @@ const MAPA_CHIPS=[
   {id:'profesional',label:'Profesionales',color:'#2E7D32'},
   {id:'proveedor',label:'Proveedores',color:'#E65100'},
 ];
-function MapaScreen({t,perfil,onLogin,userLocation}) {
+function MapaScreen({t,perfil,onLogin,userLocation,userRol,user}) {
   const mapRef=useRef(null);
   const mapInst=useRef(null);
   const markersRef=useRef([]);
@@ -1759,7 +1759,7 @@ function MapaScreen({t,perfil,onLogin,userLocation}) {
               🏪 Quiero sumarme como proveedor
             </button>
           )}
-          {perfil==='cliente'&&(
+          {perfil==='cliente'&&(!user||!isAdmin(userRol,user?.email))&&(
             <button onClick={onLogin} style={{width:'100%',background:'#2563EB',color:'#fff',border:'none',borderRadius:10,padding:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
               🔐 Login para guardar mis cotizaciones
             </button>
@@ -3965,7 +3965,7 @@ function SGMApp() {
     stats:<StatsScreen t={t} perfil={perfil} userRol={userRol}/>,
     presup:<PresupScreen t={t} dolar={dolar} user={user} userRol={userRol}/>,
     agenda:<AgendaScreen t={t} perfil={perfil} userRol={userRol} user={user}/>,
-    mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation}/>,
+    mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation} userRol={userRol} user={user}/>,
     miobrascreen:<MiObraScreen t={t} user={user}/>,
     detalle_cot:<DetalleCotizacionScreen cot={screenParams.cot} estadoProyecto={screenParams.estadoProyecto} onNav={handleNav}/>,
     avance_admin:<AvanceObraAdminScreen userRol={userRol}/>,
