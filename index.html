@@ -546,7 +546,20 @@ function avanceLabel(pct,hasData){
 }
 
 // ── DETALLE COTIZACIÓN CLIENTE
-function DetalleCotizacionScreen({cot,estadoProyecto,onNav}) {
+function DetalleCotizacionScreen({cot,estadoProyecto,onNav,userRol,user}) {
+  const [estadoLocal,setEstadoLocal]=useState(cot?.estado||estadoProyecto||'pendiente');
+  const [savedMsg,setSavedMsg]=useState(null);
+
+  async function cambiarEstado(nuevoEstado){
+    if(!supa||!cot?.id) return;
+    const{error}=await supa.from('presupuestos').update({estado:nuevoEstado}).eq('id',cot.id);
+    if(!error){
+      setEstadoLocal(nuevoEstado);
+      setSavedMsg('✓ Estado actualizado');
+      setTimeout(()=>setSavedMsg(null),2500);
+    }
+  }
+
   if(!cot) return(
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',padding:32,textAlign:'center'}}>
       <div style={{fontSize:48,marginBottom:12}}>📄</div>
@@ -554,7 +567,7 @@ function DetalleCotizacionScreen({cot,estadoProyecto,onNav}) {
       <button onClick={()=>onNav('home')} style={{marginTop:8,padding:'10px 22px',borderRadius:10,background:'none',border:`1px solid ${C.border2}`,color:C.acc,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>← Volver</button>
     </div>
   );
-  const est=estadoProyecto?(ESTADO_BANNER[estadoProyecto]||ESTADO_BANNER.pendiente):ESTADO_BANNER.pendiente;
+  const estBanner=ESTADO_BANNER[estadoLocal]||ESTADO_BANNER.pendiente;
   const calMap={economico:'Económico',standard:'Standard',premium:'Premium'};
   const diasEstimados=cot.tiempo_meses
     ?Math.round(cot.tiempo_meses*30)
@@ -572,14 +585,37 @@ function DetalleCotizacionScreen({cot,estadoProyecto,onNav}) {
       </div>
       <div style={{flex:1,overflowY:'auto',padding:'14px',display:'flex',flexDirection:'column',gap:12}}>
 
-        {/* BANNER ESTADO */}
-        <div style={{background:est.bg,border:`1px solid ${est.border}`,borderRadius:12,padding:'12px 14px',display:'flex',alignItems:'flex-start',gap:10}}>
-          <span style={{fontSize:22,flexShrink:0,lineHeight:1}}>{est.icon}</span>
-          <div>
-            <div style={{color:est.color,fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:.5,marginBottom:3}}>{est.label}</div>
-            <div style={{color:C.t2,fontSize:12,lineHeight:1.5}}>{est.msg}</div>
-          </div>
-        </div>
+        {/* BANNER / SELECTOR ESTADO */}
+        {isAdmin(userRol,user?.email)
+          ?(
+            <div style={{background:C.card,border:`.5px solid ${C.border}`,borderRadius:12,padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
+              <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+                <span style={{fontSize:13,color:C.t2,flexShrink:0}}>Estado del proyecto:</span>
+                <select value={estadoLocal} onChange={e=>cambiarEstado(e.target.value)}
+                  style={{flex:1,minWidth:140,padding:'7px 10px',borderRadius:8,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,fontWeight:600,cursor:'pointer',outline:'none',fontFamily:'inherit'}}>
+                  <option value="pendiente">🟡 Pendiente</option>
+                  <option value="en_revision">🔵 En revisión</option>
+                  <option value="aprobado">🟢 Aprobado</option>
+                  <option value="en_obra">🟠 En obra</option>
+                  <option value="completado">✅ Completado</option>
+                  <option value="cancelado">🔴 Cancelado</option>
+                </select>
+              </div>
+              {savedMsg
+                ?<div style={{fontSize:12,color:'#22C55E',fontWeight:700}}>{savedMsg}</div>
+                :<div style={{fontSize:11,color:C.t3}}>El cliente ve este estado en su dashboard al refrescar</div>
+              }
+            </div>
+          ):(
+            <div style={{background:estBanner.bg,border:`1px solid ${estBanner.border}`,borderRadius:12,padding:'12px 14px',display:'flex',alignItems:'flex-start',gap:10}}>
+              <span style={{fontSize:22,flexShrink:0,lineHeight:1}}>{estBanner.icon}</span>
+              <div>
+                <div style={{color:estBanner.color,fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:.5,marginBottom:3}}>{estBanner.label}</div>
+                <div style={{color:C.t2,fontSize:12,lineHeight:1.5}}>{estBanner.msg}</div>
+              </div>
+            </div>
+          )
+        }
 
         {/* DATOS PRINCIPALES */}
         <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'16px'}}>
@@ -3967,7 +4003,7 @@ function SGMApp() {
     agenda:<AgendaScreen t={t} perfil={perfil} userRol={userRol} user={user}/>,
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation} userRol={userRol} user={user}/>,
     miobrascreen:<MiObraScreen t={t} user={user}/>,
-    detalle_cot:<DetalleCotizacionScreen cot={screenParams.cot} estadoProyecto={screenParams.estadoProyecto} onNav={handleNav}/>,
+    detalle_cot:<DetalleCotizacionScreen cot={screenParams.cot} estadoProyecto={screenParams.estadoProyecto} onNav={handleNav} userRol={userRol} user={user}/>,
     avance_admin:<AvanceObraAdminScreen userRol={userRol}/>,
     clientes:<ClientesScreen perfil={perfil} userRol={userRol}/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
