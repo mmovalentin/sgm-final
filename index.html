@@ -16,6 +16,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -722,74 +723,100 @@ function generarPDF(pres, clienteNombre) {
   const venc=new Date(hoy.getTime()+30*24*60*60*1000);
   const fmt=d=>d.toLocaleDateString('es-AR');
   const calMap={economico:'Económico',standard:'Standard',premium:'Premium'};
+  const W=210;
 
-  // HEADER oscuro
-  doc.setFillColor(...navy);doc.rect(0,0,210,38,'F');
+  // HEADER
+  doc.setFillColor(...navy);doc.rect(0,0,W,40,'F');
+  doc.setFillColor(...acc);doc.rect(0,40,W,2,'F');
   doc.setTextColor(255,255,255);
-  doc.setFontSize(24);doc.setFont('helvetica','bold');doc.text('SGI',20,20);
-  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text('Construcciones · Steel Frame',20,28);
-  doc.setFontSize(20);doc.setFont('helvetica','bold');doc.text('PRESUPUESTO',140,18,{align:'center'});
-  doc.setFontSize(11);doc.setFont('helvetica','normal');doc.text(nro,140,27,{align:'center'});
+  doc.setFontSize(26);doc.setFont('helvetica','bold');doc.text('SGI',14,22);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('Construcciones · Steel Frame',14,30);
+  doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('PRESUPUESTO',W-14,18,{align:'right'});
+  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text(nro,W-14,27,{align:'right'});
   doc.setFontSize(8);doc.setTextColor(180,200,220);
-  doc.text('Fecha: '+fmt(hoy),162,20);doc.text('Venc.: '+fmt(venc),162,27);
+  doc.text('Emitido: '+fmt(hoy),W-14,35,{align:'right'});
+  doc.text('Vence: '+fmt(venc),W-14,35+6,{align:'right'});
 
-  // SECCIÓN CLIENTE / CONTACTO
-  let y=50;
-  doc.setTextColor(...naranja);doc.setFontSize(10);doc.setFont('helvetica','bold');
-  doc.text('CLIENTE',20,y);doc.text('CONTACTO SGI',110,y);
-  doc.setTextColor(50,50,50);doc.setFont('helvetica','normal');doc.setFontSize(10);
-  doc.text(clienteNombre||'Cliente SGI',20,y+8);
-  doc.text('Tel: 3584223386',110,y+8);doc.text('Email: mmovalentin@gmail.com',110,y+16);
+  // CLIENTE / CONTACTO
+  let y=52;
+  doc.setTextColor(...naranja);doc.setFontSize(9);doc.setFont('helvetica','bold');
+  doc.text('CLIENTE',14,y);
+  doc.text('CONTACTO SGI',W/2+6,y);
+  doc.setTextColor(40,40,40);doc.setFont('helvetica','normal');doc.setFontSize(10);
+  const nombreLines=doc.splitTextToSize(clienteNombre||'Cliente SGI',80);
+  doc.text(nombreLines,14,y+7);
+  doc.setFontSize(9);
+  doc.text('Tel: +54 358 422-3386',W/2+6,y+7);
+  doc.text('Email: mmovalentin@gmail.com',W/2+6,y+14);
+  doc.text('sgm-final.vercel.app',W/2+6,y+21);
 
-  // SEPARADOR
-  y+=28;
-  doc.setDrawColor(...acc);doc.setLineWidth(0.5);doc.line(20,y,190,y);y+=6;
+  y+=34;
+  doc.setDrawColor(...acc);doc.setLineWidth(0.4);doc.line(14,y,W-14,y);
+  y+=8;
 
-  // TABLA HEADER
-  doc.setFillColor(...navy);doc.rect(20,y,170,10,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(9);
-  doc.text('SISTEMA CONSTRUCTIVO / ESPECIFICACIONES / MATERIALES',105,y+7,{align:'center'});
-  y+=14;
-
-  // FILAS
+  // TABLA ESPECIFICACIONES
   const detalles=[
     ['Tipo de obra',pres.tipo||'Casa habitación'],
     ['Sistema constructivo',pres.sistema||'Steel Frame'],
-    ['Superficie',(pres.m2||80)+' m²'],
+    ['Superficie total',(pres.m2||80)+' m²'],
     ['Calidad',calMap[pres.cal]||pres.cal||'Standard'],
   ];
-  doc.setTextColor(50,50,50);
-  detalles.forEach(([lbl,val],i)=>{
-    if(i%2===0){doc.setFillColor(245,247,250);doc.rect(20,y-5,170,10,'F');}
-    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(lbl,25,y);
-    doc.setFont('helvetica','normal');doc.text(String(val),100,y);
-    y+=12;
+  if(pres.notas){detalles.push(['Notas',pres.notas]);}
+  doc.autoTable({
+    startY:y,
+    head:[['Especificación','Detalle']],
+    body:detalles,
+    margin:{left:14,right:14},
+    styles:{fontSize:9,cellPadding:4,textColor:[40,40,40],overflow:'linebreak'},
+    headStyles:{fillColor:navy,textColor:[255,255,255],fontStyle:'bold',fontSize:9},
+    alternateRowStyles:{fillColor:[245,247,250]},
+    columnStyles:{0:{fontStyle:'bold',cellWidth:70},1:{cellWidth:'auto'}},
+    tableLineColor:[220,220,220],tableLineWidth:0.2,
   });
 
-  // PRECIO
-  y+=4;
-  doc.setFillColor(...navy);doc.rect(120,y,70,12,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(12);
-  doc.text('USD '+(pres.total_usd||0).toLocaleString('es-AR'),155,y+8,{align:'center'});
-  y+=28;
+  y=doc.lastAutoTable.finalY+10;
+
+  // PRECIO DESTACADO
+  doc.setFillColor(...navy);doc.roundedRect(W/2,y,W/2-14,18,3,3,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(14);
+  doc.text('USD '+(pres.total_usd||0).toLocaleString('es-AR'),W-20,y+12,{align:'right'});
+  doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(180,200,220);
+  doc.text('PRECIO TOTAL',W/2+4,y+12);
+
+  y+=30;
 
   // FIRMA
-  doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);doc.line(20,y,90,y);
-  doc.setTextColor(80,80,80);doc.setFont('helvetica','normal');doc.setFontSize(9);
-  doc.text('Valentín Campos',20,y+7);
-  doc.text('Maestro Mayor de Obras',20,y+14);
-  doc.text('Exp. Antisísmico MP 5582/1',20,y+21);
+  doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);doc.line(14,y,80,y);
+  doc.setTextColor(60,60,60);doc.setFont('helvetica','normal');doc.setFontSize(8);
+  doc.text('Valentín Campos',14,y+6);
+  doc.text('Maestro Mayor de Obras · Exp. Antisísmico MP 5582/1',14,y+12);
 
-  // TOTALES (derecha)
-  const ty=y-4;
-  doc.setFillColor(245,247,250);doc.rect(120,ty,70,10,'F');
-  doc.setTextColor(80,80,80);doc.setFontSize(9);doc.setFont('helvetica','normal');
-  doc.text('Subtotal',125,ty+7);doc.text('USD '+(pres.total_usd||0).toLocaleString('es-AR'),188,ty+7,{align:'right'});
-  doc.setFillColor(238,240,244);doc.rect(120,ty+10,70,10,'F');
-  doc.text('IVA / Impuestos',125,ty+17);doc.text('0%',188,ty+17,{align:'right'});
-  doc.setFillColor(...navy);doc.rect(120,ty+20,70,12,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(10);
-  doc.text('TOTAL',125,ty+28);doc.text('USD '+(pres.total_usd||0).toLocaleString('es-AR'),188,ty+28,{align:'right'});
+  // TOTALES
+  doc.autoTable({
+    startY:y-2,
+    body:[
+      ['Subtotal','USD '+(pres.total_usd||0).toLocaleString('es-AR')],
+      ['IVA / Impuestos','0%'],
+      ['TOTAL','USD '+(pres.total_usd||0).toLocaleString('es-AR')],
+    ],
+    margin:{left:W/2,right:14},
+    styles:{fontSize:9,cellPadding:3,textColor:[40,40,40]},
+    bodyStyles:{fillColor:[245,247,250]},
+    columnStyles:{0:{fontStyle:'bold'},1:{halign:'right'}},
+    didParseCell:data=>{
+      if(data.row.index===2){
+        data.cell.styles.fillColor=navy;
+        data.cell.styles.textColor=[255,255,255];
+        data.cell.styles.fontStyle='bold';
+      }
+    },
+    tableLineColor:[220,220,220],tableLineWidth:0.2,
+  });
+
+  // PIE
+  const pageH=doc.internal.pageSize.getHeight();
+  doc.setFontSize(7);doc.setTextColor(150,150,150);
+  doc.text('Presupuesto válido por 30 días desde la fecha de emisión. Sujeto a disponibilidad de materiales.',W/2,pageH-10,{align:'center'});
 
   doc.save('Presupuesto-SGI-'+String(pres.numero_presupuesto||pres.id||1).padStart(5,'0')+'.pdf');
 }
