@@ -87,8 +87,10 @@ const MODELOS = [
 ];
 
 const ADMIN_EMAILS=['mmovalentin@gmail.com'];
-function isAdmin(p,email=''){return p==='admin'||p==='empresa'||ADMIN_EMAILS.includes(email);}
-function isCliente(p,email=''){return !isAdmin(p,email);}
+const isAdmin=(rol,email='')=>rol==='admin'||ADMIN_EMAILS.includes(email);
+const isConstructor=(tp)=>tp==='constructor';
+const isEmpresa=(tp)=>tp==='empresa';
+const isCliente=(tp)=>!tp||tp==='cliente';
 
 const CAL = {
   economico:{ color:"#2E7D32", bg:"#E8F5E9", icon:"🪨", m2:900 },
@@ -2285,8 +2287,8 @@ function RubrosScreen({perfil,t}) {
 
   if(sel!==null){
     const r=RUBROS[sel];
-    const isCliente=perfil==='cliente';
-    const cal=isCliente?'standard':calR;
+    const esCliente=isCliente(perfil);
+    const cal=esCliente?'standard':calR;
     return (
       <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
         <div style={{background:r.color,padding:'13px 16px',display:'flex',alignItems:'center',gap:12,flexShrink:0}}>
@@ -2294,7 +2296,7 @@ function RubrosScreen({perfil,t}) {
           <span style={{fontSize:20}}>{r.icon}</span>
           <div><div style={{color:'#fff',fontSize:14,fontWeight:700}}>{r.name}</div><div style={{color:'rgba(255,255,255,.6)',fontSize:10}}>{t.materiales}</div></div>
         </div>
-        {isCliente
+        {esCliente
           ? <div style={{background:'#EFF6FF',padding:'9px 14px',display:'flex',alignItems:'center',gap:8,borderBottom:`.5px solid ${C.border}`,flexShrink:0}}><span>🏠</span><span style={{fontSize:11,color:'#1565C0',fontWeight:600}}>{t.mat_std}</span></div>
           : <div style={{display:'flex',background:'#fff',borderBottom:`.5px solid ${C.border}`,flexShrink:0}}>
               {[['economico','🪨 Economico','#2E7D32'],['standard','🏠 Standard','#1565C0'],['premium','💎 Premium','#6A1B9A']].map(([k,lbl,color])=>(
@@ -2320,7 +2322,7 @@ function RubrosScreen({perfil,t}) {
                     <div style={{fontSize:10,color:C.t3,marginTop:1}}>{m.proveedores?.nombre||''}
                     </div>
                   </div>
-                  {isCliente
+                  {esCliente
                     ? <div style={{fontSize:9,padding:'2px 7px',borderRadius:8,background:'#E8F5E9',color:'#2E7D32',fontWeight:700,flexShrink:0}}>✓ Incluido</div>
                     : <div style={{textAlign:'right',flexShrink:0}}>
                         <div style={{fontSize:11,fontWeight:700,color:r.color}}>USD {(m.precio_usd||0).toLocaleString()}</div>
@@ -2331,7 +2333,7 @@ function RubrosScreen({perfil,t}) {
               ))}
             </div>
           )}
-          {!isCliente&&<button onClick={abrirComparar} style={{margin:'12px 14px',width:'calc(100% - 28px)',padding:11,borderRadius:9,border:'none',background:C.navy,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+          {!esCliente&&<button onClick={abrirComparar} style={{margin:'12px 14px',width:'calc(100% - 28px)',padding:11,borderRadius:9,border:'none',background:C.navy,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
             🔍 Comparar proveedores
           </button>}
         </div>
