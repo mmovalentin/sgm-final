@@ -2259,23 +2259,89 @@ function StatsScreen({t,perfil,userRol}) {
   );
 }
 
+const TIPO_COLOR={pago:'#C62828',inspeccion:'#E65100',hito:'#4A9FFF',reunion:'#64748B',vencimiento:'#C62828'};
+const FORM_EMPTY={titulo:'',fecha:'',hora:'',tipo:'hito',cliente_id:'',monto_usd:'',notas:'',visible_cliente:false};
+
 function AgendaScreen({t,perfil,userRol,user}) {
   const [mesActual,setMesActual]=useState(new Date());
   const [diaSeleccionado,setDiaSeleccionado]=useState(null);
+  const [eventosDB,setEventosDB]=useState([]);
   const [etapas,setEtapas]=useState([]);
-  const [loadingEtapas,setLoadingEtapas]=useState(false);
+  const [loading,setLoading]=useState(false);
+  const [presupuestos,setPresupuestos]=useState([]);
+  const [showForm,setShowForm]=useState(false);
+  const [editEv,setEditEv]=useState(null);
+  const [form,setForm]=useState(FORM_EMPTY);
+  const [saving,setSaving]=useState(false);
+  const [confirmDel,setConfirmDel]=useState(null);
+  const [detailEv,setDetailEv]=useState(null);
+
+  const admin=isAdmin(userRol,user?.email);
 
   useEffect(()=>{
-    if(isAdmin(userRol)||!supa||!user) return;
-    setLoadingEtapas(true);
-    supa.from('avance_obra')
-      .select('etapa_nombre,fecha_inicio,fecha_fin,porcentaje,completada')
-      .eq('user_id',user.id)
-      .then(({data,error})=>{setEtapas(error?[]:(data||[]));})
-      .catch(()=>setEtapas([]))
-      .finally(()=>setLoadingEtapas(false));
+    if(!supa) return;
+    const t2=setTimeout(()=>setLoading(false),8000);
+    if(admin){
+      setLoading(true);
+      Promise.all([
+        supa.from('agenda_eventos').select('*').order('fecha',{ascending:true}),
+        supa.from('presupuestos').select('id,archivo_nombre,user_id').order('created_at',{ascending:false}).limit(80),
+      ]).then(([{data:evs},{data:ps}])=>{
+        setEventosDB(evs||[]);
+        setPresupuestos(ps||[]);
+      }).catch(()=>{}).finally(()=>{clearTimeout(t2);setLoading(false);});
+    } else if(user){
+      setLoading(true);
+      Promise.all([
+        supa.from('agenda_eventos').select('*').eq('visible_cliente',true).or(`cliente_id.eq.${user.id},cliente_id.is.null`).order('fecha',{ascending:true}),
+        supa.from('avance_obra').select('etapa_nombre,fecha_inicio,fecha_fin,porcentaje,completada').eq('user_id',user.id),
+      ]).then(([{data:evs},{data:et}])=>{
+        setEventosDB(evs||[]);
+        setEtapas(et||[]);
+      }).catch(()=>{}).finally(()=>{clearTimeout(t2);setLoading(false);});
+    }
+    return()=>clearTimeout(t2);
   },[user,userRol]);
-  useEffect(()=>{const t=setTimeout(()=>setLoadingEtapas(false),8000);return()=>clearTimeout(t);},[]);
+
+  async function recargarEventos(){
+    if(!supa) return;
+    const{data}=await supa.from('agenda_eventos').select('*').order('fecha',{ascending:true});
+    setEventosDB(data||[]);
+  }
+
+  async function guardarEvento(){
+    if(!form.titulo.trim()||!form.fecha) return;
+    setSaving(true);
+    try{
+      const payload={
+        titulo:form.titulo.trim(),fecha:form.fecha,hora:form.hora||null,tipo:form.tipo,
+        cliente_id:form.cliente_id||null,
+        monto_usd:(form.tipo==='pago'||form.tipo==='vencimiento')&&form.monto_usd?Number(form.monto_usd):null,
+        notas:form.notas||null,visible_cliente:form.visible_cliente,creado_por:user?.id||null,
+      };
+      if(editEv) await supa.from('agenda_eventos').update(payload).eq('id',editEv.id);
+      else await supa.from('agenda_eventos').insert(payload);
+      setShowForm(false);setEditEv(null);setForm(FORM_EMPTY);setDetailEv(null);
+      await recargarEventos();
+    }catch(e){}
+    setSaving(false);
+  }
+
+  async function eliminarEvento(id){
+    await supa.from('agenda_eventos').delete().eq('id',id);
+    setConfirmDel(null);setDetailEv(null);setDiaSeleccionado(null);
+    await recargarEventos();
+  }
+
+  function abrirFormNuevo(dia){
+    const f=dia?`${año}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`:'';
+    setForm({...FORM_EMPTY,fecha:f});setEditEv(null);setShowForm(true);
+  }
+  function abrirFormEditar(ev){
+    setForm({titulo:ev.titulo||'',fecha:ev.fecha||'',hora:ev.hora||'',tipo:ev.tipo||'hito',
+      cliente_id:ev.cliente_id||'',monto_usd:ev.monto_usd||'',notas:ev.notas||'',visible_cliente:!!ev.visible_cliente});
+    setEditEv(ev);setShowForm(true);setDetailEv(null);
+  }
 
   const año=mesActual.getFullYear();
   const mes=mesActual.getMonth();
@@ -2286,120 +2352,186 @@ function AgendaScreen({t,perfil,userRol,user}) {
   const DIAS=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
   const mesNombre=mesActual.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
 
-  function addEv(map,fechaStr,ev){
-    if(!fechaStr) return;
-    const k=fechaStr.split('T')[0];
-    if(!map[k]) map[k]=[];
-    map[k].push(ev);
-  }
-  function buildEventos(){
+  function buildEventMap(){
     const map={};
-    if(isAdmin(userRol)){
-      const y=año,mm=String(mes+1).padStart(2,'0');
-      addEv(map,`${y}-${mm}-05`,{label:'Pago hierros · USD 850',color:'#C62828'});
-      addEv(map,`${y}-${mm}-08`,{label:'Inspección técnica',color:'#E65100'});
-      addEv(map,`${y}-${mm}-09`,{label:'Pago mano de obra · USD 1.200',color:'#C62828'});
-    } else {
-      etapas.forEach(e=>{
-        const c=e.completada?'#22C55E':'#4A9FFF';
-        if(e.fecha_inicio) addEv(map,e.fecha_inicio,{label:`Inicio: ${e.etapa_nombre}`,color:c});
-        if(e.fecha_fin) addEv(map,e.fecha_fin,{label:`Fin: ${e.etapa_nombre}`,color:e.completada?'#22C55E':'#1E40AF'});
-      });
-    }
+    const addE=(fechaStr,ev)=>{if(!fechaStr)return;const k=fechaStr.split('T')[0];if(!map[k])map[k]=[];map[k].push(ev);};
+    eventosDB.forEach(e=>addE(e.fecha,{...e,color:TIPO_COLOR[e.tipo]||'#4A9FFF',label:e.titulo}));
+    if(!admin) etapas.forEach(e=>{
+      const c=e.completada?'#22C55E':'#4A9FFF';
+      if(e.fecha_inicio) addE(e.fecha_inicio,{label:`Inicio: ${e.etapa_nombre}`,color:c,source:'etapa'});
+      if(e.fecha_fin) addE(e.fecha_fin,{label:`Fin: ${e.etapa_nombre}`,color:e.completada?'#22C55E':'#1E40AF',source:'etapa'});
+    });
     return map;
   }
-  const eventos=buildEventos();
-
+  const eventMap=buildEventMap();
   function fechaKey(d){return `${año}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
-  const eventosDia=diaSeleccionado?(eventos[fechaKey(diaSeleccionado)]||[]):[];
-  const noHayEtapas=!isAdmin(userRol)&&!loadingEtapas&&etapas.length===0;
+  const eventosDia=diaSeleccionado?(eventMap[fechaKey(diaSeleccionado)]||[]):[];
+  const noData=!admin&&!loading&&eventosDB.length===0&&etapas.length===0;
 
   return (
-    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
-      <div style={{background:C.navy,padding:'13px 14px',flexShrink:0}}>
-        <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{isAdmin(userRol)?'Admin':'Tu obra'}</div>
-        <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.agenda_title||'Agenda'}</div>
+    <div style={{display:'flex',flexDirection:'column',height:'100%',position:'relative'}}>
+
+      {/* HEADER */}
+      <div style={{background:C.navy,padding:'13px 14px',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div>
+          <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{admin?'Admin':'Tu obra'}</div>
+          <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.agenda_title||'Agenda'}</div>
+        </div>
+        {admin&&(
+          <button onClick={()=>abrirFormNuevo(diaSeleccionado)}
+            style={{background:C.acc,border:'none',borderRadius:10,width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,color:'#fff',cursor:'pointer',flexShrink:0}}>+</button>
+        )}
       </div>
+
       <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:12}}>
 
-        {/* Navegación de mes */}
+        {/* Navegación mes */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <button onClick={()=>{setMesActual(new Date(año,mes-1,1));setDiaSeleccionado(null);}} style={{background:C.off,border:`.5px solid ${C.border}`,borderRadius:8,padding:'6px 14px',color:C.t2,fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>‹</button>
+          <button onClick={()=>{setMesActual(new Date(año,mes-1,1));setDiaSeleccionado(null);setDetailEv(null);}} style={{background:C.off,border:`.5px solid ${C.border}`,borderRadius:8,padding:'6px 14px',color:C.t2,fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>‹</button>
           <div style={{color:C.t1,fontSize:13,fontWeight:700,textTransform:'capitalize'}}>{mesNombre}</div>
-          <button onClick={()=>{setMesActual(new Date(año,mes+1,1));setDiaSeleccionado(null);}} style={{background:C.off,border:`.5px solid ${C.border}`,borderRadius:8,padding:'6px 14px',color:C.t2,fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>›</button>
+          <button onClick={()=>{setMesActual(new Date(año,mes+1,1));setDiaSeleccionado(null);setDetailEv(null);}} style={{background:C.off,border:`.5px solid ${C.border}`,borderRadius:8,padding:'6px 14px',color:C.t2,fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>›</button>
         </div>
 
-        {/* Grilla de calendario */}
+        {/* Grilla */}
         <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,overflow:'hidden'}}>
           <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',borderBottom:`.5px solid ${C.border}`}}>
-            {DIAS.map(d=>(
-              <div key={d} style={{padding:'7px 0',textAlign:'center',fontSize:9,fontWeight:700,color:C.t3}}>{d}</div>
-            ))}
+            {DIAS.map(d=><div key={d} style={{padding:'7px 0',textAlign:'center',fontSize:9,fontWeight:700,color:C.t3}}>{d}</div>)}
           </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)'}}>
-            {Array.from({length:primerDiaLun}).map((_,i)=>(
-              <div key={`e${i}`} style={{minHeight:44}}/>
-            ))}
+            {Array.from({length:primerDiaLun}).map((_,i)=><div key={`e${i}`} style={{minHeight:44}}/>)}
             {Array.from({length:diasEnMes}).map((_,i)=>{
-              const d=i+1;
-              const k=fechaKey(d);
-              const evs=eventos[k]||[];
-              const isHoy=k===hoyStr;
-              const isSel=diaSeleccionado===d;
-              return (
-                <div key={d} onClick={()=>setDiaSeleccionado(isSel?null:d)}
+              const d=i+1;const k=fechaKey(d);const evs=eventMap[k]||[];
+              const isHoy=k===hoyStr;const isSel=diaSeleccionado===d;
+              return(
+                <div key={d} onClick={()=>{setDiaSeleccionado(isSel?null:d);setDetailEv(null);}}
                   style={{minHeight:44,padding:'5px 0 4px',display:'flex',flexDirection:'column',alignItems:'center',cursor:'pointer',background:isSel?'rgba(74,159,255,.12)':'transparent'}}>
                   <div style={{width:27,height:27,borderRadius:'50%',background:isHoy?C.acc:'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:isHoy?700:400,color:isHoy?'#fff':isSel?C.acc:C.t2}}>{d}</div>
-                  {evs.length>0&&(
-                    <div style={{display:'flex',gap:2,marginTop:2}}>
-                      {evs.slice(0,3).map((ev,ei)=>(
-                        <div key={ei} style={{width:4,height:4,borderRadius:'50%',background:ev.color}}/>
-                      ))}
-                    </div>
-                  )}
+                  {evs.length>0&&<div style={{display:'flex',gap:2,marginTop:2}}>{evs.slice(0,3).map((ev,ei)=><div key={ei} style={{width:4,height:4,borderRadius:'50%',background:ev.color}}/>)}</div>}
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Loading */}
-        {loadingEtapas&&<div style={{textAlign:'center',padding:12,fontSize:12,color:C.t3}}>⏳ Cargando fechas...</div>}
+        {loading&&<div style={{textAlign:'center',padding:12,fontSize:12,color:C.t3}}>⏳ Cargando...</div>}
+        {noData&&<div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'20px 16px',textAlign:'center'}}><div style={{fontSize:28,marginBottom:8}}>📅</div><div style={{color:C.t2,fontSize:12,lineHeight:1.5}}>Tu obra aún no tiene fechas programadas. El equipo las cargará pronto.</div></div>}
 
-        {/* Sin etapas */}
-        {noHayEtapas&&(
-          <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'20px 16px',textAlign:'center'}}>
-            <div style={{fontSize:28,marginBottom:8}}>📅</div>
-            <div style={{color:C.t2,fontSize:12,lineHeight:1.5}}>Tu obra aún no tiene fechas programadas. El equipo las cargará pronto.</div>
-          </div>
-        )}
-
-        {/* Eventos del día seleccionado */}
+        {/* Eventos del día */}
         {diaSeleccionado&&(
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5}}>
-              {diaSeleccionado} de {mesNombre}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5}}>{diaSeleccionado} de {mesNombre}</div>
+              {admin&&<button onClick={()=>abrirFormNuevo(diaSeleccionado)} style={{background:'none',border:`.5px solid ${C.border2}`,borderRadius:7,padding:'4px 10px',fontSize:11,color:C.acc,cursor:'pointer',fontFamily:'inherit'}}>+ Agregar</button>}
             </div>
             {eventosDia.length===0
-              ?<div style={{textAlign:'center',padding:'12px 0',color:C.t3,fontSize:12}}>Sin eventos para este día</div>
+              ?<div style={{textAlign:'center',padding:'10px 0',color:C.t3,fontSize:12}}>Sin eventos para este día</div>
               :eventosDia.map((ev,i)=>(
-                <div key={i} style={{background:C.card,borderRadius:10,border:`.5px solid ${C.border}`,padding:'10px 13px',display:'flex',alignItems:'center',gap:10}}>
-                  <div style={{width:8,height:8,borderRadius:'50%',background:ev.color,flexShrink:0}}/>
-                  <div style={{fontSize:12,color:C.t1,fontWeight:500}}>{ev.label}</div>
+                <div key={i} onClick={()=>admin&&ev.id?setDetailEv(detailEv?.id===ev.id?null:ev):null}
+                  style={{background:C.card,borderRadius:10,border:`.5px solid ${detailEv?.id===ev.id?C.acc:C.border}`,padding:'10px 13px',cursor:admin&&ev.id?'pointer':'default'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <div style={{width:8,height:8,borderRadius:'50%',background:ev.color||TIPO_COLOR[ev.tipo]||'#4A9FFF',flexShrink:0}}/>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:12,color:C.t1,fontWeight:600}}>{ev.label||ev.titulo}</div>
+                      {ev.hora&&<div style={{fontSize:10,color:C.t3,marginTop:1}}>{ev.hora}</div>}
+                      {admin&&ev.monto_usd&&<div style={{fontSize:10,color:'#C62828',fontWeight:700,marginTop:1}}>USD {Number(ev.monto_usd).toLocaleString()}</div>}
+                      {admin&&ev.notas&&<div style={{fontSize:10,color:C.t3,marginTop:2,fontStyle:'italic'}}>{ev.notas}</div>}
+                      {ev.visible_cliente&&<div style={{fontSize:9,color:'#22C55E',marginTop:2}}>👁 Visible para cliente</div>}
+                    </div>
+                  </div>
+                  {admin&&detailEv?.id===ev.id&&(
+                    <div style={{display:'flex',gap:6,marginTop:10}}>
+                      <button onClick={e=>{e.stopPropagation();abrirFormEditar(ev);}} style={{flex:1,padding:'7px',borderRadius:8,background:'none',border:`.5px solid ${C.border2}`,color:C.acc,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✏ Editar</button>
+                      <button onClick={e=>{e.stopPropagation();setConfirmDel(ev);}} style={{padding:'7px 12px',borderRadius:8,background:'none',border:'1px solid rgba(255,80,80,.3)',color:'#FF5252',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>🗑</button>
+                    </div>
+                  )}
                 </div>
               ))
             }
           </div>
         )}
 
-        {/* CTA WhatsApp para cliente */}
-        {!isAdmin(userRol)&&(
-          <button onClick={()=>openWA(false,'Hola, quiero consultar sobre el cronograma y fechas de mi obra.')}
-            style={{width:'100%',padding:'12px',background:'#25D366',color:'#fff',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontFamily:'inherit'}}>
-            💬 Consultar fechas de mi obra
-          </button>
-        )}
+        {!admin&&<button onClick={()=>openWA(false,'Hola, quiero consultar sobre el cronograma y fechas de mi obra.')} style={{width:'100%',padding:'12px',background:'#25D366',color:'#fff',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontFamily:'inherit'}}>💬 Consultar fechas de mi obra</button>}
       </div>
+
+      {/* MODAL FORM */}
+      {showForm&&(
+        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.6)',zIndex:200,display:'flex',alignItems:'flex-end'}} onClick={()=>{setShowForm(false);setEditEv(null);}}>
+          <div style={{background:C.card,borderRadius:'16px 16px 0 0',width:'100%',maxHeight:'88vh',overflowY:'auto',padding:'20px 16px 32px'}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+              <div style={{fontSize:15,fontWeight:700,color:C.t1}}>{editEv?'Editar evento':'Nuevo evento'}</div>
+              <button onClick={()=>{setShowForm(false);setEditEv(null);}} style={{background:'none',border:'none',fontSize:20,cursor:'pointer',color:C.t3}}>✕</button>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              <div>
+                <div style={{fontSize:11,color:C.t3,marginBottom:4}}>Título *</div>
+                <input value={form.titulo} onChange={e=>setForm(f=>({...f,titulo:e.target.value}))} placeholder="Ej: Pago hormigón" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,outline:'none',fontFamily:'inherit'}}/>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                <div>
+                  <div style={{fontSize:11,color:C.t3,marginBottom:4}}>Fecha *</div>
+                  <input type="date" value={form.fecha} onChange={e=>setForm(f=>({...f,fecha:e.target.value}))} style={{width:'100%',padding:'9px 10px',borderRadius:9,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,outline:'none',fontFamily:'inherit'}}/>
+                </div>
+                <div>
+                  <div style={{fontSize:11,color:C.t3,marginBottom:4}}>Hora</div>
+                  <input type="time" value={form.hora} onChange={e=>setForm(f=>({...f,hora:e.target.value}))} style={{width:'100%',padding:'9px 10px',borderRadius:9,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,outline:'none',fontFamily:'inherit'}}/>
+                </div>
+              </div>
+              <div>
+                <div style={{fontSize:11,color:C.t3,marginBottom:4}}>Tipo</div>
+                <select value={form.tipo} onChange={e=>setForm(f=>({...f,tipo:e.target.value}))} style={{width:'100%',padding:'9px 12px',borderRadius:9,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,outline:'none',fontFamily:'inherit'}}>
+                  <option value="pago">🔴 Pago</option>
+                  <option value="inspeccion">🟡 Inspección</option>
+                  <option value="hito">🔵 Hito de obra</option>
+                  <option value="reunion">⚫ Reunión</option>
+                  <option value="vencimiento">🔴 Vencimiento</option>
+                </select>
+              </div>
+              {(form.tipo==='pago'||form.tipo==='vencimiento')&&(
+                <div>
+                  <div style={{fontSize:11,color:C.t3,marginBottom:4}}>Monto USD</div>
+                  <input type="number" value={form.monto_usd} onChange={e=>setForm(f=>({...f,monto_usd:e.target.value}))} placeholder="0" style={{width:'100%',padding:'9px 12px',borderRadius:9,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,outline:'none',fontFamily:'inherit'}}/>
+                </div>
+              )}
+              <div>
+                <div style={{fontSize:11,color:C.t3,marginBottom:4}}>Cliente asignado</div>
+                <select value={form.cliente_id} onChange={e=>setForm(f=>({...f,cliente_id:e.target.value}))} style={{width:'100%',padding:'9px 12px',borderRadius:9,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,outline:'none',fontFamily:'inherit'}}>
+                  <option value="">Todos / General</option>
+                  {presupuestos.map(p=><option key={p.id} value={p.user_id||p.id}>{p.archivo_nombre||p.id}</option>)}
+                </select>
+              </div>
+              <div>
+                <div style={{fontSize:11,color:C.t3,marginBottom:4}}>Notas (solo admin)</div>
+                <textarea value={form.notas} onChange={e=>setForm(f=>({...f,notas:e.target.value}))} rows={2} placeholder="Notas internas..." style={{width:'100%',padding:'9px 12px',borderRadius:9,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,outline:'none',fontFamily:'inherit',resize:'none'}}/>
+              </div>
+              <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',padding:'10px 12px',borderRadius:9,border:`.5px solid ${C.border}`,background:C.off}}>
+                <input type="checkbox" checked={form.visible_cliente} onChange={e=>setForm(f=>({...f,visible_cliente:e.target.checked}))} style={{width:16,height:16,accentColor:C.acc}}/>
+                <div>
+                  <div style={{fontSize:12,fontWeight:600,color:C.t1}}>Visible para el cliente</div>
+                  <div style={{fontSize:10,color:C.t3}}>El cliente verá este evento en su agenda</div>
+                </div>
+              </label>
+              <button onClick={guardarEvento} disabled={saving||!form.titulo.trim()||!form.fecha}
+                style={{width:'100%',padding:'12px',borderRadius:10,border:'none',background:saving||!form.titulo.trim()||!form.fecha?C.border2:C.acc,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginTop:4}}>
+                {saving?'⏳ Guardando...':editEv?'✓ Guardar cambios':'✓ Crear evento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ELIMINAR */}
+      {confirmDel&&(
+        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.65)',zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
+          <div style={{background:C.card,borderRadius:16,padding:'24px 20px',maxWidth:320,width:'100%'}}>
+            <div style={{fontSize:15,fontWeight:700,color:C.t1,marginBottom:8}}>¿Eliminar evento?</div>
+            <div style={{fontSize:13,color:C.t2,marginBottom:20}}>"{confirmDel.titulo}"</div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>setConfirmDel(null)} style={{flex:1,padding:'11px',borderRadius:9,background:'none',border:`.5px solid ${C.border}`,color:C.t2,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+              <button onClick={()=>eliminarEvento(confirmDel.id)} style={{flex:1,padding:'11px',borderRadius:9,border:'none',background:'#C62828',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>🗑 Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
