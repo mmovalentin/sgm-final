@@ -150,6 +150,19 @@ const T = {
     cambiar_cuenta:"Cambiar cuenta",agregar_cuenta:"Agregar cuenta",cerrar_sesion:"Cerrar sesión",
     switch_light:"Cambiar a tema claro",switch_dark:"Cambiar a tema oscuro",
     mapa_lbl:"Mapa",sin_alertas:"Sin alertas activas",
+    cancelar:"Cancelar",guardar:"Guardar",agregar_cliente:"Agregar cliente",
+    nuevo_cliente:"Nuevo cliente",nombre_lbl:"Nombre *",tel_lbl:"Teléfono",
+    email_lbl:"Email",modelo_lbl:"Modelo de interés",nota_lbl:"Nota inicial (opcional)",
+    sin_clientes:"Sin clientes en esta etapa. Tocá + para agregar uno.",
+    pipeline_title:"Pipeline de Clientes",clientes_seg:"clientes en seguimiento",
+    clientes_title:"Clientes",avance_obra_title:"Avance obra",
+    etapas_title:"Etapas",completada_lbl:"Completada",
+    monto_cert_lbl:"Monto certificado $",notas_opc:"Notas opcionales...",
+    guardar_avance:"💾 Guardar avance",guardando_avance:"⏳ Guardando...",
+    avance_guardado:"✅ Avance guardado correctamente",
+    sel_presup:"Seleccionar presupuesto",no_presups:"No hay presupuestos cargados aún.",
+    sin_cuenta:"(sin cuenta)",sin_user_msg:"Este presupuesto no tiene cuenta de usuario — no se puede guardar avance.",
+    sel_presup_ph:"— Seleccioná un presupuesto —",cargando_presups:"⏳ Cargando...",
     explora_items:[
       ['Cronograma de obra','Etapas y plazos de tu proyecto','agenda'],
       ['Modelos disponibles','Ver renders y precios','modelos'],
@@ -221,6 +234,19 @@ const T = {
     cambiar_cuenta:"Change account",agregar_cuenta:"Add account",cerrar_sesion:"Sign out",
     switch_light:"Switch to light theme",switch_dark:"Switch to dark theme",
     mapa_lbl:"Map",sin_alertas:"No active alerts",
+    cancelar:"Cancel",guardar:"Save",agregar_cliente:"Add client",
+    nuevo_cliente:"New client",nombre_lbl:"Name *",tel_lbl:"Phone",
+    email_lbl:"Email",modelo_lbl:"Model of interest",nota_lbl:"Initial note (optional)",
+    sin_clientes:"No clients in this stage. Tap + to add one.",
+    pipeline_title:"Client Pipeline",clientes_seg:"clients tracked",
+    clientes_title:"Clients",avance_obra_title:"Work progress",
+    etapas_title:"Stages",completada_lbl:"Completed",
+    monto_cert_lbl:"Certified amount $",notas_opc:"Optional notes...",
+    guardar_avance:"💾 Save progress",guardando_avance:"⏳ Saving...",
+    avance_guardado:"✅ Progress saved",
+    sel_presup:"Select quote",no_presups:"No quotes loaded yet.",
+    sin_cuenta:"(no account)",sin_user_msg:"This quote has no user account — progress cannot be saved.",
+    sel_presup_ph:"— Select a quote —",cargando_presups:"⏳ Loading...",
     explora_items:[
       ['Project schedule','Stages and timeline of your project','agenda'],
       ['Available models','View renders and prices','modelos'],
@@ -2949,14 +2975,14 @@ function AyudaPanel({onClose,t}) {
 // ── MORE MENU
 // ── CLIENTES PIPELINE
 const ETAPAS=[
-  {id:'Interesado',color:'#4A9FFF',icon:'👀'},
-  {id:'Cotizado',color:'#7B61FF',icon:'📄'},
-  {id:'En negociación',color:'#E65100',icon:'🤝'},
-  {id:'Cerrado',color:'#2E7D32',icon:'✅'},
-  {id:'Perdido',color:'#C62828',icon:'❌'},
+  {id:'Interesado',label_en:'Interested',color:'#4A9FFF',icon:'👀'},
+  {id:'Cotizado',label_en:'Quoted',color:'#7B61FF',icon:'📄'},
+  {id:'En negociación',label_en:'Negotiating',color:'#E65100',icon:'🤝'},
+  {id:'Cerrado',label_en:'Closed',color:'#2E7D32',icon:'✅'},
+  {id:'Perdido',label_en:'Lost',color:'#C62828',icon:'❌'},
 ];
 
-function ClientesScreen({perfil,userRol}) {
+function ClientesScreen({perfil,userRol,t={},lang='es'}) {
   const [clientes,setClientes]=useState([]);
   const [loading,setLoading]=useState(false);
   const [etapaActiva,setEtapaActiva]=useState('Interesado');
@@ -3193,8 +3219,8 @@ function ClientesScreen({perfil,userRol}) {
     <div style={{display:'flex',flexDirection:'column',height:'100%',position:'relative'}}>
       <div style={{background:C.navy,padding:'13px 14px',flexShrink:0,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div>
-          <div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>Pipeline de Clientes</div>
-          <div style={{color:C.t3,fontSize:10,marginTop:2}}>{clientes.length} clientes en seguimiento</div>
+          <div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>{t.pipeline_title||'Pipeline de Clientes'}</div>
+          <div style={{color:C.t3,fontSize:10,marginTop:2}}>{clientes.length} {t.clientes_seg||'clientes en seguimiento'}</div>
         </div>
         <div style={{display:'flex',gap:6}}>
           <button onClick={()=>setShowCotizaciones(true)} style={{background:'none',border:`.5px solid ${C.border2}`,color:C.t2,borderRadius:8,padding:'6px 11px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
@@ -3214,7 +3240,7 @@ function ClientesScreen({perfil,userRol}) {
           return(
             <button key={e.id} onClick={()=>setEtapaActiva(e.id)} style={{flexShrink:0,padding:'8px 14px',border:'none',background:'none',cursor:'pointer',borderBottom:`2px solid ${active?e.color:'transparent'}`,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
               <span style={{fontSize:14}}>{e.icon}</span>
-              <span style={{fontSize:10,fontWeight:700,color:active?e.color:C.t3,whiteSpace:'nowrap'}}>{e.id}</span>
+              <span style={{fontSize:10,fontWeight:700,color:active?e.color:C.t3,whiteSpace:'nowrap'}}>{lang==='en'?(e.label_en||e.id):e.id}</span>
               {count>0&&<span style={{fontSize:9,background:e.color,color:'#fff',borderRadius:8,padding:'1px 5px',fontWeight:700}}>{count}</span>}
             </button>
           );
@@ -3227,7 +3253,7 @@ function ClientesScreen({perfil,userRol}) {
         {!loading&&itemsActivos.length===0&&(
           <div style={{textAlign:'center',padding:32,color:C.t3,fontSize:13}}>
             <div style={{fontSize:36,marginBottom:8}}>{colActiva.icon}</div>
-            Sin clientes en "{colActiva.id}".<br/>Tocá + para agregar uno.
+            {t.sin_clientes||'Sin clientes en esta etapa. Tocá + para agregar uno.'}
           </div>
         )}
         {itemsActivos.map(c=>(
@@ -3341,17 +3367,17 @@ function ClientesScreen({perfil,userRol}) {
       {showForm&&(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:200,display:'flex',alignItems:'flex-end'}} onClick={()=>setShowForm(false)}>
           <div style={{background:C.card,borderRadius:'16px 16px 0 0',width:'100%',maxHeight:'88vh',overflow:'auto',padding:16}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:14,fontWeight:700,color:C.t1,marginBottom:12}}>Nuevo cliente</div>
-            {[['nombre','Nombre *','text'],['telefono','Teléfono','tel'],['email','Email','email'],['modelo','Modelo de interés','text']].map(([k,lbl,type])=>(
+            <div style={{fontSize:14,fontWeight:700,color:C.t1,marginBottom:12}}>{t.nuevo_cliente||'Nuevo cliente'}</div>
+            {[['nombre',t.nombre_lbl||'Nombre *','text'],['telefono',t.tel_lbl||'Teléfono','tel'],['email',t.email_lbl||'Email','email'],['modelo',t.modelo_lbl||'Modelo de interés','text']].map(([k,lbl,type])=>(
               <input key={k} type={type} value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} placeholder={lbl} style={{width:'100%',marginBottom:8,padding:'10px 12px',borderRadius:8,border:`.5px solid ${C.border2}`,fontSize:13,outline:'none',fontFamily:'inherit'}}/>
             ))}
-            <select value={form.etapa} onChange={e=>setForm(f=>({...f,etapa:e.target.value}))} style={{width:'100%',marginBottom:8,padding:'10px 12px',borderRadius:8,border:`.5px solid ${C.border2}`,fontSize:13,background:'#fff',outline:'none',fontFamily:'inherit'}}>
-              {ETAPAS.map(e=><option key={e.id} value={e.id}>{e.icon} {e.id}</option>)}
+            <select value={form.etapa} onChange={e=>setForm(f=>({...f,etapa:e.target.value}))} style={{width:'100%',marginBottom:8,padding:'10px 12px',borderRadius:8,border:`.5px solid ${C.border2}`,fontSize:13,outline:'none',fontFamily:'inherit'}}>
+              {ETAPAS.map(e=><option key={e.id} value={e.id}>{e.icon} {lang==='en'?(e.label_en||e.id):e.id}</option>)}
             </select>
-            <textarea value={form.nota} onChange={e=>setForm(f=>({...f,nota:e.target.value}))} placeholder="Nota inicial (opcional)" rows={2} style={{width:'100%',marginBottom:12,padding:'10px 12px',borderRadius:8,border:`.5px solid ${C.border2}`,fontSize:13,resize:'none',outline:'none',fontFamily:'inherit'}}/>
+            <textarea value={form.nota} onChange={e=>setForm(f=>({...f,nota:e.target.value}))} placeholder={t.nota_lbl||'Nota inicial (opcional)'} rows={2} style={{width:'100%',marginBottom:12,padding:'10px 12px',borderRadius:8,border:`.5px solid ${C.border2}`,fontSize:13,resize:'none',outline:'none',fontFamily:'inherit'}}/>
             <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>setShowForm(false)} style={{flex:1,padding:12,borderRadius:9,border:`.5px solid ${C.border}`,background:'none',cursor:'pointer',fontSize:13,fontWeight:700,color:C.t2}}>Cancelar</button>
-              <button onClick={agregarCliente} disabled={savingForm||!form.nombre.trim()} style={{flex:2,padding:12,borderRadius:9,border:'none',background:C.navy,color:'#fff',cursor:'pointer',fontSize:13,fontWeight:700,opacity:savingForm?0.6:1}}>{savingForm?'⏳ Guardando...':'✓ Agregar cliente'}</button>
+              <button onClick={()=>setShowForm(false)} style={{flex:1,padding:12,borderRadius:9,border:`.5px solid ${C.border}`,background:'none',cursor:'pointer',fontSize:13,fontWeight:700,color:C.t2}}>{t.cancelar||'Cancelar'}</button>
+              <button onClick={agregarCliente} disabled={savingForm||!form.nombre.trim()} style={{flex:2,padding:12,borderRadius:9,border:'none',background:C.navy,color:'#fff',cursor:'pointer',fontSize:13,fontWeight:700,opacity:savingForm?0.6:1}}>{savingForm?'⏳...':`✓ ${t.agregar_cliente||'Agregar cliente'}`}</button>
             </div>
           </div>
         </div>
@@ -3361,13 +3387,14 @@ function ClientesScreen({perfil,userRol}) {
 }
 
 // ── AVANCE OBRA ADMIN
-function AvanceObraAdminScreen({userRol,user}) {
+function AvanceObraAdminScreen({userRol,user,t={}}) {
   const admin=isAdmin(userRol,user?.email);
   const [viewEtapas,setViewEtapas]=useState(ETAPAS_OBRA_DEFAULT.map(e=>({...e})));
   const [loadingView,setLoadingView]=useState(false);
   const [clientes,setClientes]=useState([]);
   const [loadingClientes,setLoadingClientes]=useState(false);
   const [selUserId,setSelUserId]=useState('');
+  const [selEntry,setSelEntry]=useState(null);
   const [etapas,setEtapas]=useState(ETAPAS_OBRA_DEFAULT.map(e=>({...e})));
   const [saving,setSaving]=useState(false);
   const [saved,setSaved]=useState(false);
@@ -3386,23 +3413,30 @@ function AvanceObraAdminScreen({userRol,user}) {
   useEffect(()=>{
     if(!admin||!supa) return;
     setLoadingClientes(true);
-    supa.from('presupuestos').select('id,archivo_nombre,total_usd,user_id,tipo,sistema,m2')
-      .order('created_at',{ascending:false})
-      .then(({data:presups,error})=>{
-        if(error||!presups){setClientes([]);return;}
-        const entries=presups.filter(p=>p.user_id).map(p=>({
-          id:p.user_id,
-          label:`${p.archivo_nombre||`${p.tipo||''} ${p.m2||''}m²`} — USD ${(p.total_usd||0).toLocaleString()}`,
-        }));
-        setClientes(entries.filter((e,i,a)=>a.findIndex(x=>x.id===e.id)===i));
-      })
-      .catch(()=>setClientes([]))
-      .finally(()=>setLoadingClientes(false));
+    Promise.all([
+      supa.from('presupuestos').select('id,archivo_nombre,total_usd,user_id,tipo,sistema,m2').order('created_at',{ascending:false}),
+      supa.from('perfiles').select('id,email'),
+    ]).then(([{data:presups},{data:perfs}])=>{
+      if(!presups){setClientes([]);return;}
+      const emailMap=Object.fromEntries((perfs||[]).map(p=>[p.id,p.email]));
+      const entries=presups.map(p=>({
+        presId:p.id,
+        userId:p.user_id||null,
+        label:`${p.archivo_nombre||`${p.tipo||''} ${p.m2||''}m²`}${p.user_id&&emailMap[p.user_id]?' — '+emailMap[p.user_id]:' '+( t.sin_cuenta||'(sin cuenta)')} · USD ${(p.total_usd||0).toLocaleString()}`,
+      }));
+      setClientes(entries);
+    })
+    .catch(()=>setClientes([]))
+    .finally(()=>setLoadingClientes(false));
   },[admin]);
 
-  async function loadEtapas(uid){
-    setSelUserId(uid);setSaved(false);setSaveError(null);
-    if(!uid) return;
+  async function loadEtapas(presId){
+    setSelUserId(presId);setSaved(false);setSaveError(null);
+    if(!presId) return;
+    const entry=clientes.find(c=>c.presId===presId)||null;
+    setSelEntry(entry);
+    const uid=entry?.userId;
+    if(!uid||!supa){setEtapas(ETAPAS_OBRA_DEFAULT.map(e=>({...e})));return;}
     const{data}=await supa.from('avance_obra').select('*').eq('user_id',uid).order('etapa_numero',{ascending:true});
     if(data&&data.length>0) setEtapas(data.map(e=>({...e})));
     else setEtapas(ETAPAS_OBRA_DEFAULT.map(e=>({...e,user_id:uid})));
@@ -3413,10 +3447,12 @@ function AvanceObraAdminScreen({userRol,user}) {
   }
 
   async function guardarAvance(){
-    if(!supa||!selUserId) return;
+    const uid=selEntry?.userId;
+    if(!supa||!selUserId){return;}
+    if(!uid){setSaveError(t.sin_user_msg||'Este presupuesto no tiene cuenta de usuario — no se puede guardar avance.');return;}
     setSaving(true);setSaveError(null);setSaved(false);
     const rows=etapas.map(e=>({
-      user_id:selUserId,
+      user_id:uid,
       etapa_numero:e.etapa_numero,
       etapa_nombre:e.etapa_nombre,
       porcentaje:Number(e.porcentaje)||0,
@@ -3501,31 +3537,32 @@ function AvanceObraAdminScreen({userRol,user}) {
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <div style={{background:C.navy,padding:'13px 14px',flexShrink:0}}>
         <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Admin</div>
-        <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>Actualizar avance de obra</div>
+        <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.avance_obra_title||'Avance obra'}</div>
       </div>
       <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:12}}>
         <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'13px'}}>
-          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Seleccionar cliente</div>
+          <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>{t.sel_presup||'Seleccionar presupuesto'}</div>
           {loadingClientes
-            ?<div style={{textAlign:'center',padding:'10px 0',fontSize:12,color:C.t3}}>⏳ Cargando clientes...</div>
+            ?<div style={{textAlign:'center',padding:'10px 0',fontSize:12,color:C.t3}}>{t.cargando_presups||'⏳ Cargando...'}</div>
             :clientes.length===0
-              ?<div style={{padding:'12px 0',fontSize:12,color:C.t3,textAlign:'center'}}>No hay presupuestos con cuenta de usuario cargados aún.</div>
+              ?<div style={{padding:'12px 0',fontSize:12,color:C.t3,textAlign:'center'}}>{t.no_presups||'No hay presupuestos cargados aún.'}</div>
               :<select value={selUserId} onChange={e=>loadEtapas(e.target.value)} style={{width:'100%',padding:'9px 11px',borderRadius:8,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:12,outline:'none',fontFamily:'inherit'}}>
-                <option value=''>— Seleccioná un cliente —</option>
-                {clientes.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
+                <option value=''>{t.sel_presup_ph||'— Seleccioná un presupuesto —'}</option>
+                {clientes.map(c=><option key={c.presId} value={c.presId}>{c.label}</option>)}
               </select>
           }
         </div>
         {selUserId&&(
           <>
-            <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5}}>Etapas</div>
+            <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5}}>{t.etapas_title||'Etapas'}</div>
+            {!selEntry?.userId&&<div style={{fontSize:11,color:'#FF9800',padding:'8px 12px',background:'rgba(255,152,0,.1)',borderRadius:8}}>⚠ {t.sin_user_msg||'Este presupuesto no tiene cuenta de usuario — no se puede guardar avance.'}</div>}
             {etapas.map((e,i)=>(
               <div key={i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
                   <div style={{fontSize:12,fontWeight:700,color:C.t1,flex:1}}>{e.etapa_numero}. {e.etapa_nombre}</div>
                   <label style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:C.t2,cursor:'pointer',flexShrink:0,marginLeft:10}}>
                     <input type='checkbox' checked={!!(e.completada)} onChange={ev=>updEtapa(i,'completada',ev.target.checked)} style={{width:15,height:15}}/>
-                    Completada
+                    {t.completada_lbl||'Completada'}
                   </label>
                 </div>
                 <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
@@ -3536,14 +3573,14 @@ function AvanceObraAdminScreen({userRol,user}) {
                   <input type='date' value={e.fecha_inicio||''} onChange={ev=>updEtapa(i,'fecha_inicio',ev.target.value)} placeholder='Inicio' style={{padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
                   <input type='date' value={e.fecha_fin||''} onChange={ev=>updEtapa(i,'fecha_fin',ev.target.value)} placeholder='Fin' style={{padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
                 </div>
-                <input type='number' min={0} value={e.monto_certificado??''} onChange={ev=>updEtapa(i,'monto_certificado',ev.target.value)} placeholder='Monto certificado $' style={{width:'100%',padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit',marginBottom:6}}/>
-                <input value={e.notas||''} onChange={ev=>updEtapa(i,'notas',ev.target.value)} placeholder='Notas opcionales...' style={{width:'100%',padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
+                <input type='number' min={0} value={e.monto_certificado??''} onChange={ev=>updEtapa(i,'monto_certificado',ev.target.value)} placeholder={t.monto_cert_lbl||'Monto certificado $'} style={{width:'100%',padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit',marginBottom:6}}/>
+                <input value={e.notas||''} onChange={ev=>updEtapa(i,'notas',ev.target.value)} placeholder={t.notas_opc||'Notas opcionales...'} style={{width:'100%',padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,outline:'none',fontFamily:'inherit'}}/>
               </div>
             ))}
             {saveError&&<div style={{fontSize:11,color:'#FF5252',padding:'8px 12px',background:'rgba(255,82,82,.1)',borderRadius:8}}>⚠ {saveError}</div>}
-            {saved&&<div style={{fontSize:12,color:'#22C55E',fontWeight:700,textAlign:'center',padding:'8px'}}>✅ Avance guardado correctamente</div>}
-            <button onClick={guardarAvance} disabled={saving} style={{width:'100%',padding:'13px',background:saving?C.border:C.acc,color:'#fff',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:saving?'default':'pointer'}}>
-              {saving?'⏳ Guardando...':'💾 Guardar avance'}
+            {saved&&<div style={{fontSize:12,color:'#22C55E',fontWeight:700,textAlign:'center',padding:'8px'}}>{t.avance_guardado||'✅ Avance guardado correctamente'}</div>}
+            <button onClick={guardarAvance} disabled={saving||!selEntry?.userId} style={{width:'100%',padding:'13px',background:(saving||!selEntry?.userId)?C.border:C.acc,color:'#fff',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:(saving||!selEntry?.userId)?'default':'pointer'}}>
+              {saving?(t.guardando_avance||'⏳ Guardando...'):(t.guardar_avance||'💾 Guardar avance')}
             </button>
           </>
         )}
@@ -3554,7 +3591,7 @@ function AvanceObraAdminScreen({userRol,user}) {
 
 const CLIENTE_HIDDEN=['rubros','presup','stats','clientes'];
 function MoreMenu({onNav,onClose,t,lang,onLang,perfil,userRol}) {
-  const allItems=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['👥','Clientes','clientes'],['🏗️','Avance obra','avance_admin']];
+  const allItems=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['👥',t.clientes_title||'Clientes','clientes'],['🏗️',t.avance_obra_title||'Avance obra','avance_admin']];
   const items=isAdmin(userRol)?allItems:allItems.filter(([,,id])=>!CLIENTE_HIDDEN.includes(id));
   return (
     <div style={{position:'absolute',inset:0,zIndex:200,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
@@ -4224,14 +4261,14 @@ function SGMApp() {
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation} userRol={userRol} user={user}/>,
     miobrascreen:<MiObraScreen t={t} user={user}/>,
     detalle_cot:<DetalleCotizacionScreen cot={screenParams.cot} estadoProyecto={screenParams.estadoProyecto} onNav={handleNav} userRol={userRol} user={user}/>,
-    avance_admin:<AvanceObraAdminScreen userRol={userRol} user={user}/>,
-    clientes:<ClientesScreen perfil={perfil} userRol={userRol}/>,
+    avance_admin:<AvanceObraAdminScreen userRol={userRol} user={user} t={t}/>,
+    clientes:<ClientesScreen perfil={perfil} userRol={userRol} t={t} lang={lang}/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
   };
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100vh',width:'100%',background:C.card,position:'relative',overflow:'hidden',fontFamily:"system-ui,sans-serif"}}>
-      <style>{`:root{--c-navy:#0D1B2A;--c-bg:#0A1628;--c-card:#0D1B2A;--c-off:#0F2035;--c-t1:#F0F6FF;--c-t2:rgba(240,246,255,.55);--c-t3:rgba(240,246,255,.35);--c-border:rgba(255,255,255,.07);--c-border2:rgba(255,255,255,.14);--c-on-navy:#FFFFFF;--c-nav-dim:rgba(255,255,255,.3);--c-nav-border:rgba(255,255,255,.06);--c-dolar-bg:rgba(100,255,218,.1);--c-dolar-text:#64FFDA;--c-chip-bg:#1E293B;--c-chip-text:#94A3B8;--c-drop-bg:#1E293B;--c-drop-text:#F0F6FF;--c-drop-border:rgba(255,255,255,.12)}body.theme-light{--c-navy:#FFFFFF;--c-bg:#F0F4F8;--c-card:#FFFFFF;--c-off:#F1F5F9;--c-t1:#0F172A;--c-t2:#475569;--c-t3:#94A3B8;--c-border:#E2E8F0;--c-border2:#CBD5E1;--c-on-navy:#0F172A;--c-nav-dim:#64748B;--c-nav-border:#E2E8F0;--c-dolar-bg:rgba(37,99,235,.08);--c-dolar-text:#2563EB;--c-chip-bg:#F1F5F9;--c-chip-text:#475569;--c-drop-bg:#FFFFFF;--c-drop-text:#0F172A;--c-drop-border:#E2E8F0}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,textarea{color:var(--c-t1)}input,select,button,textarea{font-family:inherit}`}</style>
+      <style>{`:root{--c-navy:#0D1B2A;--c-bg:#0A1628;--c-card:#0D1B2A;--c-off:#0F2035;--c-t1:#F0F6FF;--c-t2:rgba(240,246,255,.55);--c-t3:rgba(240,246,255,.35);--c-border:rgba(255,255,255,.07);--c-border2:rgba(255,255,255,.14);--c-on-navy:#FFFFFF;--c-nav-dim:rgba(255,255,255,.3);--c-nav-border:rgba(255,255,255,.06);--c-dolar-bg:rgba(100,255,218,.1);--c-dolar-text:#64FFDA;--c-chip-bg:#1E293B;--c-chip-text:#94A3B8;--c-drop-bg:#1E293B;--c-drop-text:#F0F6FF;--c-drop-border:rgba(255,255,255,.12)}body.theme-light{--c-navy:#FFFFFF;--c-bg:#F0F4F8;--c-card:#FFFFFF;--c-off:#F1F5F9;--c-t1:#0F172A;--c-t2:#475569;--c-t3:#94A3B8;--c-border:#E2E8F0;--c-border2:#CBD5E1;--c-on-navy:#0F172A;--c-nav-dim:#64748B;--c-nav-border:#E2E8F0;--c-dolar-bg:rgba(37,99,235,.08);--c-dolar-text:#2563EB;--c-chip-bg:#F1F5F9;--c-chip-text:#475569;--c-drop-bg:#FFFFFF;--c-drop-text:#0F172A;--c-drop-border:#E2E8F0}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,textarea{color:var(--c-t1);background-color:var(--c-off)}input,select,button,textarea{font-family:inherit}`}</style>
       <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>handleNav('faq')} loggedIn={loggedIn} t={t} user={user} onSignOut={signOut} onGoogleSignIn={loginWithGoogle} theme={theme} onThemeChange={setTheme} lang={lang} onLang={l=>{setLang(l);localStorage.setItem('sgi_lang',l);}}/>
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap} onTouchStart={e=>{touchStartXRef.current=e.touches[0].clientX;touchStartYRef.current=e.touches[0].clientY;}} onTouchEnd={e=>{const dx=e.changedTouches[0].clientX-touchStartXRef.current;const dy=Math.abs(e.changedTouches[0].clientY-touchStartYRef.current);if(touchStartXRef.current<30&&dx>80&&dy<80&&screen!=='home')handleNav('home');}}>
         {screens[screen]||screens.home}
