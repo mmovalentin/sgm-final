@@ -4085,13 +4085,19 @@ function SGMApp() {
 
   async function handleAuthenticatedUser(userObj){
     setUser(userObj);setLoggedIn(true);
+    const timeout5s=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000));
     try{
-      // Auto-register Google users: insert 'cliente' role only if no profile exists
-      await supa.from('perfiles').upsert(
-        {id:userObj.id,email:userObj.email,rol:'cliente'},
-        {onConflict:'id',ignoreDuplicates:true}
-      );
-      const {data}=await supa.from('perfiles').select('rol').eq('id',userObj.id).single();
+      await Promise.race([
+        supa.from('perfiles').upsert(
+          {id:userObj.id,email:userObj.email,rol:'cliente'},
+          {onConflict:'id',ignoreDuplicates:true}
+        ),
+        timeout5s,
+      ]);
+      const {data}=await Promise.race([
+        supa.from('perfiles').select('rol').eq('id',userObj.id).single(),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000)),
+      ]);
       const rol=ADMIN_EMAILS.includes(userObj.email)?'admin':(data?.rol||'cliente');
       console.log('[SGI auth] user=',userObj.email,' role=',rol,' raw=',data);
       setUserRol(rol);
@@ -4114,9 +4120,11 @@ function SGMApp() {
       }
     }catch(e){
       console.error('[SGI auth error]',e);
-      // Supabase unavailable — default to client access, never admin
-      setUserRol('cliente');setPerfil('cliente');
-      localStorage.setItem('sgm-perfil','cliente');
+      // Timeout or Supabase unavailable — continue with email-based role, never block login
+      const rol=ADMIN_EMAILS.includes(userObj.email)?'admin':'cliente';
+      setUserRol(rol);
+      if(isAdmin(rol)){const saved=localStorage.getItem('sgm-perfil');if(saved)setPerfil(saved);}
+      else{setPerfil('cliente');localStorage.setItem('sgm-perfil','cliente');}
       setPhase('app');
     }
   }
