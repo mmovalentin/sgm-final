@@ -438,6 +438,7 @@ function BottomNav({screen,onNav,t,perfil,userRol}) {
 function HomeScreen({onNav,t,user,perfil,userRol}) {
   const [lastCot,setLastCot]=useState(null);
   const [met,setMet]=useState({avance:0,presup:0,proveed:0,op:0,ingresos:0,egresos:0,ahorro:0,saldo:0});
+  const [alertas,setAlertas]=useState([]);
 
   useEffect(()=>{
     try{
@@ -490,15 +491,17 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
             </div>
           </div>
         )}
-        <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,overflow:'hidden',marginBottom:12}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 13px',borderBottom:`.5px solid ${C.border}`}}>
-            <div style={{fontSize:13,fontWeight:700}}>⚠️ {t.alertas}</div>
-            <button onClick={()=>onNav('agenda')} style={{background:'none',border:'none',color:C.acc,fontSize:11,fontWeight:600,cursor:'pointer'}}>{t.ver_agenda||'Ver agenda'}</button>
+        {alertas.length>0&&(
+          <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,overflow:'hidden',marginBottom:12}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 13px',borderBottom:`.5px solid ${C.border}`}}>
+              <div style={{fontSize:13,fontWeight:700}}>⚠️ {t.alertas}</div>
+              <button onClick={()=>onNav('agenda')} style={{background:'none',border:'none',color:C.acc,fontSize:11,fontWeight:600,cursor:'pointer'}}>{t.ver_agenda||'Ver agenda'}</button>
+            </div>
+            {alertas.map((a,i)=>(
+              <div key={i} style={{padding:'10px 13px',borderBottom:`.5px solid ${C.border}`,fontSize:12,color:C.t2}}>{a.msg}</div>
+            ))}
           </div>
-          <div style={{padding:'16px 13px',textAlign:'center',color:C.t3,fontSize:12}}>
-            {t.sin_alertas||'Sin alertas activas'}
-          </div>
-        </div>
+        )}
         <div style={{marginBottom:12}}>
           <div style={{fontSize:11,fontWeight:700,color:C.t2,textTransform:'uppercase',letterSpacing:.5,marginBottom:10}}>{t.acceso}</div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
@@ -2213,46 +2216,143 @@ function StatsScreen({t,perfil,userRol}) {
   );
 }
 
-function AgendaScreen({t,perfil,userRol}) {
-  if(!isAdmin(userRol)){
-    return (
-      <div>
-        <div style={{background:C.navy,padding:'13px 14px'}}>
-          <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>Tu obra</div>
-          <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.cron_titulo||'Cronograma de obra'}</div>
-        </div>
-        <div style={{padding:'14px',display:'flex',flexDirection:'column',gap:8}}>
-          {(t.etapas||[]).map(([nombre,desc],i)=>(
-            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:12,padding:'12px',background:C.card,borderRadius:12,border:`.5px solid ${C.border}`}}>
-              <div style={{width:28,height:28,minWidth:28,borderRadius:'50%',background:'rgba(74,159,255,.12)',border:'1px solid rgba(74,159,255,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:C.acc}}>{i+1}</div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{color:C.t1,fontSize:12,fontWeight:700,marginBottom:2}}>{nombre}</div>
-                <div style={{color:C.t3,fontSize:11,lineHeight:1.4}}>{desc}</div>
-              </div>
-            </div>
-          ))}
-          <button onClick={()=>openWA(false,'Hola, quiero consultar sobre el cronograma y fechas de mi obra.')} style={{width:'100%',marginTop:4,padding:'12px',background:'#25D366',color:'#fff',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-            💬 Consultar fechas de mi obra
-          </button>
-        </div>
-      </div>
-    );
+function AgendaScreen({t,perfil,userRol,user}) {
+  const [mesActual,setMesActual]=useState(new Date());
+  const [diaSeleccionado,setDiaSeleccionado]=useState(null);
+  const [etapas,setEtapas]=useState([]);
+  const [loadingEtapas,setLoadingEtapas]=useState(false);
+
+  useEffect(()=>{
+    if(isAdmin(userRol)||!supa||!user) return;
+    setLoadingEtapas(true);
+    supa.from('avance_obra')
+      .select('etapa_nombre,fecha_inicio,fecha_fin,porcentaje,completada')
+      .eq('user_id',user.id)
+      .then(({data})=>{setEtapas(data||[]);setLoadingEtapas(false);});
+  },[user,userRol]);
+
+  const año=mesActual.getFullYear();
+  const mes=mesActual.getMonth();
+  const diasEnMes=new Date(año,mes+1,0).getDate();
+  const primerDiaLun=(new Date(año,mes,1).getDay()+6)%7;
+  const hoyD=new Date();
+  const hoyStr=`${hoyD.getFullYear()}-${String(hoyD.getMonth()+1).padStart(2,'0')}-${String(hoyD.getDate()).padStart(2,'0')}`;
+  const DIAS=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
+  const mesNombre=mesActual.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+
+  function addEv(map,fechaStr,ev){
+    if(!fechaStr) return;
+    const k=fechaStr.split('T')[0];
+    if(!map[k]) map[k]=[];
+    map[k].push(ev);
   }
+  function buildEventos(){
+    const map={};
+    if(isAdmin(userRol)){
+      const y=año,mm=String(mes+1).padStart(2,'0');
+      addEv(map,`${y}-${mm}-05`,{label:'Pago hierros · USD 850',color:'#C62828'});
+      addEv(map,`${y}-${mm}-08`,{label:'Inspección técnica',color:'#E65100'});
+      addEv(map,`${y}-${mm}-09`,{label:'Pago mano de obra · USD 1.200',color:'#C62828'});
+    } else {
+      etapas.forEach(e=>{
+        const c=e.completada?'#22C55E':'#4A9FFF';
+        if(e.fecha_inicio) addEv(map,e.fecha_inicio,{label:`Inicio: ${e.etapa_nombre}`,color:c});
+        if(e.fecha_fin) addEv(map,e.fecha_fin,{label:`Fin: ${e.etapa_nombre}`,color:e.completada?'#22C55E':'#1E40AF'});
+      });
+    }
+    return map;
+  }
+  const eventos=buildEventos();
+
+  function fechaKey(d){return `${año}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+  const eventosDia=diaSeleccionado?(eventos[fechaKey(diaSeleccionado)]||[]):[];
+  const noHayEtapas=!isAdmin(userRol)&&!loadingEtapas&&etapas.length===0;
+
   return (
-    <div>
-      <div style={{background:C.navy,padding:'13px 14px'}}><div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>{t.agenda_title}</div></div>
-      <div style={{padding:'12px 14px'}}>
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div style={{background:C.navy,padding:'13px 14px',flexShrink:0}}>
+        <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1}}>{isAdmin(userRol)?'Admin':'Tu obra'}</div>
+        <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2}}>{t.agenda_title||'Agenda'}</div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:12}}>
+
+        {/* Navegación de mes */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <button onClick={()=>{setMesActual(new Date(año,mes-1,1));setDiaSeleccionado(null);}} style={{background:C.off,border:`.5px solid ${C.border}`,borderRadius:8,padding:'6px 14px',color:C.t2,fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>‹</button>
+          <div style={{color:C.t1,fontSize:13,fontWeight:700,textTransform:'capitalize'}}>{mesNombre}</div>
+          <button onClick={()=>{setMesActual(new Date(año,mes+1,1));setDiaSeleccionado(null);}} style={{background:C.off,border:`.5px solid ${C.border}`,borderRadius:8,padding:'6px 14px',color:C.t2,fontSize:16,cursor:'pointer',fontFamily:'inherit'}}>›</button>
+        </div>
+
+        {/* Grilla de calendario */}
         <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,overflow:'hidden'}}>
-          <div style={{padding:'11px 13px',borderBottom:`.5px solid ${C.border}`,fontSize:13,fontWeight:700}}>📅 {t.esta_semana||'Esta semana'}</div>
-          <div style={{padding:'4px 13px 8px'}}>
-            {[[t.pago_hierros,'Lun 5/5 · USD 850',C.red,t.vencido],[t.insp,'Jue 8/5',C.amber,t.proximo],[t.pago_mo,'Vie 9/5 · USD 1.200',C.green,t.confirmado]].map(([t2,d,c,b])=>(
-              <div key={t2} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'7px 0',borderBottom:`.5px solid ${C.border}`}}>
-                <div style={{width:7,height:7,borderRadius:'50%',background:c,marginTop:4,flexShrink:0}}/>
-                <div><div style={{fontSize:12,fontWeight:500}}>{t2}</div><div style={{fontSize:10,color:C.t3,marginTop:1}}>{d} <span style={{background:c,color:'#fff',fontSize:8,fontWeight:700,padding:'1px 5px',borderRadius:4,marginLeft:3}}>{b}</span></div></div>
-              </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',borderBottom:`.5px solid ${C.border}`}}>
+            {DIAS.map(d=>(
+              <div key={d} style={{padding:'7px 0',textAlign:'center',fontSize:9,fontWeight:700,color:C.t3}}>{d}</div>
             ))}
           </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)'}}>
+            {Array.from({length:primerDiaLun}).map((_,i)=>(
+              <div key={`e${i}`} style={{minHeight:44}}/>
+            ))}
+            {Array.from({length:diasEnMes}).map((_,i)=>{
+              const d=i+1;
+              const k=fechaKey(d);
+              const evs=eventos[k]||[];
+              const isHoy=k===hoyStr;
+              const isSel=diaSeleccionado===d;
+              return (
+                <div key={d} onClick={()=>setDiaSeleccionado(isSel?null:d)}
+                  style={{minHeight:44,padding:'5px 0 4px',display:'flex',flexDirection:'column',alignItems:'center',cursor:'pointer',background:isSel?'rgba(74,159,255,.12)':'transparent'}}>
+                  <div style={{width:27,height:27,borderRadius:'50%',background:isHoy?C.acc:'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:isHoy?700:400,color:isHoy?'#fff':isSel?C.acc:C.t2}}>{d}</div>
+                  {evs.length>0&&(
+                    <div style={{display:'flex',gap:2,marginTop:2}}>
+                      {evs.slice(0,3).map((ev,ei)=>(
+                        <div key={ei} style={{width:4,height:4,borderRadius:'50%',background:ev.color}}/>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Loading */}
+        {loadingEtapas&&<div style={{textAlign:'center',padding:12,fontSize:12,color:C.t3}}>⏳ Cargando fechas...</div>}
+
+        {/* Sin etapas */}
+        {noHayEtapas&&(
+          <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'20px 16px',textAlign:'center'}}>
+            <div style={{fontSize:28,marginBottom:8}}>📅</div>
+            <div style={{color:C.t2,fontSize:12,lineHeight:1.5}}>Tu obra aún no tiene fechas programadas. El equipo las cargará pronto.</div>
+          </div>
+        )}
+
+        {/* Eventos del día seleccionado */}
+        {diaSeleccionado&&(
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5}}>
+              {diaSeleccionado} de {mesNombre}
+            </div>
+            {eventosDia.length===0
+              ?<div style={{textAlign:'center',padding:'12px 0',color:C.t3,fontSize:12}}>Sin eventos para este día</div>
+              :eventosDia.map((ev,i)=>(
+                <div key={i} style={{background:C.card,borderRadius:10,border:`.5px solid ${C.border}`,padding:'10px 13px',display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{width:8,height:8,borderRadius:'50%',background:ev.color,flexShrink:0}}/>
+                  <div style={{fontSize:12,color:C.t1,fontWeight:500}}>{ev.label}</div>
+                </div>
+              ))
+            }
+          </div>
+        )}
+
+        {/* CTA WhatsApp para cliente */}
+        {!isAdmin(userRol)&&(
+          <button onClick={()=>openWA(false,'Hola, quiero consultar sobre el cronograma y fechas de mi obra.')}
+            style={{width:'100%',padding:'12px',background:'#25D366',color:'#fff',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontFamily:'inherit'}}>
+            💬 Consultar fechas de mi obra
+          </button>
+        )}
       </div>
     </div>
   );
@@ -3837,7 +3937,7 @@ function SGMApp() {
     faq:<FAQScreen t={t} onNav={handleNav}/>,
     stats:<StatsScreen t={t} perfil={perfil} userRol={userRol}/>,
     presup:<PresupScreen t={t} dolar={dolar} user={user} userRol={userRol}/>,
-    agenda:<AgendaScreen t={t} perfil={perfil} userRol={userRol}/>,
+    agenda:<AgendaScreen t={t} perfil={perfil} userRol={userRol} user={user}/>,
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation}/>,
     miobrascreen:<MiObraScreen t={t} user={user}/>,
     detalle_cot:<DetalleCotizacionScreen cot={screenParams.cot} estadoProyecto={screenParams.estadoProyecto} onNav={handleNav}/>,
