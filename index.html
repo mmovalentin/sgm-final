@@ -582,7 +582,7 @@ function DetalleCotizacionScreen({cot,estadoProyecto,onNav,userRol,user}) {
   async function cambiarEstado(nuevoEstado){
     console.log('[SGI] cambiarEstado →',nuevoEstado,'id:',cot?.id);
     if(!supa){setSavedMsg('⚠ Sin conexión a base de datos');return;}
-    if(!cot?.id){setSavedMsg('⚠ Presupuesto sin ID — no se puede guardar');console.warn('[SGI] cot.id es undefined',cot);return;}
+    if(!cot?.id){setSavedMsg('⚠ Sin ID de presupuesto en BD');return;}
     setEstadoLocal(nuevoEstado);
     const{data,error}=await supa.from('presupuestos').update({estado:nuevoEstado}).eq('id',cot.id).select();
     console.log('[SGI] update result →',data,error);
@@ -639,9 +639,7 @@ function DetalleCotizacionScreen({cot,estadoProyecto,onNav,userRol,user}) {
               </div>
               {savedMsg
                 ?<div style={{fontSize:12,color:savedMsg.startsWith('⚠')?'#FF5252':'#22C55E',fontWeight:700}}>{savedMsg}</div>
-                :!cot?.id
-                  ?<div style={{fontSize:11,color:'#FF9800',fontWeight:600}}>⚠ Este presupuesto no tiene ID en BD — abrilo desde la lista de clientes para editar el estado</div>
-                  :<div style={{fontSize:11,color:C.t3}}>El cliente ve este estado en su dashboard al refrescar</div>
+                :<div style={{fontSize:11,color:C.t3}}>El cliente ve este estado en su dashboard al refrescar</div>
               }
             </div>
           ):(
@@ -3521,14 +3519,17 @@ function AvanceObraAdminScreen({userRol,user,t={}}) {
 
   async function loadEtapas(presId){
     setSelUserId(presId);setSaved(false);setSaveError(null);
-    if(!presId) return;
+    if(!presId||!supa) return;
     const entry=clientes.find(c=>c.presId===presId)||null;
     setSelEntry(entry);
     const uid=entry?.userId;
-    if(!uid||!supa){setEtapas(ETAPAS_OBRA_DEFAULT.map(e=>({...e})));return;}
-    const{data}=await supa.from('avance_obra').select('*').eq('user_id',uid).order('etapa_numero',{ascending:true});
-    if(data&&data.length>0) setEtapas(data.map(e=>({...e})));
-    else setEtapas(ETAPAS_OBRA_DEFAULT.map(e=>({...e,user_id:uid})));
+    // try presupuesto_id first, fall back to user_id for legacy rows
+    let res=await supa.from('avance_obra').select('*').eq('presupuesto_id',presId).order('etapa_numero',{ascending:true});
+    if((!res.data||res.data.length===0)&&uid){
+      res=await supa.from('avance_obra').select('*').eq('user_id',uid).order('etapa_numero',{ascending:true});
+    }
+    if(res.data&&res.data.length>0) setEtapas(res.data.map(e=>({...e})));
+    else setEtapas(ETAPAS_OBRA_DEFAULT.map(e=>({...e,presupuesto_id:presId,user_id:uid||null})));
   }
 
   function updEtapa(i,field,val){
@@ -3536,11 +3537,11 @@ function AvanceObraAdminScreen({userRol,user,t={}}) {
   }
 
   async function guardarAvance(){
-    const uid=selEntry?.userId;
-    if(!supa||!selUserId){return;}
-    if(!uid){setSaveError(t.sin_user_msg||'Este presupuesto no tiene cuenta de usuario — no se puede guardar avance.');return;}
+    if(!supa||!selUserId) return;
+    const uid=selEntry?.userId||null;
     setSaving(true);setSaveError(null);setSaved(false);
     const rows=etapas.map(e=>({
+      presupuesto_id:selUserId,
       user_id:uid,
       etapa_numero:e.etapa_numero,
       etapa_nombre:e.etapa_nombre,
@@ -3551,7 +3552,7 @@ function AvanceObraAdminScreen({userRol,user,t={}}) {
       monto_certificado:e.monto_certificado!=null&&e.monto_certificado!==''?Number(e.monto_certificado):null,
       notas:e.notas||'',
     }));
-    const{error}=await supa.from('avance_obra').upsert(rows,{onConflict:'user_id,etapa_numero'});
+    const{error}=await supa.from('avance_obra').upsert(rows,{onConflict:'presupuesto_id,etapa_numero'});
     setSaving(false);
     if(error){setSaveError(error.message||'Error al guardar');return;}
     setSaved(true);setTimeout(()=>setSaved(false),3000);
@@ -3644,7 +3645,6 @@ function AvanceObraAdminScreen({userRol,user,t={}}) {
         {selUserId&&(
           <>
             <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5}}>{t.etapas_title||'Etapas'}</div>
-            {!selEntry?.userId&&<div style={{fontSize:11,color:'#FF9800',padding:'8px 12px',background:'rgba(255,152,0,.1)',borderRadius:8}}>⚠ {t.sin_user_msg||'Este presupuesto no tiene cuenta de usuario — no se puede guardar avance.'}</div>}
             {etapas.map((e,i)=>(
               <div key={i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
@@ -3668,7 +3668,7 @@ function AvanceObraAdminScreen({userRol,user,t={}}) {
             ))}
             {saveError&&<div style={{fontSize:11,color:'#FF5252',padding:'8px 12px',background:'rgba(255,82,82,.1)',borderRadius:8}}>⚠ {saveError}</div>}
             {saved&&<div style={{fontSize:12,color:'#22C55E',fontWeight:700,textAlign:'center',padding:'8px'}}>{t.avance_guardado||'✅ Avance guardado correctamente'}</div>}
-            <button onClick={guardarAvance} disabled={saving||!selEntry?.userId} style={{width:'100%',padding:'13px',background:(saving||!selEntry?.userId)?C.border:C.acc,color:'#fff',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:(saving||!selEntry?.userId)?'default':'pointer'}}>
+            <button onClick={guardarAvance} disabled={saving} style={{width:'100%',padding:'13px',background:saving?C.border:C.acc,color:'#fff',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:saving?'default':'pointer'}}>
               {saving?(t.guardando_avance||'⏳ Guardando...'):(t.guardar_avance||'💾 Guardar avance')}
             </button>
           </>
