@@ -3501,8 +3501,11 @@ function AvanceObraAdminScreen({userRol,user,t={}}) {
     Promise.all([
       supa.from('presupuestos').select('id,archivo_nombre,total_usd,user_id,tipo,sistema,m2,numero_presupuesto').order('created_at',{ascending:false}),
       supa.from('perfiles').select('id,email'),
-    ]).then(([{data:presups},{data:perfs}])=>{
-      if(!presups){setClientes([]);return;}
+    ]).then(([{data:presups,error:errPresups},{data:perfs,error:errPerfs}])=>{
+      console.log('presupuestos:', presups, 'error:', errPresups);
+      console.log('perfiles:', perfs, 'error:', errPerfs);
+      if(errPresups){setClientes([{presId:null,userId:null,label:'⚠ Error RLS: '+errPresups.message}]);return;}
+      if(!presups||presups.length===0){setClientes([{presId:null,userId:null,label:'(sin presupuestos)'}]);return;}
       const emailMap=Object.fromEntries((perfs||[]).map(p=>[p.id,p.email]));
       const entries=presups.map(p=>({
         presId:p.id,
@@ -3511,7 +3514,7 @@ function AvanceObraAdminScreen({userRol,user,t={}}) {
       }));
       setClientes(entries);
     })
-    .catch(()=>setClientes([]))
+    .catch(e=>{console.error('avance_admin fetch error:',e);setClientes([]);})
     .finally(()=>setLoadingClientes(false));
   },[admin]);
 
