@@ -31,20 +31,20 @@ html,body{height:100%;width:100%;overflow:hidden;background:#07111F}
 const SGM_VERSION = '2.4';
 // Cliente Supabase: se inicializa desde /api/config (env vars de Vercel).
 // Fallback a valores hardcodeados si el endpoint no está disponible.
-let supa = null;
+// Inicializar supa sincrónicamente para evitar race condition al montar componentes.
+// La IIFE luego lo actualiza con credenciales de /api/config si están disponibles.
+let supa = window.supabase?.createClient(
+  'https://wwaaoritqbfzoqnbtqvk.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3YWFvcml0cWJmem9xbmJ0cXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTA2NDYsImV4cCI6MjA5MzkyNjY0Nn0.3-1FnfLmxkRXEfZz-u3qIKDCrq--Rhg6U1YjUryNFDo'
+) || null;
 (async () => {
   try {
     const r = await fetch('/api/config');
     const { supabaseUrl, supabaseAnonKey } = await r.json();
     if (supabaseUrl && supabaseAnonKey && window.supabase) {
       supa = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-      return;
     }
   } catch(_) {}
-  supa = window.supabase?.createClient(
-    'https://wwaaoritqbfzoqnbtqvk.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3YWFvcml0cWJmem9xbmJ0cXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTA2NDYsImV4cCI6MjA5MzkyNjY0Nn0.3-1FnfLmxkRXEfZz-u3qIKDCrq--Rhg6U1YjUryNFDo'
-  );
 })();
 
 const C = {
@@ -2264,8 +2264,16 @@ function vigenciaBadge(created_at,vigencia_dias=30){
   if(dias<vigencia_dias+15) return{label:'Por vencer',color:'#fff',bg:C.amber,warn:false};
   return{label:'Desactualizado',color:'#fff',bg:C.red,warn:true};
 }
+const ESTADO_PRESUP_MAP={
+  pendiente:{label:'Pendiente',bg:'#E65100',color:'#fff'},
+  vigente:  {label:'Vigente',  bg:'#2E7D32',color:'#fff'},
+  aprobado: {label:'Aprobado', bg:'#1565C0',color:'#fff'},
+  'en obra':{label:'En obra',  bg:'#4A9FFF',color:'#fff'},
+  vencido:  {label:'Vencido',  bg:'#C62828',color:'#fff'},
+};
+function estadoBadgeStyle(estado){return ESTADO_PRESUP_MAP[estado]||{label:estado||'Pendiente',bg:'#E65100',color:'#fff'};}
 
-function PresupScreen({t,dolar=1415}) {
+function PresupScreen({t,dolar=1415,user,userRol}) {
   const [loading,setLoading]=useState(false);
   const [result,setResult]=useState(null);
   const [mapStatus,setMapStatus]=useState(null);
@@ -2290,11 +2298,16 @@ function PresupScreen({t,dolar=1415}) {
     if(!supa) return;
     setLoadingSaved(true);
     const {data}=await supa.from('presupuestos')
-      .select('id,archivo_nombre,total_usd,created_at,vigencia_dias,proveedores(nombre)')
+      .select('id,archivo_nombre,total_usd,created_at,vigencia_dias,estado,proveedores(nombre)')
       .order('created_at',{ascending:false})
       .limit(30);
     setSavedList(data||[]);
     setLoadingSaved(false);
+  }
+  async function updateEstadoPresupuesto(id,nuevoEstado){
+    if(!supa) return;
+    await supa.from('presupuestos').update({estado:nuevoEstado}).eq('id',id);
+    setSavedList(prev=>prev.map(p=>p.id===id?{...p,estado:nuevoEstado}:p));
   }
 
   useEffect(()=>{fetchSaved();fetchCompras();},[]);
@@ -2488,6 +2501,8 @@ function PresupScreen({t,dolar=1415}) {
             const badge=vigenciaBadge(ps.created_at,ps.vigencia_dias||30);
             const nombre=ps.proveedores?.nombre||ps.archivo_nombre||'—';
             const fecha=new Date(ps.created_at).toLocaleDateString('es-AR');
+            const estadoActual=ps.estado||'pendiente';
+            const estStyle=estadoBadgeStyle(estadoActual);
             return(
               <div key={ps.id} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'11px 13px',marginBottom:8}}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
@@ -2495,9 +2510,14 @@ function PresupScreen({t,dolar=1415}) {
                     <div style={{fontSize:12,fontWeight:700,color:C.t1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{nombre}</div>
                     <div style={{fontSize:10,color:C.t3,marginTop:2}}>{fecha} · USD {(ps.total_usd||0).toLocaleString()}</div>
                   </div>
-                  <span style={{background:badge.bg,color:badge.color,fontSize:9,fontWeight:700,padding:'3px 8px',borderRadius:20,whiteSpace:'nowrap',flexShrink:0}}>{badge.label}</span>
+                  {isAdmin(userRol)
+                    ?<select value={estadoActual} onChange={e=>updateEstadoPresupuesto(ps.id,e.target.value)} onClick={e=>e.stopPropagation()} style={{fontSize:9,fontWeight:700,padding:'3px 8px',borderRadius:20,border:'none',background:estStyle.bg,color:'#fff',cursor:'pointer',flexShrink:0,appearance:'none',WebkitAppearance:'none',outline:'none'}}>
+                        {['pendiente','vigente','aprobado','en obra','vencido'].map(op=><option key={op} value={op}>{ESTADO_PRESUP_MAP[op]?.label||op}</option>)}
+                      </select>
+                    :<span style={{background:estStyle.bg,color:estStyle.color,fontSize:9,fontWeight:700,padding:'3px 8px',borderRadius:20,whiteSpace:'nowrap',flexShrink:0}}>{estStyle.label}</span>
+                  }
                 </div>
-                {badge.warn&&<div style={{marginTop:6,fontSize:10,color:C.red,fontWeight:600}}>Solicitá nuevo presupuesto a este proveedor</div>}
+                {badge.warn&&!ps.estado&&<div style={{marginTop:6,fontSize:10,color:C.red,fontWeight:600}}>Solicitá nuevo presupuesto a este proveedor</div>}
               </div>
             );
           })}
@@ -3816,7 +3836,7 @@ function SGMApp() {
     rubros:<RubrosScreen perfil={perfil} t={t}/>,
     faq:<FAQScreen t={t} onNav={handleNav}/>,
     stats:<StatsScreen t={t} perfil={perfil} userRol={userRol}/>,
-    presup:<PresupScreen t={t} dolar={dolar}/>,
+    presup:<PresupScreen t={t} dolar={dolar} user={user} userRol={userRol}/>,
     agenda:<AgendaScreen t={t} perfil={perfil} userRol={userRol}/>,
     mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation}/>,
     miobrascreen:<MiObraScreen t={t} user={user}/>,
