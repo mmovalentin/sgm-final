@@ -554,13 +554,20 @@ function DetalleCotizacionScreen({cot,estadoProyecto,onNav,userRol,user}) {
   const [savedMsg,setSavedMsg]=useState(null);
 
   async function cambiarEstado(nuevoEstado){
-    if(!supa||!cot?.id) return;
-    const{error}=await supa.from('presupuestos').update({estado:nuevoEstado}).eq('id',cot.id);
-    if(!error){
-      setEstadoLocal(nuevoEstado);
+    console.log('[SGI] cambiarEstado →',nuevoEstado,'id:',cot?.id);
+    if(!supa){setSavedMsg('⚠ Sin conexión a base de datos');return;}
+    if(!cot?.id){setSavedMsg('⚠ Presupuesto sin ID — no se puede guardar');console.warn('[SGI] cot.id es undefined',cot);return;}
+    setEstadoLocal(nuevoEstado);
+    const{data,error}=await supa.from('presupuestos').update({estado:nuevoEstado}).eq('id',cot.id).select();
+    console.log('[SGI] update result →',data,error);
+    if(error){
+      console.error('[SGI] Error update estado:',error);
+      setSavedMsg('⚠ Error: '+error.message);
+      setEstadoLocal(estadoLocal);
+    } else {
       setSavedMsg('✓ Estado actualizado');
-      setTimeout(()=>setSavedMsg(null),2500);
     }
+    setTimeout(()=>setSavedMsg(null),3000);
   }
 
   if(!cot) return(
@@ -605,8 +612,10 @@ function DetalleCotizacionScreen({cot,estadoProyecto,onNav,userRol,user}) {
                 </select>
               </div>
               {savedMsg
-                ?<div style={{fontSize:12,color:'#22C55E',fontWeight:700}}>{savedMsg}</div>
-                :<div style={{fontSize:11,color:C.t3}}>El cliente ve este estado en su dashboard al refrescar</div>
+                ?<div style={{fontSize:12,color:savedMsg.startsWith('⚠')?'#FF5252':'#22C55E',fontWeight:700}}>{savedMsg}</div>
+                :!cot?.id
+                  ?<div style={{fontSize:11,color:'#FF9800',fontWeight:600}}>⚠ Este presupuesto no tiene ID en BD — abrilo desde la lista de clientes para editar el estado</div>
+                  :<div style={{fontSize:11,color:C.t3}}>El cliente ve este estado en su dashboard al refrescar</div>
               }
             </div>
           ):(
