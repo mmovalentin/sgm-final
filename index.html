@@ -593,12 +593,15 @@ function DetalleCotizacionScreen({cot,estadoProyecto,onNav,userRol,user}) {
     if(!nombre.trim()) return;
     setGuardandoDatos(true);
     localStorage.setItem('sgi_datos_cliente',JSON.stringify({nombre:nombre.trim(),localidad:localidad.trim(),telefono:telefono.trim()}));
-    if(supa&&cot?.id){
-      await supa.from('presupuestos').update({
-        cliente_nombre:nombre.trim(),
-        cliente_localidad:localidad.trim(),
-        cliente_telefono:telefono.trim(),
-      }).eq('id',cot.id).catch(()=>{});
+    if(cot?.id){
+      localStorage.setItem('sgm_presupuesto_id',cot.id);
+      if(supa){
+        await supa.from('presupuestos').update({
+          cliente_nombre:nombre.trim(),
+          cliente_localidad:localidad.trim(),
+          cliente_telefono:telefono.trim(),
+        }).eq('id',cot.id).catch(()=>{});
+      }
     }
     setGuardandoDatos(false);
     setDatosOk(true);
@@ -879,15 +882,17 @@ function generarPDF(pres, clienteNombre) {
 // ── CLIENTE HOME (dashboard orientado a su obra)
 const ESTADO_BANNER={
   pendiente:{color:'#F59E0B',bg:'rgba(245,158,11,.08)',border:'rgba(245,158,11,.2)',icon:'🟡',label:'En revisión',msg:'Tu proyecto está siendo revisado por nuestro equipo. Te contactaremos pronto.'},
+  en_revision:{color:'#3B82F6',bg:'rgba(59,130,246,.08)',border:'rgba(59,130,246,.2)',icon:'🔵',label:'En revisión',msg:'Tu proyecto está siendo revisado por nuestro equipo de profesionales.'},
   verificando:{color:'#3B82F6',bg:'rgba(59,130,246,.08)',border:'rgba(59,130,246,.2)',icon:'🔵',label:'En verificación',msg:'Tu proyecto fue recibido y está en verificación. En breve recibirás confirmación.'},
   aprobado:{color:'#22C55E',bg:'rgba(34,197,94,.08)',border:'rgba(34,197,94,.2)',icon:'🟢',label:'Aprobado',msg:'¡Tu proyecto fue aprobado! Ya podemos comenzar a planificar tu obra.'},
-  en_obra:{color:'#22C55E',bg:'rgba(34,197,94,.08)',border:'rgba(34,197,94,.2)',icon:'🏗️',label:'En obra',msg:'Tu obra está en marcha. ¡Vamos!'},
+  en_obra:{color:'#F97316',bg:'rgba(249,115,22,.08)',border:'rgba(249,115,22,.2)',icon:'🏗️',label:'En obra',msg:'Tu obra está en marcha. ¡Vamos!'},
+  completado:{color:'#22C55E',bg:'rgba(34,197,94,.08)',border:'rgba(34,197,94,.2)',icon:'✅',label:'Obra completada',msg:'¡Felicitaciones! Tu obra fue completada exitosamente.'},
+  cancelado:{color:'#EF4444',bg:'rgba(239,68,68,.08)',border:'rgba(239,68,68,.2)',icon:'🔴',label:'Cancelado',msg:'Este proyecto fue cancelado. Contactanos si querés retomarlo.'},
 };
 
 function ClienteHomeScreen({onNav,t,user}) {
   const nombre=user?.user_metadata?.full_name?.split(' ')[0]||user?.email?.split('@')[0]||null;
   const [lastCot,setLastCot]=useState(null);
-  const [obraData,setObraData]=useState(null);
   const [avanceRows,setAvanceRows]=useState([]);
   const [estadoProyecto,setEstadoProyecto]=useState(null);
   const [descripcion,setDescripcion]=useState('');
@@ -902,50 +907,49 @@ function ClienteHomeScreen({onNav,t,user}) {
     let localCot=null;
     try{const s=localStorage.getItem('sgi_last_cot');if(s){localCot=JSON.parse(s);setLastCot(localCot);}}catch(e){}
     if(!supa||!user) return;
-    // Cargar cotización real desde Supabase (tiene prioridad sobre localStorage)
     supa.from('presupuestos').select('*').eq('user_id',user.id)
       .order('created_at',{ascending:false}).limit(1).single()
       .then(({data:dbPres})=>{
         if(dbPres){
-          const normalized={
-            ...dbPres,
-            cal:localCot?.cal||null,
-            fecha:dbPres.created_at,
-            tiempo_meses:localCot?.tiempo_meses||Math.round((dbPres.m2||80)/15),
-          };
+          const normalized={...dbPres,cal:localCot?.cal||null,fecha:dbPres.created_at,tiempo_meses:localCot?.tiempo_meses||Math.round((dbPres.m2||80)/15)};
           setLastCot(normalized);
+          setEstadoProyecto(dbPres.estado||'pendiente');
+          setProyectoId(dbPres.id);
           try{localStorage.setItem('sgi_last_cot',JSON.stringify(normalized));}catch(e){}
+          supa.from('avance_obra').select('*').eq('presupuesto_id',dbPres.id).order('etapa_numero',{ascending:true})
+            .then(({data:av1})=>{
+              if(av1&&av1.length>0){setAvanceRows(av1);return;}
+              supa.from('avance_obra').select('*').eq('user_id',user.id).order('etapa_numero',{ascending:true})
+                .then(({data:av2})=>{if(av2&&av2.length>0)setAvanceRows(av2);});
+            });
+        } else {
+          if(localCot) setEstadoProyecto('pendiente');
+          supa.from('avance_obra').select('*').eq('user_id',user.id).order('etapa_numero',{ascending:true})
+            .then(({data})=>{if(data&&data.length>0)setAvanceRows(data);});
         }
       });
-    supa.from('proyecto_cliente').select('*').eq('user_id',user.id).single()
-      .then(async({data})=>{
-        if(data){
-          setObraData(data);
-          setEstadoProyecto(data.estado_proyecto||'pendiente');
-          setDescripcion(data.descripcion||'');
-          setProyectoId(data.id);
-        } else if(localCot){
-          const{data:nd}=await supa.from('proyecto_cliente').upsert({
-            user_id:user.id,email:user.email,
-            nombre_cliente:user.user_metadata?.full_name||user.email,
-            estado_proyecto:'pendiente',
-            m2_totales:localCot.m2,sistema:localCot.sistema,tipo:localCot.tipo,
-            descripcion:'',etapas:[],proveedores:[],
-          },{onConflict:'user_id'}).select().single();
-          if(nd){setEstadoProyecto('pendiente');setProyectoId(nd.id);}
-        }
-      });
-    supa.from('avance_obra').select('*').eq('user_id',user.id).order('etapa_numero',{ascending:true})
-      .then(({data})=>{if(data&&data.length>0)setAvanceRows(data);});
   },[user]);
+
+  useEffect(()=>{
+    if(!supa||!proyectoId) return;
+    const recargarAvance=()=>{
+      supa.from('avance_obra').select('*').eq('presupuesto_id',proyectoId).order('etapa_numero',{ascending:true})
+        .then(({data})=>{if(data&&data.length>0)setAvanceRows(data);});
+    };
+    const ch=supa.channel('home-'+proyectoId)
+      .on('postgres_changes',{event:'*',schema:'public',table:'avance_obra',filter:`presupuesto_id=eq.${proyectoId}`},recargarAvance)
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'presupuestos',filter:`id=eq.${proyectoId}`},(p)=>{setEstadoProyecto(p.new.estado||'pendiente');})
+      .subscribe();
+    return()=>{supa.removeChannel(ch);};
+  },[proyectoId]);
 
   const hasAvance=avanceRows.length>0;
   const avance=hasAvance?Math.round(avanceRows.reduce((s,e)=>s+(e.porcentaje||0),0)/8):0;
   const etapasOk=hasAvance?avanceRows.filter(e=>e.completada||e.porcentaje>=100).length:0;
   const totalEtapas=hasAvance?avanceRows.length:8;
   const etapaLabel=avanceLabel(avance,hasAvance);
-  const m2=obraData?.m2_totales||lastCot?.m2||0;
-  const sistema=obraData?.sistema||lastCot?.sistema||'';
+  const m2=lastCot?.m2||0;
+  const sistema=lastCot?.sistema||'';
   const diasEstimados=lastCot?.tiempo_meses
     ?Math.round(lastCot.tiempo_meses*30)
     :(m2>0?(sistema.toLowerCase().includes('mampost')?Math.round(m2*3):Math.round(m2*2.25)):180);
@@ -957,13 +961,11 @@ function ClienteHomeScreen({onNav,t,user}) {
     if(!user?.id)return;
     setSavingDesc(true);setDescError(null);
     try{
-      const{error}=await supa.from('cotizaciones')
-        .update({descripcion:editDescText}).eq('user_id',user.id);
-      if(error)throw error;
+      localStorage.setItem('sgi_desc_'+user.id,editDescText);
       setDescripcion(editDescText);setEditDesc(false);
       setDescSaved(true);setTimeout(()=>setDescSaved(false),2000);
     }catch(e){
-      setDescError('Error al guardar: '+e.message);
+      setDescError('Error al guardar');
     }finally{
       setSavingDesc(false);
     }
@@ -1117,29 +1119,58 @@ function ClienteHomeScreen({onNav,t,user}) {
 // ── MI OBRA (cronograma + stats + proveedores)
 function MiObraScreen({t,user}) {
   const [lastCot,setLastCot]=useState(null);
-  const [proyData,setProyData]=useState(null);
   const [avanceRows,setAvanceRows]=useState([]);
+  const [presId,setPresId]=useState(null);
   const [loading,setLoading]=useState(false);
   useEffect(()=>{
-    try{const s=localStorage.getItem('sgi_last_cot');if(s)setLastCot(JSON.parse(s));}catch(e){}
-    if(!supa||!user){setLoading(false);return;}
+    let lc=null;
+    try{const s=localStorage.getItem('sgi_last_cot');if(s){lc=JSON.parse(s);setLastCot(lc);}}catch(e){}
+    if(!supa){setLoading(false);return;}
+    const cargarAvancePorId=(pid)=>{
+      setPresId(pid);
+      supa.from('avance_obra').select('*').eq('presupuesto_id',pid).order('etapa_numero',{ascending:true})
+        .then(({data:av1})=>{
+          if(av1&&av1.length>0){setAvanceRows(av1);return;}
+          if(user){
+            supa.from('avance_obra').select('*').eq('user_id',user.id).order('etapa_numero',{ascending:true})
+              .then(({data:av2})=>{if(av2&&av2.length>0)setAvanceRows(av2);});
+          }
+        });
+    };
+    if(!user){
+      const anonId=localStorage.getItem('sgm_presupuesto_id');
+      if(anonId){setLoading(true);const s2=setTimeout(()=>setLoading(false),8000);cargarAvancePorId(anonId);clearTimeout(s2);setLoading(false);}
+      return;
+    }
     setLoading(true);
     const safety=setTimeout(()=>setLoading(false),8000);
-    Promise.all([
-      supa.from('proyecto_cliente').select('*').eq('user_id',user.id).single(),
-      supa.from('avance_obra').select('*').eq('user_id',user.id).order('etapa_numero',{ascending:true}),
-    ]).then(([{data:proy},{data:avance}])=>{
-      if(proy) setProyData(proy);
-      if(avance&&avance.length>0) setAvanceRows(avance);
-    }).catch(()=>{}).finally(()=>{clearTimeout(safety);setLoading(false);});
+    supa.from('presupuestos').select('*').eq('user_id',user.id)
+      .order('created_at',{ascending:false}).limit(1).single()
+      .then(({data:pres})=>{
+        if(pres){setLastCot(prev=>prev||{...pres,fecha:pres.created_at});cargarAvancePorId(pres.id);}
+        else if(user){supa.from('avance_obra').select('*').eq('user_id',user.id).order('etapa_numero',{ascending:true}).then(({data})=>{if(data&&data.length>0)setAvanceRows(data);});}
+      })
+      .catch(()=>{}).finally(()=>{clearTimeout(safety);setLoading(false);});
   },[user]);
+
+  useEffect(()=>{
+    if(!supa||!presId) return;
+    const recargar=()=>{
+      supa.from('avance_obra').select('*').eq('presupuesto_id',presId).order('etapa_numero',{ascending:true})
+        .then(({data})=>{if(data&&data.length>0)setAvanceRows(data);});
+    };
+    const ch=supa.channel('mi-obra-'+presId)
+      .on('postgres_changes',{event:'*',schema:'public',table:'avance_obra',filter:`presupuesto_id=eq.${presId}`},recargar)
+      .subscribe();
+    return()=>{supa.removeChannel(ch);};
+  },[presId]);
 
   const hasAvance=avanceRows.length>0;
   const etapas=hasAvance?avanceRows:ETAPAS_OBRA_DEFAULT;
   const avance=hasAvance?Math.round(avanceRows.reduce((s,e)=>s+(e.porcentaje||0),0)/8):0;
   const etapasOk=etapas.filter(e=>e.completada||e.porcentaje>=100).length;
-  const proveedores=proyData?.proveedores||[];
-  const m2Total=proyData?.m2_totales||lastCot?.m2||0;
+  const proveedores=[];
+  const m2Total=lastCot?.m2||0;
   const m2Construidos=avance>0?Math.round(m2Total*avance/100):0;
   const etapaLbl=avanceLabel(avance,hasAvance);
 
@@ -2495,13 +2526,21 @@ function AgendaScreen({t,perfil,userRol,user}) {
       }).catch(()=>{}).finally(()=>{clearTimeout(t2);setLoading(false);});
     } else if(user){
       setLoading(true);
-      Promise.all([
-        supa.from('agenda_eventos').select('*').eq('visible_cliente',true).or(`cliente_id.eq.${user.id},cliente_id.is.null`).order('fecha',{ascending:true}),
-        supa.from('avance_obra').select('etapa_nombre,fecha_inicio,fecha_fin,porcentaje,completada').eq('user_id',user.id),
-      ]).then(([{data:evs},{data:et}])=>{
+      (async()=>{
+        const anonPresId=localStorage.getItem('sgm_presupuesto_id');
+        const presRes=await supa.from('presupuestos').select('id').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1).single().catch(()=>({data:null}));
+        const pid=presRes?.data?.id||anonPresId||null;
+        const avanceQuery=pid
+          ?supa.from('avance_obra').select('etapa_nombre,fecha_inicio,fecha_fin,porcentaje,completada').eq('presupuesto_id',pid)
+          :supa.from('avance_obra').select('etapa_nombre,fecha_inicio,fecha_fin,porcentaje,completada').eq('user_id',user.id);
+        const[{data:evs},{data:et}]=await Promise.all([
+          supa.from('agenda_eventos').select('*').eq('visible_cliente',true).or(`cliente_id.eq.${user.id},cliente_id.is.null`).order('fecha',{ascending:true}),
+          avanceQuery,
+        ]).catch(()=>[{data:[]},{data:[]}]);
         setEventosDB(evs||[]);
         setEtapas(et||[]);
-      }).catch(()=>{}).finally(()=>{clearTimeout(t2);setLoading(false);});
+        clearTimeout(t2);setLoading(false);
+      })().catch(()=>{clearTimeout(t2);setLoading(false);});
     }
     return()=>clearTimeout(t2);
   },[user,userRol]);
@@ -3186,9 +3225,19 @@ function ClientesScreen({perfil,userRol,t={},lang='es'}) {
     if(!supa){setLoadingProy(false);return;}
     setLoadingProy(true);
     try{
-      const{data,error}=await supa.from('proyecto_cliente').select('*').order('created_at',{ascending:false});
+      const[{data:presups,error},{data:perfs}]=await Promise.all([
+        supa.from('presupuestos').select('id,user_id,archivo_nombre,total_usd,m2,sistema,tipo,estado,cliente_nombre,numero_presupuesto,created_at').order('created_at',{ascending:false}).limit(100),
+        supa.from('perfiles').select('id,email'),
+      ]);
       if(error) throw error;
-      setProyectosWeb(data||[]);
+      const emailMap=Object.fromEntries((perfs||[]).map(p=>[p.id,p.email]));
+      setProyectosWeb((presups||[]).map(p=>({
+        ...p,
+        nombre_cliente:p.cliente_nombre||emailMap[p.user_id]||'Sin nombre',
+        email:emailMap[p.user_id]||null,
+        m2_totales:p.m2,
+        estado_proyecto:p.estado||'pendiente',
+      })));
     }catch(e){setProyectosWeb([]);}
     finally{setLoadingProy(false);}
   }
@@ -3210,7 +3259,7 @@ function ClientesScreen({perfil,userRol,t={},lang='es'}) {
   async function cambiarEstadoProyecto(proyId,nuevoEstado){
     if(!supa) return;
     setAprobando(proyId);
-    await supa.from('proyecto_cliente').update({estado_proyecto:nuevoEstado}).eq('id',proyId);
+    await supa.from('presupuestos').update({estado:nuevoEstado}).eq('id',proyId);
     await fetchProyectos();
     setAprobando(null);
   }
@@ -3568,13 +3617,27 @@ function AvanceObraAdminScreen({userRol,user,t={}}) {
   const [saveError,setSaveError]=useState(null);
 
   useEffect(()=>{
-    if(admin||!supa||!user) return;
+    if(admin) return;
+    if(!supa){setLoadingView(false);return;}
     setLoadingView(true);
     const safety=setTimeout(()=>setLoadingView(false),8000);
-    supa.from('avance_obra').select('*').eq('user_id',user.id).order('etapa_numero',{ascending:true})
-      .then(({data})=>{if(data&&data.length>0)setViewEtapas(data.map(e=>({...e})));})
-      .catch(()=>{})
-      .finally(()=>{clearTimeout(safety);setLoadingView(false);});
+    const anonPresId=localStorage.getItem('sgm_presupuesto_id');
+    const runQuery=async()=>{
+      let pid=anonPresId;
+      if(!pid&&user){
+        const r=await supa.from('presupuestos').select('id').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1).single().catch(()=>({data:null}));
+        pid=r?.data?.id||null;
+      }
+      if(pid){
+        const{data:av1}=await supa.from('avance_obra').select('*').eq('presupuesto_id',pid).order('etapa_numero',{ascending:true}).catch(()=>({data:null}));
+        if(av1&&av1.length>0){setViewEtapas(av1.map(e=>({...e})));return;}
+      }
+      if(user){
+        const{data:av2}=await supa.from('avance_obra').select('*').eq('user_id',user.id).order('etapa_numero',{ascending:true}).catch(()=>({data:null}));
+        if(av2&&av2.length>0)setViewEtapas(av2.map(e=>({...e})));
+      }
+    };
+    runQuery().catch(()=>{}).finally(()=>{clearTimeout(safety);setLoadingView(false);});
   },[user,admin]);
 
   useEffect(()=>{
