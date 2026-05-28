@@ -1377,7 +1377,7 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
   const [pagos,setPagos]=useState([]);
   const [confirmDelete,setConfirmDelete]=useState(false);
   const [deleting,setDeleting]=useState(false);
-  const [concepto,setConcepto]=useState('Pago de obra');
+  const [concepto,setConcepto]=useState('Pago anticipo');
   const [montoPago,setMontoPago]=useState('');
   const [fechaPago,setFechaPago]=useState(()=>new Date().toISOString().split('T')[0]);
   const [tipoPago,setTipoPago]=useState('pago');
@@ -1416,8 +1416,9 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
     setRegistrando(true);
     const hoyISO=new Date().toISOString().split('T')[0];
     await supa.from('agenda_eventos').insert({
-      titulo:concepto.trim()+' — '+obra.cliente_nombre,
+      titulo:concepto.trim()+' - '+obra.cliente_nombre,
       fecha:fechaPago,
+      hora:'00:00',
       monto_usd:parseFloat(montoPago)||0,
       tipo:tipoPago,
       cliente_id:null,
@@ -1427,7 +1428,7 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
       notas:'Obra: '+(obra.cliente_nombre||''),
     }).catch(()=>{});
     setRegistrando(false);
-    setConcepto('Pago de obra');setMontoPago('');setFechaPago(hoyISO);setTipoPago('pago');setYaFuePagado(false);
+    setConcepto('Pago anticipo');setMontoPago('');setFechaPago(hoyISO);setTipoPago('pago');setYaFuePagado(false);
     setPagoMsg('Pago registrado.');setTimeout(()=>setPagoMsg(null),2500);
     cargarPagos();
   }
