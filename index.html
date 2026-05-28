@@ -774,8 +774,6 @@ function DetalleCotizacionScreen({cot,estadoProyecto,onNav,userRol,user}) {
   );
 }
 
-const LOGO_BASE64='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='6' fill='%230D1B2A'/><rect x='4' y='7' width='20' height='4' rx='2' fill='white'/><rect x='4' y='13' width='12' height='4' rx='2' fill='%23F59E0B'/><rect x='20' y='13' width='4' height='9' rx='2' fill='white'/><rect x='4' y='18' width='20' height='4' rx='2' fill='white'/></svg>`);
-
 function generarPDF(pres, clienteNombre) {
   if(!window.jspdf){alert('jsPDF no disponible. Verificá tu conexión.');return;}
   const{jsPDF}=window.jspdf;
@@ -791,7 +789,10 @@ function generarPDF(pres, clienteNombre) {
   // ── HEADER (0–45)
   doc.setFillColor(...navy);doc.rect(0,0,W,45,'F');
   doc.setFillColor(...blue);doc.rect(0,45,W,2,'F');
-  doc.addImage(LOGO_BASE64,'SVG',6,6,22,22);
+  doc.setFillColor(13,27,42);doc.roundedRect(6,6,22,22,3,3,'F');
+  doc.setFillColor(255,255,255);doc.rect(9,11,14,3,'F');
+  doc.setFillColor(245,158,11);doc.rect(9,15,9,3,'F');
+  doc.setFillColor(255,255,255);doc.rect(9,19,14,3,'F');
   doc.setTextColor(255,255,255);
   doc.setFontSize(16);doc.setFont('helvetica','bold');doc.text('SGI',32,16);
   doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(180,200,220);doc.text('Construcciones · Steel Frame',32,23);
@@ -1004,7 +1005,10 @@ function ClienteHomeScreen({onNav,t,user}) {
 
     // ── HEADER (0–50)
     doc.setFillColor(...navy);doc.rect(0,0,W,50,'F');
-    doc.addImage(LOGO_BASE64,'SVG',6,8,20,20);
+    doc.setFillColor(13,27,42);doc.roundedRect(6,8,20,20,3,3,'F');
+    doc.setFillColor(255,255,255);doc.rect(9,13,12,2.5,'F');
+    doc.setFillColor(245,158,11);doc.rect(9,17,8,2.5,'F');
+    doc.setFillColor(255,255,255);doc.rect(9,21,12,2.5,'F');
     doc.setTextColor(255,255,255);
     doc.setFontSize(16);doc.setFont('helvetica','bold');doc.text('RECIBO DE PAGO',W/2,20,{align:'center'});
     doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(...grisClaro);
