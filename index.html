@@ -992,6 +992,8 @@ function ClienteHomeScreen({onNav,t,user}) {
     }
   }
 
+  const generarRecibo=(evento)=>{console.log('recibo:',evento);};
+
   return (
     <div style={{background:C.bg,minHeight:'100%',paddingBottom:16}}>
 
@@ -1004,6 +1006,23 @@ function ClienteHomeScreen({onNav,t,user}) {
         </div>
         <div style={{color:C.t3,fontSize:12}}>Tu obra avanza</div>
       </div>
+
+      {/* ── BANNER PAGOS HOY ── */}
+      {pagosHoy.length>0&&(
+        <div style={{marginBottom:'16px'}}>
+          {pagosHoy.map(evento=>(
+            <div key={evento.id} style={{background:'#FEF3C7',border:'1px solid #F59E0B',borderRadius:'12px',padding:'14px 16px',marginBottom:'8px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <div>
+                <div style={{fontWeight:600,color:'#92400E',fontSize:'14px'}}>📅 {evento.titulo}</div>
+                <div style={{color:'#B45309',fontSize:'13px',marginTop:'2px'}}>USD {evento.monto_usd?.toLocaleString()}</div>
+              </div>
+              <button onClick={()=>generarRecibo(evento)} style={{background:'#F59E0B',border:'none',borderRadius:'8px',color:'#fff',padding:'8px 14px',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>
+                📄 Descargar recibo
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── BANNER ESTADO ── */}
       {banner&&(
