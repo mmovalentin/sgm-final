@@ -992,7 +992,48 @@ function ClienteHomeScreen({onNav,t,user}) {
     }
   }
 
-  const generarRecibo=(evento)=>{console.log('recibo:',evento);};
+  const generarRecibo=async(evento)=>{
+    const{jsPDF}=window.jspdf;
+    const doc=new jsPDF();
+    // Header
+    doc.setFillColor(0,27,42);
+    doc.rect(0,0,210,35,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica','bold');
+    doc.text('SGI - RECIBO DE PAGO',105,20,{align:'center'});
+    doc.setFontSize(10);
+    doc.text('Sistema de Gestión Integral',105,28,{align:'center'});
+    // Datos
+    doc.setTextColor(0,0,0);
+    doc.setFontSize(12);
+    doc.setFont('helvetica','normal');
+    const hoy=new Date().toLocaleDateString('es-AR');
+    doc.text('Fecha: '+hoy,20,50);
+    doc.text('Concepto: '+(evento.titulo||''),20,60);
+    doc.text('Monto: USD '+(evento.monto_usd?.toLocaleString()||'0'),20,70);
+    // Caja monto
+    doc.setFillColor(0,27,42);
+    doc.rect(20,85,170,25,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica','bold');
+    doc.text('TOTAL: USD '+(evento.monto_usd?.toLocaleString()||'0'),105,101,{align:'center'});
+    // Firma
+    doc.setTextColor(0,0,0);
+    doc.setFontSize(10);
+    doc.setFont('helvetica','normal');
+    doc.line(20,140,90,140);
+    doc.text('Firma',50,148,{align:'center'});
+    // Descargar
+    doc.save('recibo-'+(evento.titulo||'pago').replace(/\s+/g,'-')+'.pdf');
+    // Marcar como generado en Supabase
+    if(supa&&evento.id){
+      await supa.from('agenda_eventos').update({recibo_generado:true,recibo_fecha:new Date().toISOString().split('T')[0]}).eq('id',evento.id);
+    }
+    // Actualizar estado local
+    setPagosHoy(prev=>prev.map(e=>e.id===evento.id?{...e,recibo_generado:true}:e));
+  };
 
   return (
     <div style={{background:C.bg,minHeight:'100%',paddingBottom:16}}>
