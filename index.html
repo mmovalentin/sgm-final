@@ -3243,7 +3243,7 @@ function ClientesScreen({perfil,userRol,t={},lang='es'}) {
     if(!supa){setLoading(false);return;}
     setLoading(true);
     try{
-      const{data,error}=await supa.from('clientes').select('*').order('ultimo_contacto',{ascending:false});
+      const{data,error}=await supa.from('perfiles').select('*').order('ultimo_contacto',{ascending:false});
       if(error) throw error;
       setClientes(data||[]);
     }catch(e){setClientes([]);}
@@ -3298,7 +3298,7 @@ function ClientesScreen({perfil,userRol,t={},lang='es'}) {
     if(!form.nombre.trim()) return;
     setSavingForm(true);
     const notas=form.nota.trim()?[{fecha:new Date().toISOString(),texto:form.nota.trim()}]:[];
-    const {error}=await supa.from('clientes').insert({nombre:form.nombre.trim(),telefono:form.telefono.trim(),email:form.email.trim(),modelo:form.modelo.trim(),etapa:form.etapa,notas,ultimo_contacto:new Date().toISOString()});
+    const {error}=await supa.from('perfiles').insert({nombre:form.nombre.trim(),telefono:form.telefono.trim(),email:form.email.trim(),modelo:form.modelo.trim(),etapa:form.etapa,notas,ultimo_contacto:new Date().toISOString()});
     if(!error){setShowForm(false);setForm({nombre:'',telefono:'',email:'',modelo:'',etapa:'Interesado',nota:''});fetchClientes();}
     setSavingForm(false);
   }
@@ -3307,7 +3307,7 @@ function ClientesScreen({perfil,userRol,t={},lang='es'}) {
     if(!notaTexto.trim()||!selCliente) return;
     setSaving(true);
     const notas=[...(selCliente.notas||[]),{fecha:new Date().toISOString(),texto:notaTexto.trim()}];
-    await supa.from('clientes').update({notas,ultimo_contacto:new Date().toISOString()}).eq('id',selCliente.id);
+    await supa.from('perfiles').update({notas,ultimo_contacto:new Date().toISOString()}).eq('id',selCliente.id);
     setNotaTexto('');setShowNota(false);
     await fetchClientes();
     setSaving(false);
@@ -3336,7 +3336,7 @@ function ClientesScreen({perfil,userRol,t={},lang='es'}) {
   async function moverEtapa(nuevaEtapa){
     if(!selCliente) return;
     setSaving(true);
-    await supa.from('clientes').update({etapa:nuevaEtapa}).eq('id',selCliente.id);
+    await supa.from('perfiles').update({etapa:nuevaEtapa}).eq('id',selCliente.id);
     setShowMover(false);
     await fetchClientes();
     setSaving(false);
@@ -4296,7 +4296,7 @@ function SGMApp() {
       supa.from('presupuestos').update({user_id:userObj.id})
         .is('user_id',null)
         .gte('created_at',new Date(Date.now()-24*60*60*1000).toISOString())
-        .catch(()=>{});
+        .then(()=>{}).catch(()=>{});
       setPhase(nextPhase);
       mostrarPermisosModal();
       if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){
