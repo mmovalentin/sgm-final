@@ -774,6 +774,8 @@ function DetalleCotizacionScreen({cot,estadoProyecto,onNav,userRol,user}) {
   );
 }
 
+const LOGO_BASE64='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='6' fill='%230D1B2A'/><rect x='4' y='7' width='20' height='4' rx='2' fill='white'/><rect x='4' y='13' width='12' height='4' rx='2' fill='%23F59E0B'/><rect x='20' y='13' width='4' height='9' rx='2' fill='white'/><rect x='4' y='18' width='20' height='4' rx='2' fill='white'/></svg>`);
+
 function generarPDF(pres, clienteNombre) {
   if(!window.jspdf){alert('jsPDF no disponible. Verificá tu conexión.');return;}
   const{jsPDF}=window.jspdf;
@@ -789,9 +791,10 @@ function generarPDF(pres, clienteNombre) {
   // ── HEADER (0–45)
   doc.setFillColor(...navy);doc.rect(0,0,W,45,'F');
   doc.setFillColor(...blue);doc.rect(0,45,W,2,'F');
+  doc.addImage(LOGO_BASE64,'SVG',6,6,22,22);
   doc.setTextColor(255,255,255);
-  doc.setFontSize(24);doc.setFont('helvetica','bold');doc.text('SGI',M,28);
-  doc.setFontSize(11);doc.setFont('helvetica','normal');doc.text('Construcciones · Steel Frame',M,37);
+  doc.setFontSize(16);doc.setFont('helvetica','bold');doc.text('SGI',32,16);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(180,200,220);doc.text('Construcciones · Steel Frame',32,23);
   doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('PRESUPUESTO',W-M,24,{align:'right'});
   doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(180,200,220);
   doc.text(nro,W-M,32,{align:'right'});
@@ -1001,12 +1004,11 @@ function ClienteHomeScreen({onNav,t,user}) {
 
     // ── HEADER (0–50)
     doc.setFillColor(...navy);doc.rect(0,0,W,50,'F');
+    doc.addImage(LOGO_BASE64,'SVG',6,8,20,20);
     doc.setTextColor(255,255,255);
-    doc.setFontSize(28);doc.setFont('helvetica','bold');doc.text('SGI',W/2,22,{align:'center'});
-    doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(...blue);
-    doc.text('RECIBO DE PAGO',W/2,33,{align:'center'});
-    doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(...grisClaro);
-    doc.text('Sistema de Gestión Integral',W/2,42,{align:'center'});
+    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.text('RECIBO DE PAGO',W/2,20,{align:'center'});
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(...grisClaro);
+    doc.text('Sistema de Gestión Integral',W/2,27,{align:'center'});
 
     // ── SEPARADOR + N° RECIBO (52–65)
     doc.setDrawColor(...blue);doc.setLineWidth(0.5);doc.line(M,52,W-M,52);
