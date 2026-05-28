@@ -909,7 +909,19 @@ function ClienteHomeScreen({onNav,t,user}) {
   useEffect(()=>{
     let localCot=null;
     try{const s=localStorage.getItem('sgi_last_cot');if(s){localCot=JSON.parse(s);setLastCot(localCot);}}catch(e){}
-    if(!supa||!user) return;
+    if(!supa) return;
+    const anonPresId=localStorage.getItem('sgm_presupuesto_id');
+    const cargarAvancePorPresId=pid=>{
+      supa.from('avance_obra').select('*').eq('presupuesto_id',pid).order('etapa_numero',{ascending:true})
+        .then(({data})=>{if(data&&data.length>0)setAvanceRows(data);}).catch(()=>{});
+    };
+    const cargarPresByAnon=()=>{
+      if(!anonPresId) return;
+      supa.from('presupuestos').select('*').eq('id',anonPresId).single()
+        .then(({data})=>{if(data){setEstadoProyecto(data.estado||'pendiente');setProyectoId(data.id);cargarAvancePorPresId(data.id);}})
+        .catch(()=>{});
+    };
+    if(!user){cargarPresByAnon();return;}
     supa.from('presupuestos').select('*').eq('user_id',user.id)
       .order('created_at',{ascending:false}).limit(1).single()
       .then(({data:dbPres})=>{
@@ -919,18 +931,12 @@ function ClienteHomeScreen({onNav,t,user}) {
           setEstadoProyecto(dbPres.estado||'pendiente');
           setProyectoId(dbPres.id);
           try{localStorage.setItem('sgi_last_cot',JSON.stringify(normalized));}catch(e){}
-          supa.from('avance_obra').select('*').eq('presupuesto_id',dbPres.id).order('etapa_numero',{ascending:true})
-            .then(({data:av1})=>{
-              if(av1&&av1.length>0){setAvanceRows(av1);return;}
-              supa.from('avance_obra').select('*').eq('user_id',user.id).order('etapa_numero',{ascending:true})
-                .then(({data:av2})=>{if(av2&&av2.length>0)setAvanceRows(av2);});
-            });
+          cargarAvancePorPresId(dbPres.id);
         } else {
           if(localCot) setEstadoProyecto('pendiente');
-          supa.from('avance_obra').select('*').eq('user_id',user.id).order('etapa_numero',{ascending:true})
-            .then(({data})=>{if(data&&data.length>0)setAvanceRows(data);});
+          cargarPresByAnon();
         }
-      });
+      }).catch(()=>{cargarPresByAnon();});
   },[user]);
 
   useEffect(()=>{
