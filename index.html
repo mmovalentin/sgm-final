@@ -1483,7 +1483,7 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
         const lista=data||[];
         setEtapas(lista);
         const init={};
-        lista.forEach(e=>{init[e.id]={porcentaje:e.porcentaje||0,completada:e.completada||false};});
+        lista.forEach(e=>{init[e.id]={porcentaje:e.porcentaje||0,completada:e.completada||false,fecha_inicio:e.fecha_inicio||'',fecha_fin:e.fecha_fin||''};});
         setCambiosEtapas(init);
       }).catch(()=>{});
   };
@@ -1532,13 +1532,20 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
     if(!supa) return;
     setGuardandoEtapaId(etapaId);
     const c=cambiosEtapas[etapaId];
-    const{error}=await supa.from('avance_obra').update({porcentaje:c.porcentaje,completada:c.completada}).eq('id',etapaId);
+    if(!c){setGuardandoEtapaId(null);return;}
+    const{error}=await supa.from('avance_obra').update({
+      porcentaje:c.porcentaje,
+      completada:c.completada,
+      fecha_inicio:c.fecha_inicio||null,
+      fecha_fin:c.fecha_fin||null,
+    }).eq('id',etapaId);
     if(error){console.error('[guardarEtapa]',error);setGuardandoEtapaId(null);return;}
     const actualizadas=etapas.map(e=>e.id===etapaId?{...e,...c}:e);
     const avg=Math.round(actualizadas.reduce((s,e)=>s+(cambiosEtapas[e.id]?.porcentaje??e.porcentaje??0),0)/actualizadas.length);
+    setAvanceLocal(avg);
     if(obra?.id){
-      await supa.from('obras_constructor').update({avance:avg}).eq('id',obra.id);
-      setAvanceLocal(avg);
+      const{error:updErr}=await supa.from('obras_constructor').update({avance:avg}).eq('id',obra.id);
+      if(updErr) console.error('[guardarEtapa avance]',updErr);
     }
     setEtapas(actualizadas);
     setGuardandoEtapaId(null);
@@ -1625,6 +1632,20 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
                    <input type="range" min={0} max={100} value={c.porcentaje}
                      onChange={ev=>setCambiosEtapas(prev=>({...prev,[e.id]:{...prev[e.id],porcentaje:Number(ev.target.value)}}))}
                      style={{width:'100%',marginBottom:8,accentColor:'#4A9FFF'}}/>
+                   <div style={{display:'flex',gap:8,marginBottom:8}}>
+                     <div style={{flex:1}}>
+                       <div style={{color:C.t3,fontSize:10,marginBottom:3}}>Inicio</div>
+                       <input type="date" value={c.fecha_inicio||''}
+                         onChange={ev=>setCambiosEtapas(prev=>({...prev,[e.id]:{...prev[e.id],fecha_inicio:ev.target.value}}))}
+                         style={{width:'100%',padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,fontFamily:'inherit',outline:'none'}}/>
+                     </div>
+                     <div style={{flex:1}}>
+                       <div style={{color:C.t3,fontSize:10,marginBottom:3}}>Fin estimado</div>
+                       <input type="date" value={c.fecha_fin||''}
+                         onChange={ev=>setCambiosEtapas(prev=>({...prev,[e.id]:{...prev[e.id],fecha_fin:ev.target.value}}))}
+                         style={{width:'100%',padding:'6px 8px',borderRadius:7,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:11,fontFamily:'inherit',outline:'none'}}/>
+                     </div>
+                   </div>
                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                      <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer'}}>
                        <input type="checkbox" checked={c.completada}
