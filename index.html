@@ -1961,6 +1961,7 @@ function ConstructorAvanceScreen({user,onNav}) {
   const [cambios,setCambios]=useState({});
   const [guardando,setGuardando]=useState(false);
   const [guardadoOk,setGuardadoOk]=useState(false);
+  const [creandoEtapas,setCreandoEtapas]=useState(false);
 
   useEffect(()=>{
     if(!supa||!user?.id) return;
@@ -1968,26 +1969,36 @@ function ConstructorAvanceScreen({user,onNav}) {
       .then(({data})=>setObras(data||[])).catch(()=>{});
   },[user]);
 
+  const cargarEtapasDeObra=(obra)=>{
+    if(!supa||!obra?.id||!user?.id) return;
+    setEtapas([]);setCambios({});
+    supa.from('avance_obra').select('*').eq('user_id',user.id)
+      .ilike('notas','%obras_constructor:'+obra.id+'%')
+      .order('etapa_numero',{ascending:true})
+      .then(({data})=>{
+        const lista=data||[];
+        setEtapas(lista);
+        const init={};
+        lista.forEach(e=>{init[e.id]={porcentaje:e.porcentaje||0,completada:e.completada||false};});
+        setCambios(init);
+      }).catch(()=>{});
+  };
+
   useEffect(()=>{
     if(!obraSeleccionada) return;
-    setEtapas([]);setCambios({});
-    console.log('[avance] buscando etapas para:',obraSeleccionada.cliente_nombre);
-    supa.from('presupuestos').select('id').ilike('cliente_nombre','%'+obraSeleccionada.cliente_nombre+'%')
-      .then(({data:pres})=>{
-        console.log('[avance] presupuestos:',pres);
-        if(!pres||pres.length===0) return;
-        const ids=pres.map(p=>p.id);
-        supa.from('avance_obra').select('*').in('presupuesto_id',ids).order('etapa_numero',{ascending:true})
-          .then(({data})=>{
-            console.log('[avance] etapas:',data);
-            const lista=data||[];
-            setEtapas(lista);
-            const init={};
-            lista.forEach(e=>{init[e.id]={porcentaje:e.porcentaje||0,completada:e.completada||false};});
-            setCambios(init);
-          }).catch(()=>{});
-      }).catch(()=>{});
+    cargarEtapasDeObra(obraSeleccionada);
   },[obraSeleccionada]);
+
+  async function crearEtapasEstandar(){
+    if(!supa||!user?.id||!obraSeleccionada?.id) return;
+    setCreandoEtapas(true);
+    const nombres=['Proyecto y RT','Fundaciones','Estructura Steel Frame','Instalaciones','Terminaciones gruesas','Terminaciones finas','Revisión y documentación','Cierre y garantía'];
+    const rows=nombres.map((n,i)=>({etapa_numero:i+1,etapa_nombre:n,porcentaje:0,completada:false,user_id:user.id,notas:'obras_constructor:'+obraSeleccionada.id}));
+    const{error}=await supa.from('avance_obra').insert(rows);
+    setCreandoEtapas(false);
+    if(error){console.error('[crearEtapas]',error);return;}
+    cargarEtapasDeObra(obraSeleccionada);
+  }
 
   async function guardarCambios(){
     if(!supa||etapas.length===0) return;
@@ -2013,7 +2024,12 @@ function ConstructorAvanceScreen({user,onNav}) {
           <div style={{color:C.t1,fontSize:17,fontWeight:800,marginBottom:2}}>{obraSeleccionada.cliente_nombre||'Obra'}</div>
           <div style={{color:C.t3,fontSize:12,marginBottom:16}}>{obraSeleccionada.sistema||''}{obraSeleccionada.m2?' · '+obraSeleccionada.m2+'m²':''}</div>
           {etapas.length===0
-            ?<div style={{color:C.t3,fontSize:13,textAlign:'center',padding:'40px 0'}}>Sin etapas. El admin debe cargarlas desde el panel de administración.</div>
+            ?<div style={{textAlign:'center',padding:'40px 0'}}>
+               <div style={{color:C.t3,fontSize:13,marginBottom:12}}>Sin etapas registradas</div>
+               <button onClick={crearEtapasEstandar} disabled={creandoEtapas} style={{padding:'10px 20px',background:'#2563EB',border:'none',borderRadius:10,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:creandoEtapas?0.6:1}}>
+                 {creandoEtapas?'Creando...':'Crear etapas estándar'}
+               </button>
+             </div>
             :<>
               {etapas.map(etapa=>{
                 const c=cambios[etapa.id]||{porcentaje:etapa.porcentaje||0,completada:etapa.completada||false};
