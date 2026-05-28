@@ -4121,6 +4121,8 @@ function SGMApp() {
   const [denegadoReason,setDenegadoReason]=useState('unauthorized');
   const [splashExiting,setSplashExiting]=useState(false);
   const [theme,setTheme]=useState(()=>localStorage.getItem('sgi_theme')||'dark');
+  const [adminView,setAdminView]=useState(null);
+  const [showAdminSwitch,setShowAdminSwitch]=useState(false);
   const pendingPhaseRef=useRef(null);
   const splashResultRef=useRef(null);
   const splashMinReadyRef=useRef(false);
@@ -4516,23 +4518,26 @@ function SGMApp() {
 
   if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{if(user?.id){const lk='sgi_perfil_'+user.id;localStorage.setItem(lk,p);localStorage.setItem('sgm_active_uid',user.id);if(supa)supa.from('perfiles').update({tipo_perfil:p}).eq('id',user.id).catch(()=>{});}else{localStorage.setItem('sgm-perfil',p);}setPerfil(p);setPhase('app');}}/></div>;
 
+  const efectivoPerfil=isAdmin(userRol)&&adminView?adminView:perfil;
+  const efectivoRol=isAdmin(userRol)&&adminView?'cliente':userRol;
+
   const screens={
-    home:!isAdmin(userRol)
+    home:!isAdmin(efectivoRol)
       ?<ClienteHomeScreen onNav={handleNav} t={t} user={user} dolar={dolar}/>
-      :<HomeScreen onNav={handleNav} t={t} user={user} perfil={perfil} userRol={userRol}/>,
+      :<HomeScreen onNav={handleNav} t={t} user={user} perfil={efectivoPerfil} userRol={efectivoRol}/>,
     modelos:<ModelosScreen onNav={handleNav} t={t}/>,
     cot:<CotizadorScreen t={t} initParams={screenParams} lang={lang} user={user}/>,
     chat:<ChatScreen t={t}/>,
-    rubros:<RubrosScreen perfil={perfil} t={t}/>,
+    rubros:<RubrosScreen perfil={efectivoPerfil} t={t}/>,
     faq:<FAQScreen t={t} onNav={handleNav}/>,
-    stats:<StatsScreen t={t} perfil={perfil} userRol={userRol}/>,
-    presup:<PresupScreen t={t} dolar={dolar} user={user} userRol={userRol}/>,
-    agenda:<AgendaScreen t={t} perfil={perfil} userRol={userRol} user={user}/>,
-    mapa:<MapaScreen t={t} perfil={perfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation} userRol={userRol} user={user}/>,
+    stats:<StatsScreen t={t} perfil={efectivoPerfil} userRol={efectivoRol}/>,
+    presup:<PresupScreen t={t} dolar={dolar} user={user} userRol={efectivoRol}/>,
+    agenda:<AgendaScreen t={t} perfil={efectivoPerfil} userRol={efectivoRol} user={user}/>,
+    mapa:<MapaScreen t={t} perfil={efectivoPerfil} onLogin={()=>setLoggedIn(true)} userLocation={userLocation} userRol={efectivoRol} user={user}/>,
     miobrascreen:<MiObraScreen t={t} user={user}/>,
-    detalle_cot:<DetalleCotizacionScreen cot={screenParams.cot} estadoProyecto={screenParams.estadoProyecto} onNav={handleNav} userRol={userRol} user={user}/>,
-    avance_admin:<AvanceObraAdminScreen userRol={userRol} user={user} t={t}/>,
-    clientes:<ClientesScreen perfil={perfil} userRol={userRol} t={t} lang={lang}/>,
+    detalle_cot:<DetalleCotizacionScreen cot={screenParams.cot} estadoProyecto={screenParams.estadoProyecto} onNav={handleNav} userRol={efectivoRol} user={user}/>,
+    avance_admin:<AvanceObraAdminScreen userRol={efectivoRol} user={user} t={t}/>,
+    clientes:<ClientesScreen perfil={efectivoPerfil} userRol={efectivoRol} t={t} lang={lang}/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
   };
 
@@ -4543,8 +4548,34 @@ function SGMApp() {
       <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap} onTouchStart={e=>{touchStartXRef.current=e.touches[0].clientX;touchStartYRef.current=e.touches[0].clientY;}} onTouchEnd={e=>{const dx=e.changedTouches[0].clientX-touchStartXRef.current;const dy=Math.abs(e.changedTouches[0].clientY-touchStartYRef.current);if(touchStartXRef.current<30&&dx>80&&dy<80&&screen!=='home')handleNav('home');}}>
         {screens[screen]||screens.home}
       </div>
-      <BottomNav screen={screen} onNav={handleNav} t={t} perfil={perfil} userRol={userRol}/>
-      {showMore&&<MoreMenu onNav={handleNav} onClose={()=>setShowMore(false)} t={t} lang={lang} onLang={()=>setLang(l=>l==='es'?'en':'es')} perfil={perfil} userRol={userRol}/>}
+      <BottomNav screen={screen} onNav={handleNav} t={t} perfil={efectivoPerfil} userRol={efectivoRol}/>
+      {showMore&&<MoreMenu onNav={handleNav} onClose={()=>setShowMore(false)} t={t} lang={lang} onLang={()=>setLang(l=>l==='es'?'en':'es')} perfil={efectivoPerfil} userRol={efectivoRol}/>}
+      {isAdmin(userRol)&&(
+        <div style={{position:'fixed',bottom:74,right:12,zIndex:800}}>
+          {adminView?(
+            <button onClick={()=>{setAdminView(null);setShowAdminSwitch(false);handleNav('home');}} style={{background:'#1E3A5F',border:'1px solid #4A9FFF',borderRadius:20,padding:'8px 14px',color:'#4A9FFF',fontSize:12,fontWeight:700,cursor:'pointer',boxShadow:'0 4px 16px rgba(0,0,0,.5)',display:'flex',alignItems:'center',gap:6}}>
+              ⬅ Panel Admin
+            </button>
+          ):(
+            <div style={{position:'relative'}}>
+              <button onClick={()=>setShowAdminSwitch(v=>!v)} style={{background:'#1B2A3D',border:'1px solid rgba(255,255,255,.18)',borderRadius:20,padding:'8px 14px',color:'rgba(255,255,255,.75)',fontSize:12,fontWeight:700,cursor:'pointer',boxShadow:'0 4px 16px rgba(0,0,0,.4)'}}>
+                🔧 Vistas
+              </button>
+              {showAdminSwitch&&<div onClick={()=>setShowAdminSwitch(false)} style={{position:'fixed',inset:0,zIndex:799}}/>}
+              {showAdminSwitch&&(
+                <div style={{position:'absolute',bottom:40,right:0,background:'#0D1B2A',border:'1px solid rgba(255,255,255,.12)',borderRadius:14,padding:10,display:'flex',flexDirection:'column',gap:6,minWidth:160,boxShadow:'0 8px 32px rgba(0,0,0,.6)'}}>
+                  <div style={{fontSize:10,color:'rgba(255,255,255,.35)',fontWeight:700,textTransform:'uppercase',letterSpacing:1,paddingBottom:4,borderBottom:'1px solid rgba(255,255,255,.08)',marginBottom:2}}>Simular vista</div>
+                  {[['cliente','🏠','Cliente'],['constructor','🔨','Constructor'],['proveedor','🏢','Empresa']].map(([v,ic,lb])=>(
+                    <button key={v} onClick={()=>{setAdminView(v);setShowAdminSwitch(false);handleNav('home');}} style={{background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.08)',borderRadius:10,padding:'9px 12px',color:'#F0F6FF',fontSize:13,fontWeight:600,cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:8}}>
+                      <span>{ic}</span>{lb}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       {showAyuda&&<AyudaPanel onClose={()=>setShowAyuda(false)} t={t}/>}
       {showWebAuthnModal&&<WebAuthnModal onActivate={activateWebAuthn} onDismiss={()=>setShowWebAuthnModal(false)} status={webAuthnModalStatus}/>}
       {showPermisosModal&&(
