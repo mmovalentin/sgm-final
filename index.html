@@ -2847,7 +2847,7 @@ function PresupScreen({t,dolar=1415,user,userRol}) {
     finally{setLoadingSaved(false);}
   }
   async function updateEstadoPresupuesto(id,nuevoEstado){
-    if(!supa) return;
+    if(!supa||!id) return;
     await supa.from('presupuestos').update({estado:nuevoEstado}).eq('id',id);
     setSavedList(prev=>prev.map(p=>p.id===id?{...p,estado:nuevoEstado}:p));
   }
@@ -3268,12 +3268,12 @@ function ClientesScreen({perfil,userRol,t={},lang='es'}) {
     finally{setLoadingCot(false);}
   }
   async function aprobarPresupuesto(id){
-    if(!supa) return;
+    if(!supa||!id) return;
     await supa.from('presupuestos').update({estado:'aprobado'}).eq('id',id);
     fetchCotizaciones();
   }
   async function cambiarEstadoProyecto(proyId,nuevoEstado){
-    if(!supa) return;
+    if(!supa||!proyId) return;
     setAprobando(proyId);
     await supa.from('presupuestos').update({estado:nuevoEstado}).eq('id',proyId);
     await fetchProyectos();
