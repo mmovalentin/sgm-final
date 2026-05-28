@@ -883,6 +883,82 @@ function generarPDF(pres, clienteNombre) {
   doc.save('Presupuesto-SGI-'+String(pres.numero_presupuesto||pres.id||1).padStart(5,'0')+'.pdf');
 }
 
+function generarPDFAvance(obra,etapas) {
+  if(!window.jspdf){alert('jsPDF no disponible. Verificá tu conexión.');return;}
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  const navy=[0,27,42],blue=[37,99,235];
+  const W=210,M=20;
+  const fechaStr=new Date().toLocaleDateString('es-AR');
+
+  // ── HEADER navy 40px
+  doc.setFillColor(...navy);doc.rect(0,0,W,40,'F');
+  doc.setFillColor(13,27,42);doc.roundedRect(6,6,22,22,3,3,'F');
+  doc.setFillColor(255,255,255);doc.rect(9,11,14,3,'F');
+  doc.setFillColor(245,158,11);doc.rect(9,15,9,3,'F');
+  doc.setFillColor(255,255,255);doc.rect(9,19,14,3,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('CERTIFICADO DE AVANCE DE OBRA',W/2,18,{align:'center'});
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(180,200,220);
+  doc.text(fechaStr,W-M,32,{align:'right'});
+
+  // ── DATOS OBRA (y=55)
+  doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...blue);
+  doc.text('Cliente:',M,55);
+  doc.setFont('helvetica','normal');doc.setTextColor(40,40,40);
+  doc.text(obra.cliente_nombre||'—',M+18,55);
+  doc.setFont('helvetica','bold');doc.setTextColor(...blue);
+  doc.text('Tipo:',110,55);
+  doc.setFont('helvetica','normal');doc.setTextColor(40,40,40);
+  doc.text(obra.tipo||'—',110+14,55);
+  doc.setFont('helvetica','bold');doc.setTextColor(...blue);
+  doc.text('Sistema:',M,65);
+  doc.setFont('helvetica','normal');doc.setTextColor(40,40,40);
+  doc.text(obra.sistema||'—',M+22,65);
+  doc.setFont('helvetica','bold');doc.setTextColor(...blue);
+  doc.text('Superficie:',110,65);
+  doc.setFont('helvetica','normal');doc.setTextColor(40,40,40);
+  doc.text(obra.m2?(obra.m2+'m²'):'—',110+28,65);
+
+  // ── SEPARADOR AZUL y=75
+  doc.setDrawColor(...blue);doc.setLineWidth(0.4);doc.line(M,75,W-M,75);
+
+  // ── AVANCE GENERAL y=82
+  doc.setFillColor(...navy);doc.roundedRect(M,82,W-M*2,16,3,3,'F');
+  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+  doc.text('AVANCE GENERAL: '+(obra.avance||0)+'%',W/2,93,{align:'center'});
+
+  // ── ETAPAS y=105
+  if(etapas&&etapas.length>0){
+    doc.autoTable({
+      startY:105,
+      head:[['Etapa','Nombre','%','Estado']],
+      body:etapas.map(e=>[String(e.etapa_numero||''),e.etapa_nombre||'',(e.porcentaje||0)+'%',e.completada?'Completada':'En proceso']),
+      margin:{left:M,right:M},
+      styles:{fontSize:9,cellPadding:4,textColor:[40,40,40]},
+      headStyles:{fillColor:navy,textColor:[255,255,255],fontStyle:'bold',fontSize:9},
+      alternateRowStyles:{fillColor:[248,250,252]},
+      columnStyles:{0:{cellWidth:18},1:{cellWidth:'auto'},2:{cellWidth:18,halign:'center'},3:{cellWidth:32,halign:'center'}},
+      tableLineColor:[226,232,240],tableLineWidth:0.2,
+    });
+  } else {
+    doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(150,150,150);
+    doc.text('Sin etapas registradas',W/2,120,{align:'center'});
+  }
+
+  // ── PIE DE PÁGINA
+  const pageH=doc.internal.pageSize.getHeight();
+  const footY=pageH-20;
+  doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);doc.line(M,footY-6,W-M,footY-6);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
+  doc.text('Valentín Campos — Maestro Mayor de Obras',M,footY);
+  doc.setTextColor(150,150,150);
+  doc.text('Emisión: '+fechaStr,W-M,footY,{align:'right'});
+
+  doc.save('avance-'+(obra.cliente_nombre||'obra').replace(/\s+/g,'-')+'.pdf');
+}
+
 // ── CLIENTE HOME (dashboard orientado a su obra)
 const ESTADO_BANNER={
   pendiente:{color:'#F59E0B',bg:'rgba(245,158,11,.08)',border:'rgba(245,158,11,.2)',icon:'🟡',label:'En revisión',msg:'Tu proyecto está siendo revisado por nuestro equipo. Te contactaremos pronto.'},
@@ -1482,6 +1558,9 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
           <input type="range" min={0} max={100} value={avanceLocal} onChange={e=>setAvanceLocal(Number(e.target.value))} style={{width:'100%',marginBottom:10,accentColor:'#4A9FFF'}}/>
           <button onClick={guardarAvance} disabled={guardandoAvance} style={{width:'100%',padding:'10px',background:avanceSaved?'#22C55E':'#2563EB',border:'none',borderRadius:10,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:guardandoAvance?0.6:1}}>
             {avanceSaved?'✓ Guardado':guardandoAvance?'Guardando...':'Guardar avance'}
+          </button>
+          <button onClick={()=>generarPDFAvance(obra,etapas)} style={{width:'100%',padding:'10px',background:'rgba(37,99,235,.15)',border:'1px solid rgba(37,99,235,.3)',borderRadius:10,color:'#60A5FA',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginTop:8}}>
+            📄 Descargar avance de obra
           </button>
         </div>
         {/* Etapas */}
