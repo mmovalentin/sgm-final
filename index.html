@@ -1345,7 +1345,7 @@ function ConstructorObraScreen({user,t,onNav}) {
               </div>
               {obrasFiltradas.length===0&&<div style={{color:C.t3,fontSize:12,textAlign:'center',padding:'20px 0'}}>Sin obras</div>}
               {obrasFiltradas.map(obra=>(
-                <div key={obra.id} onClick={()=>onNav('constructorobra',{obra})} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px',marginBottom:8,cursor:'pointer'}}>
+                <div key={obra.id} onClick={()=>onNav('constructorobra',{obra})} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px',marginBottom:8,cursor:'pointer',userSelect:'none'}}>
                   <div style={{color:C.t1,fontSize:13,fontWeight:700,marginBottom:4}}>{obra.cliente_nombre||'Cliente'}</div>
                   <div style={{color:C.t3,fontSize:10,marginBottom:6}}>{obra.m2?obra.m2+'m²':''}{obra.sistema?' · '+obra.sistema:''}</div>
                   {obra.presupuesto_usd>0&&<div style={{color:C.acc,fontSize:12,fontWeight:700,marginBottom:6}}>USD {(obra.presupuesto_usd||0).toLocaleString()}</div>}
