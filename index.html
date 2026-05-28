@@ -1398,12 +1398,14 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
   useEffect(()=>{
     if(!supa||!obra) return;
     if(obra.cliente_nombre){
-      supa.from('presupuestos').select('id').eq('cliente_nombre',obra.cliente_nombre)
-        .then(({data:pres})=>{
+      console.log('[etapas] buscando cliente_nombre:',obra.cliente_nombre);
+      supa.from('presupuestos').select('id,cliente_nombre').ilike('cliente_nombre','%'+obra.cliente_nombre+'%')
+        .then(({data:pres,error:presErr})=>{
+          console.log('[etapas] presupuestos encontrados:',pres,'error:',presErr);
           if(!pres||pres.length===0) return;
           const ids=pres.map(p=>p.id);
           supa.from('avance_obra').select('*').in('presupuesto_id',ids).order('etapa_numero',{ascending:true})
-            .then(({data})=>setEtapas(data||[])).catch(()=>{});
+            .then(({data,error:etErr})=>{console.log('[etapas] etapas encontradas:',data,'error:',etErr);setEtapas(data||[]);}).catch(()=>{});
         }).catch(()=>{});
       cargarPagos();
     }
