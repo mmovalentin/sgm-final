@@ -611,8 +611,9 @@ function DetalleCotizacionScreen({cot,estadoProyecto,onNav,userRol,user}) {
 
   async function cambiarEstado(nuevoEstado){
     if(!supa){setSavedMsg('⚠ Sin conexión a base de datos');return;}
+    if(!cot?.id){setSavedMsg('⚠ Presupuesto sin ID — abrilo desde la lista de presupuestos');return;}
     setEstadoLocal(nuevoEstado);
-    const{data,error}=await supa.from('presupuestos').update({estado:nuevoEstado}).eq('id',cot?.id).select();
+    const{data,error}=await supa.from('presupuestos').update({estado:nuevoEstado}).eq('id',cot.id).select();
     if(error){
       setSavedMsg('⚠ Error: '+error.message);
       setEstadoLocal(cot?.estado||estadoLocal);
