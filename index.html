@@ -4667,7 +4667,7 @@ function SGMApp() {
               </button>
               {showAdminSwitch&&<div onClick={()=>setShowAdminSwitch(false)} style={{position:'fixed',inset:0,zIndex:799}}/>}
               {showAdminSwitch&&(
-                <div style={{position:'absolute',bottom:40,right:0,background:'#0D1B2A',border:'1px solid rgba(255,255,255,.12)',borderRadius:14,padding:10,display:'flex',flexDirection:'column',gap:6,minWidth:160,boxShadow:'0 8px 32px rgba(0,0,0,.6)'}}>
+                <div style={{position:'absolute',bottom:40,right:0,background:'#0D1B2A',border:'1px solid rgba(255,255,255,.12)',borderRadius:14,padding:10,display:'flex',flexDirection:'column',gap:6,minWidth:160,boxShadow:'0 8px 32px rgba(0,0,0,.6)',zIndex:801}}>
                   <div style={{fontSize:10,color:'rgba(255,255,255,.35)',fontWeight:700,textTransform:'uppercase',letterSpacing:1,paddingBottom:4,borderBottom:'1px solid rgba(255,255,255,.08)',marginBottom:2}}>Simular vista</div>
                   {[['cliente','🏠','Cliente'],['constructor','🔨','Constructor'],['proveedor','🏢','Empresa']].map(([v,ic,lb])=>(
                     <button key={v} onClick={()=>{setAdminView(v);setShowAdminSwitch(false);handleNav('home');}} style={{background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.08)',borderRadius:10,padding:'9px 12px',color:'#F0F6FF',fontSize:13,fontWeight:600,cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:8}}>
