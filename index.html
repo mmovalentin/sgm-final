@@ -1437,7 +1437,8 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
   async function guardarAvance(){
     if(!supa||!obra?.id) return;
     setGuardandoAvance(true);
-    await supa.from('obras_constructor').update({avance:avanceLocal}).eq('id',obra.id).catch(()=>{});
+    const{error}=await supa.from('obras_constructor').update({avance:avanceLocal}).eq('id',obra.id);
+    if(error){console.error('[guardarAvance]',error);setGuardandoAvance(false);return;}
     setGuardandoAvance(false);setAvanceSaved(true);setTimeout(()=>setAvanceSaved(false),2200);
   }
 
