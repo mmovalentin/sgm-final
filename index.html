@@ -1415,7 +1415,7 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
     if(!supa||!concepto.trim()||!montoPago) return;
     setRegistrando(true);
     const hoyISO=new Date().toISOString().split('T')[0];
-    await supa.from('agenda_eventos').insert({
+    const{error:insErr}=await supa.from('agenda_eventos').insert({
       titulo:concepto.trim()+' - '+obra.cliente_nombre,
       fecha:fechaPago,
       hora:'00:00',
@@ -1426,7 +1426,8 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
       recibo_fecha:yaFuePagado?hoyISO:null,
       visible_cliente:true,
       notas:'Obra: '+(obra.cliente_nombre||''),
-    }).catch(()=>{});
+    });
+    if(insErr){console.error('[registrarPago]',insErr);setRegistrando(false);return;}
     setRegistrando(false);
     setConcepto('Pago anticipo');setMontoPago('');setFechaPago(hoyISO);setTipoPago('pago');setYaFuePagado(false);
     setPagoMsg('Pago registrado.');setTimeout(()=>setPagoMsg(null),2500);
