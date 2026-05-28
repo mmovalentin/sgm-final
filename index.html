@@ -549,7 +549,7 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
         <button onClick={()=>openWA()} style={{width:'100%',background:'#25D366',border:'none',borderRadius:10,padding:12,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
           💬 {t.wa}
         </button>
-        <button onClick={()=>{localStorage.removeItem('sgm-perfil');window.location.reload();}} style={{width:'100%',background:'none',border:`.5px solid ${C.border2}`,borderRadius:10,padding:10,fontSize:12,fontWeight:600,color:C.t3,cursor:'pointer',marginTop:8}}>
+        <button onClick={()=>{const uid=localStorage.getItem('sgm_active_uid');if(uid){localStorage.removeItem('sgi_perfil_'+uid);if(supa)supa.from('perfiles').update({tipo_perfil:null}).eq('id',uid).catch(()=>{});}else{localStorage.removeItem('sgm-perfil');}window.location.reload();}} style={{width:'100%',background:'none',border:`.5px solid ${C.border2}`,borderRadius:10,padding:10,fontSize:12,fontWeight:600,color:C.t3,cursor:'pointer',marginTop:8}}>
           👤 {t.cambiar_perfil}
         </button>
       </div>
@@ -4088,7 +4088,7 @@ class ErrorBoundary extends React.Component {
 }
 function SGMApp() {
   const [phase,setPhase]=useState('splash');
-  const [perfil,setPerfil]=useState(()=>localStorage.getItem('sgm-perfil'));
+  const [perfil,setPerfil]=useState(null);
   const [screen,setScreen]=useState('home');
   const [screenParams,setScreenParams]=useState({});
   const [showMore,setShowMore]=useState(false);
@@ -4151,14 +4151,15 @@ function SGMApp() {
             console.log('[SGI splash] user=',session.user.email,' role=',rol,' raw=',data);
             setUserRol(rol);
             const dbTipo=data?.tipo_perfil||null;
-            const storedP=localStorage.getItem('sgm-perfil');
-            const storedUid=localStorage.getItem('sgm-perfil-uid');
+            const localKey='sgi_perfil_'+session.user.id;
+            const storedP=localStorage.getItem(localKey);
+            localStorage.setItem('sgm_active_uid',session.user.id);
             if(dbTipo){
-              setPerfil(dbTipo);localStorage.setItem('sgm-perfil',dbTipo);localStorage.setItem('sgm-perfil-uid',session.user.id);storeSplashResult('app');
-            } else if(storedP&&storedUid===session.user.id){
+              setPerfil(dbTipo);localStorage.setItem(localKey,dbTipo);storeSplashResult('app');
+            } else if(storedP){
               setPerfil(storedP);storeSplashResult('app');
             } else {
-              localStorage.removeItem('sgm-perfil');localStorage.removeItem('sgm-perfil-uid');storeSplashResult('onboarding');
+              storeSplashResult('onboarding');
             }
             if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){
               PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok=>{if(ok){setWebAuthnModalStatus('idle');setShowWebAuthnModal(true);}}).catch(()=>{});
@@ -4166,10 +4167,10 @@ function SGMApp() {
           }catch(e){
             console.error('[SGI splash error]',e);
             setUserRol('cliente');
-            const storedP=localStorage.getItem('sgm-perfil');
-            const storedUid=localStorage.getItem('sgm-perfil-uid');
-            if(storedP&&storedUid===session.user.id){setPerfil(storedP);storeSplashResult('app');}
-            else{localStorage.removeItem('sgm-perfil');localStorage.removeItem('sgm-perfil-uid');storeSplashResult('onboarding');}
+            const localKey='sgi_perfil_'+session.user.id;
+            const storedP=localStorage.getItem(localKey);
+            if(storedP){setPerfil(storedP);storeSplashResult('app');}
+            else{storeSplashResult('onboarding');}
           }
         } else {
           storeSplashResult('login');
@@ -4266,15 +4267,16 @@ function SGMApp() {
       console.log('[SGI auth] user=',userObj.email,' role=',rol,' raw=',data);
       setUserRol(rol);
       const dbTipo=data?.tipo_perfil||null;
-      const storedP=localStorage.getItem('sgm-perfil');
-      const storedUid=localStorage.getItem('sgm-perfil-uid');
+      const localKey='sgi_perfil_'+userObj.id;
+      const storedP=localStorage.getItem(localKey);
+      localStorage.setItem('sgm_active_uid',userObj.id);
       let nextPhase='app';
       if(dbTipo){
-        setPerfil(dbTipo);localStorage.setItem('sgm-perfil',dbTipo);localStorage.setItem('sgm-perfil-uid',userObj.id);
-      } else if(storedP&&storedUid===userObj.id){
+        setPerfil(dbTipo);localStorage.setItem(localKey,dbTipo);
+      } else if(storedP){
         setPerfil(storedP);
       } else {
-        localStorage.removeItem('sgm-perfil');localStorage.removeItem('sgm-perfil-uid');nextPhase='onboarding';
+        nextPhase='onboarding';
       }
       // Vincular presupuestos anónimos recientes (últimas 24h)
       supa.from('presupuestos').update({user_id:userObj.id})
@@ -4290,11 +4292,10 @@ function SGMApp() {
       console.error('[SGI auth error]',e);
       const rol=ADMIN_EMAILS.includes(userObj.email)?'admin':'cliente';
       setUserRol(rol);
-      const storedP=localStorage.getItem('sgm-perfil');
-      const storedUid=localStorage.getItem('sgm-perfil-uid');
-      if(storedP&&storedUid===userObj.id){setPerfil(storedP);}
-      else{localStorage.removeItem('sgm-perfil');localStorage.removeItem('sgm-perfil-uid');setPerfil('cliente');localStorage.setItem('sgm-perfil','cliente');localStorage.setItem('sgm-perfil-uid',userObj.id);}
-      setPhase('app');
+      const localKey='sgi_perfil_'+userObj.id;
+      const storedP=localStorage.getItem(localKey);
+      if(storedP){setPerfil(storedP);setPhase('app');}
+      else{setPhase('onboarding');}
     }
   }
 
@@ -4398,8 +4399,7 @@ function SGMApp() {
     await supa.auth.signOut();
     setUser(null);setLoggedIn(false);setUserRol('cliente');
     setPerfil(null);
-    localStorage.removeItem('sgm-perfil');
-    localStorage.removeItem('sgm-perfil-uid');
+    localStorage.removeItem('sgm_active_uid');
     setPhase('login');
   }
 
@@ -4514,7 +4514,7 @@ function SGMApp() {
     </div>
   );
 
-  if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{localStorage.setItem('sgm-perfil',p);localStorage.setItem('sgm-perfil-uid',user?.id||'');if(supa&&user?.id)supa.from('perfiles').update({tipo_perfil:p}).eq('id',user.id).catch(()=>{});setPerfil(p);setPhase('app');}}/></div>;
+  if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{if(user?.id){const lk='sgi_perfil_'+user.id;localStorage.setItem(lk,p);localStorage.setItem('sgm_active_uid',user.id);if(supa)supa.from('perfiles').update({tipo_perfil:p}).eq('id',user.id).catch(()=>{});}else{localStorage.setItem('sgm-perfil',p);}setPerfil(p);setPhase('app');}}/></div>;
 
   const screens={
     home:!isAdmin(userRol)
