@@ -1618,6 +1618,14 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
   const [cambiosEtapas,setCambiosEtapas]=useState({});
   const [creandoEtapas,setCreandoEtapas]=useState(false);
   const [guardandoEtapaId,setGuardandoEtapaId]=useState(null);
+  const [showEditModal,setShowEditModal]=useState(false);
+  const [editCliente,setEditCliente]=useState(obra?.cliente_nombre||'');
+  const [editTipo,setEditTipo]=useState(obra?.tipo||'');
+  const [editSistema,setEditSistema]=useState(obra?.sistema||'');
+  const [editM2,setEditM2]=useState(String(obra?.m2||''));
+  const [editPresup,setEditPresup]=useState(String(obra?.presupuesto_usd||''));
+  const [editEstado,setEditEstado]=useState(obra?.estado||'presupuestando');
+  const [guardandoEdit,setGuardandoEdit]=useState(false);
 
   const cargarPagos=()=>{
     if(!supa||!obra?.cliente_nombre) return;
@@ -1715,6 +1723,22 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
     setGuardandoAvance(false);setAvanceSaved(true);setTimeout(()=>setAvanceSaved(false),2200);
   }
 
+  async function guardarEdicion(){
+    if(!supa||!obra?.id||!editCliente.trim()) return;
+    setGuardandoEdit(true);
+    const{error}=await supa.from('obras_constructor').update({
+      cliente_nombre:editCliente.trim(),
+      tipo:editTipo.trim()||null,
+      sistema:editSistema.trim()||null,
+      m2:parseFloat(editM2)||null,
+      presupuesto_usd:parseFloat(editPresup)||null,
+      estado:editEstado,
+    }).eq('id',obra.id);
+    if(error){console.error('[guardarEdicion]',error);setGuardandoEdit(false);return;}
+    setGuardandoEdit(false);setShowEditModal(false);
+    onNav('home');
+  }
+
   async function eliminarObra(){
     if(!supa||!obra?.id) return;
     setDeleting(true);
@@ -1735,6 +1759,7 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
       <div style={{background:C.navy,padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
         <button onClick={()=>onNav('home')} style={{background:'none',border:'none',color:C.t2,fontSize:13,fontWeight:600,cursor:'pointer',padding:0,fontFamily:'inherit'}}>← Volver</button>
         <div style={{flex:1}}><div style={{color:C.onNavy,fontSize:15,fontWeight:700}}>{obra.cliente_nombre||'Obra'}</div></div>
+        <button onClick={()=>setShowEditModal(true)} style={{background:'none',border:'1px solid rgba(255,255,255,.2)',borderRadius:8,color:C.t2,fontSize:12,padding:'4px 10px',cursor:'pointer',fontFamily:'inherit'}}>✏️</button>
         <div style={{background:badge.bg,borderRadius:8,padding:'4px 10px',color:badge.color,fontSize:10,fontWeight:700}}>{badge.label}</div>
       </div>
       <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:12}}>
@@ -1896,6 +1921,31 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
           }
         </div>
       </div>
+
+      {/* Modal editar obra */}
+      {showEditModal&&(
+        <div style={{position:'fixed',inset:0,zIndex:500,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
+          <div onClick={()=>setShowEditModal(false)} style={{position:'absolute',inset:0,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)'}}/>
+          <div style={{background:C.card,borderRadius:'20px 20px 0 0',padding:'20px 16px 32px',position:'relative',zIndex:1,maxHeight:'85vh',overflowY:'auto'}}>
+            <div style={{color:C.t1,fontSize:16,fontWeight:800,marginBottom:16}}>Editar obra</div>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              <input value={editCliente} onChange={e=>setEditCliente(e.target.value)} placeholder="Cliente *" style={{padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+              <input value={editTipo} onChange={e=>setEditTipo(e.target.value)} placeholder="Tipo (Casa habitación)" style={{padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+              <input value={editSistema} onChange={e=>setEditSistema(e.target.value)} placeholder="Sistema (Steel Frame)" style={{padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+              <input value={editM2} onChange={e=>setEditM2(e.target.value)} placeholder="M²" type="number" min={0} style={{padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+              <input value={editPresup} onChange={e=>setEditPresup(e.target.value)} placeholder="Presupuesto USD" type="number" min={0} style={{padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+              <select value={editEstado} onChange={e=>setEditEstado(e.target.value)} style={{padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}>
+                <option value="presupuestando">Presupuestando</option>
+                <option value="en_obra">En obra</option>
+                <option value="terminada">Terminada</option>
+              </select>
+            </div>
+            <button onClick={guardarEdicion} disabled={guardandoEdit||!editCliente.trim()} style={{width:'100%',marginTop:16,padding:'12px',background:'#2563EB',border:'none',borderRadius:12,color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:guardandoEdit||!editCliente.trim()?0.5:1}}>
+              {guardandoEdit?'Guardando...':'Guardar cambios'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
