@@ -4641,9 +4641,14 @@ function AvanceObraAdminScreen({userRol,user,t={}}) {
     setSelEntry(entry);
     const uid=entry?.userId;
     // try presupuesto_id first, fall back to user_id for legacy rows
-    let res=await supa.from('avance_obra').select('*').eq('presupuesto_id',presId).order('etapa_numero',{ascending:true});
+    // exclude constructor etapas (notas='obras_constructor:<id>')
+    let res=await supa.from('avance_obra').select('*').eq('presupuesto_id',presId)
+      .or('notas.is.null,notas.not.ilike.%obras_constructor%')
+      .order('etapa_numero',{ascending:true});
     if((!res.data||res.data.length===0)&&uid){
-      res=await supa.from('avance_obra').select('*').eq('user_id',uid).order('etapa_numero',{ascending:true});
+      res=await supa.from('avance_obra').select('*').eq('user_id',uid)
+        .or('notas.is.null,notas.not.ilike.%obras_constructor%')
+        .order('etapa_numero',{ascending:true});
     }
     if(res.data&&res.data.length>0) setEtapas(res.data.map(e=>({...e})));
     else setEtapas(ETAPAS_OBRA_DEFAULT.map(e=>({...e,presupuesto_id:presId,user_id:uid||null})));
@@ -4657,21 +4662,28 @@ function AvanceObraAdminScreen({userRol,user,t={}}) {
     if(!supa||!selUserId) return;
     const uid=selEntry?.userId||null;
     setSaving(true);setSaveError(null);setSaved(false);
-    const rows=etapas.map(e=>({
-      presupuesto_id:selUserId,
-      user_id:uid,
-      etapa_numero:e.etapa_numero,
-      etapa_nombre:e.etapa_nombre,
-      porcentaje:Number(e.porcentaje)||0,
-      completada:!!(e.completada||(Number(e.porcentaje)>=100)),
-      fecha_inicio:e.fecha_inicio||null,
-      fecha_fin:e.fecha_fin||null,
-      monto_certificado:e.monto_certificado!=null&&e.monto_certificado!==''?Number(e.monto_certificado):null,
-      notas:e.notas||'',
-    }));
-    const{error}=await supa.from('avance_obra').upsert(rows,{onConflict:'presupuesto_id,etapa_numero'});
+    for(const e of etapas){
+      const payload={
+        presupuesto_id:selUserId,
+        user_id:uid,
+        etapa_numero:e.etapa_numero,
+        etapa_nombre:e.etapa_nombre,
+        porcentaje:Number(e.porcentaje)||0,
+        completada:!!(e.completada||(Number(e.porcentaje)>=100)),
+        fecha_inicio:e.fecha_inicio||null,
+        fecha_fin:e.fecha_fin||null,
+        monto_certificado:e.monto_certificado!=null&&e.monto_certificado!==''?Number(e.monto_certificado):null,
+        notas:e.notas||'',
+      };
+      if(e.id){
+        const{error}=await supa.from('avance_obra').update(payload).eq('id',e.id);
+        if(error){setSaving(false);setSaveError(error.message||'Error al guardar');return;}
+      } else {
+        const{error}=await supa.from('avance_obra').insert(payload);
+        if(error){setSaving(false);setSaveError(error.message||'Error al guardar');return;}
+      }
+    }
     setSaving(false);
-    if(error){setSaveError(error.message||'Error al guardar');return;}
     setSaved(true);setTimeout(()=>setSaved(false),3000);
   }
 
