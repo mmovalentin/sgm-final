@@ -2006,7 +2006,8 @@ function ConstructorAvanceScreen({user,onNav}) {
     for(const etapa of etapas){
       const c=cambios[etapa.id];
       if(!c) continue;
-      await supa.from('avance_obra').update({porcentaje:c.porcentaje,completada:c.completada}).eq('id',etapa.id).catch(()=>{});
+      const{error}=await supa.from('avance_obra').update({porcentaje:c.porcentaje,completada:c.completada}).eq('id',etapa.id);
+      if(error){console.error('[guardarCambios]',error);setGuardando(false);return;}
     }
     setGuardando(false);setGuardadoOk(true);setTimeout(()=>setGuardadoOk(false),2200);
   }
