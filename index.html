@@ -1575,6 +1575,133 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
   );
 }
 
+// ── CONSTRUCTOR AVANCE SCREEN
+function ConstructorAvanceScreen({user,onNav}) {
+  const [obras,setObras]=useState([]);
+  const [obraSeleccionada,setObraSeleccionada]=useState(null);
+  const [etapas,setEtapas]=useState([]);
+  const [cambios,setCambios]=useState({});
+  const [guardando,setGuardando]=useState(false);
+  const [guardadoOk,setGuardadoOk]=useState(false);
+
+  useEffect(()=>{
+    if(!supa||!user?.id) return;
+    supa.from('obras_constructor').select('*').eq('constructor_id',user.id).order('created_at',{ascending:false})
+      .then(({data})=>setObras(data||[])).catch(()=>{});
+  },[user]);
+
+  useEffect(()=>{
+    if(!obraSeleccionada) return;
+    setEtapas([]);setCambios({});
+    console.log('[avance] buscando etapas para:',obraSeleccionada.cliente_nombre);
+    supa.from('presupuestos').select('id').ilike('cliente_nombre','%'+obraSeleccionada.cliente_nombre+'%')
+      .then(({data:pres})=>{
+        console.log('[avance] presupuestos:',pres);
+        if(!pres||pres.length===0) return;
+        const ids=pres.map(p=>p.id);
+        supa.from('avance_obra').select('*').in('presupuesto_id',ids).order('etapa_numero',{ascending:true})
+          .then(({data})=>{
+            console.log('[avance] etapas:',data);
+            const lista=data||[];
+            setEtapas(lista);
+            const init={};
+            lista.forEach(e=>{init[e.id]={porcentaje:e.porcentaje||0,completada:e.completada||false};});
+            setCambios(init);
+          }).catch(()=>{});
+      }).catch(()=>{});
+  },[obraSeleccionada]);
+
+  async function guardarCambios(){
+    if(!supa||etapas.length===0) return;
+    setGuardando(true);
+    for(const etapa of etapas){
+      const c=cambios[etapa.id];
+      if(!c) continue;
+      await supa.from('avance_obra').update({porcentaje:c.porcentaje,completada:c.completada}).eq('id',etapa.id).catch(()=>{});
+    }
+    setGuardando(false);setGuardadoOk(true);setTimeout(()=>setGuardadoOk(false),2200);
+  }
+
+  const BADGE={en_obra:{bg:'rgba(59,130,246,.15)',color:'#60A5FA',label:'En obra'},presupuestando:{bg:'rgba(245,158,11,.15)',color:'#FBBF24',label:'Presupuestando'},terminada:{bg:'rgba(34,197,94,.15)',color:'#4ADE80',label:'Terminada'}};
+
+  if(obraSeleccionada){
+    const badge=BADGE[obraSeleccionada.estado]||BADGE.presupuestando;
+    return (
+      <div style={{background:C.bg,minHeight:'100%',paddingBottom:24}}>
+        <div style={{background:C.navy,padding:'14px 16px'}}>
+          <button onClick={()=>setObraSeleccionada(null)} style={{background:'none',border:'none',color:C.acc,fontSize:13,fontWeight:700,cursor:'pointer',padding:0,fontFamily:'inherit'}}>← Volver a mis obras</button>
+        </div>
+        <div style={{padding:'16px'}}>
+          <div style={{color:C.t1,fontSize:17,fontWeight:800,marginBottom:2}}>{obraSeleccionada.cliente_nombre||'Obra'}</div>
+          <div style={{color:C.t3,fontSize:12,marginBottom:16}}>{obraSeleccionada.sistema||''}{obraSeleccionada.m2?' · '+obraSeleccionada.m2+'m²':''}</div>
+          {etapas.length===0
+            ?<div style={{color:C.t3,fontSize:13,textAlign:'center',padding:'40px 0'}}>Sin etapas. El admin debe cargarlas desde el panel de administración.</div>
+            :<>
+              {etapas.map(etapa=>{
+                const c=cambios[etapa.id]||{porcentaje:etapa.porcentaje||0,completada:etapa.completada||false};
+                return (
+                  <div key={etapa.id} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'14px',marginBottom:10}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                      <div>
+                        <span style={{color:C.t3,fontSize:11,marginRight:6}}>#{etapa.etapa_numero}</span>
+                        <span style={{color:C.t1,fontSize:13,fontWeight:700}}>{etapa.etapa_nombre}</span>
+                      </div>
+                      <span style={{color:C.acc,fontSize:13,fontWeight:700}}>{c.porcentaje}%</span>
+                    </div>
+                    <div style={{background:'rgba(255,255,255,.08)',borderRadius:4,height:6,marginBottom:10}}>
+                      <div style={{background:c.completada?'#4ADE80':'#60A5FA',width:`${c.porcentaje}%`,height:'100%',borderRadius:4,transition:'width .2s'}}/>
+                    </div>
+                    <input type="range" min={0} max={100} value={c.porcentaje}
+                      onChange={e=>setCambios(prev=>({...prev,[etapa.id]:{...prev[etapa.id],porcentaje:Number(e.target.value)}}))}
+                      style={{width:'100%',marginBottom:10,accentColor:'#60A5FA'}}/>
+                    <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+                      <input type="checkbox" checked={c.completada}
+                        onChange={e=>setCambios(prev=>({...prev,[etapa.id]:{...prev[etapa.id],completada:e.target.checked}}))}
+                        style={{width:16,height:16,accentColor:'#4ADE80'}}/>
+                      <span style={{color:C.t2,fontSize:12}}>Completada</span>
+                    </label>
+                  </div>
+                );
+              })}
+              {guardadoOk&&<div style={{color:'#4ADE80',fontSize:13,textAlign:'center',marginBottom:10}}>✅ Cambios guardados</div>}
+              <button onClick={guardarCambios} disabled={guardando} style={{width:'100%',padding:13,borderRadius:12,border:'none',background:'#2563EB',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:guardando?0.6:1}}>
+                {guardando?'Guardando...':'Guardar cambios'}
+              </button>
+            </>
+          }
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{background:C.bg,minHeight:'100%',padding:'16px 0 16px'}}>
+      <div style={{padding:'0 16px 12px',color:C.t1,fontSize:18,fontWeight:800}}>Avance de obra</div>
+      {obras.length===0&&<div style={{color:C.t3,fontSize:13,textAlign:'center',padding:'40px 0'}}>Sin obras registradas.</div>}
+      <div style={{padding:'0 16px'}}>
+        {obras.map(obra=>{
+          const badge=BADGE[obra.estado]||BADGE.presupuestando;
+          return (
+            <div key={obra.id} onClick={()=>setObraSeleccionada(obra)} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'14px',marginBottom:10,cursor:'pointer',userSelect:'none'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+                <div style={{color:C.t1,fontSize:14,fontWeight:700}}>{obra.cliente_nombre||'Cliente'}</div>
+                <span style={{background:badge.bg,color:badge.color,fontSize:10,fontWeight:700,borderRadius:6,padding:'2px 8px'}}>{badge.label}</span>
+              </div>
+              <div style={{color:C.t3,fontSize:11}}>{obra.sistema||''}{obra.m2?' · '+obra.m2+'m²':''}</div>
+              {obra.avance>0&&<div style={{marginTop:8}}>
+                <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:C.t3,marginBottom:3}}><span>Avance</span><span>{obra.avance}%</span></div>
+                <div style={{background:'rgba(255,255,255,.08)',borderRadius:3,height:4}}>
+                  <div style={{background:badge.color,width:`${obra.avance}%`,height:'100%',borderRadius:3}}/>
+                </div>
+              </div>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── MI OBRA (cronograma + stats + proveedores)
 function MiObraScreen({t,user}) {
   const [lastCot,setLastCot]=useState(null);
@@ -4292,7 +4419,8 @@ function AvanceObraAdminScreen({userRol,user,t={}}) {
 
 const CLIENTE_HIDDEN=['rubros','presup','stats','clientes'];
 function MoreMenu({onNav,onClose,t,lang,onLang,perfil,userRol}) {
-  const allItems=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['👥',t.clientes_title||'Clientes','clientes'],['🏗️',t.avance_obra_title||'Avance obra','avance_admin']];
+  const avanceItem=isConstructor(perfil)?['🏗️',t.avance_obra_title||'Avance obra','constructoravance']:['🏗️',t.avance_obra_title||'Avance obra','avance_admin'];
+  const allItems=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['👥',t.clientes_title||'Clientes','clientes'],avanceItem];
   const items=isAdmin(userRol)?allItems:allItems.filter(([,,id])=>!CLIENTE_HIDDEN.includes(id));
   return (
     <div style={{position:'absolute',inset:0,zIndex:200,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
@@ -4990,6 +5118,7 @@ function SGMApp() {
     constructorobra:screenParams.obra?<ConstructorObraDetalleScreen obra={screenParams.obra} onNav={handleNav} user={user}/>:null,
     detalle_cot:<DetalleCotizacionScreen cot={screenParams.cot} estadoProyecto={screenParams.estadoProyecto} onNav={handleNav} userRol={efectivoRol} user={user}/>,
     avance_admin:<AvanceObraAdminScreen userRol={efectivoRol} user={user} t={t}/>,
+    constructoravance:<ConstructorAvanceScreen user={user} onNav={handleNav}/>,
     clientes:<ClientesScreen perfil={efectivoPerfil} userRol={efectivoRol} t={t} lang={lang}/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
   };
