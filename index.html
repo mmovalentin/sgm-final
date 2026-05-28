@@ -4140,27 +4140,30 @@ function SGMApp() {
               {id:session.user.id,email:session.user.email,rol:'cliente'},
               {onConflict:'id',ignoreDuplicates:true}
             );
-            const {data}=await supa.from('perfiles').select('rol').eq('id',session.user.id).single();
+            const {data}=await supa.from('perfiles').select('rol,tipo_perfil').eq('id',session.user.id).single();
             const rol=ADMIN_EMAILS.includes(session.user.email)?'admin':(data?.rol||'cliente');
             console.log('[SGI splash] user=',session.user.email,' role=',rol,' raw=',data);
             setUserRol(rol);
-            if(isAdmin(rol)){
-              const saved=localStorage.getItem('sgm-perfil');
-              if(saved)setPerfil(saved);
-              storeSplashResult(saved?'app':'onboarding');
+            const dbTipo=data?.tipo_perfil||null;
+            const storedP=localStorage.getItem('sgm-perfil');
+            const storedUid=localStorage.getItem('sgm-perfil-uid');
+            if(dbTipo){
+              setPerfil(dbTipo);localStorage.setItem('sgm-perfil',dbTipo);localStorage.setItem('sgm-perfil-uid',session.user.id);storeSplashResult('app');
+            } else if(storedP&&storedUid===session.user.id){
+              setPerfil(storedP);storeSplashResult('app');
             } else {
-              setPerfil('cliente');
-              localStorage.setItem('sgm-perfil','cliente');
-              storeSplashResult('app');
+              localStorage.removeItem('sgm-perfil');localStorage.removeItem('sgm-perfil-uid');storeSplashResult('onboarding');
             }
             if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){
               PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok=>{if(ok){setWebAuthnModalStatus('idle');setShowWebAuthnModal(true);}}).catch(()=>{});
             }
           }catch(e){
             console.error('[SGI splash error]',e);
-            setUserRol('cliente');setPerfil('cliente');
-            localStorage.setItem('sgm-perfil','cliente');
-            storeSplashResult('app');
+            setUserRol('cliente');
+            const storedP=localStorage.getItem('sgm-perfil');
+            const storedUid=localStorage.getItem('sgm-perfil-uid');
+            if(storedP&&storedUid===session.user.id){setPerfil(storedP);storeSplashResult('app');}
+            else{localStorage.removeItem('sgm-perfil');localStorage.removeItem('sgm-perfil-uid');storeSplashResult('onboarding');}
           }
         } else {
           storeSplashResult('login');
@@ -4250,36 +4253,41 @@ function SGMApp() {
         timeout5s,
       ]);
       const {data}=await Promise.race([
-        supa.from('perfiles').select('rol').eq('id',userObj.id).single(),
+        supa.from('perfiles').select('rol,tipo_perfil').eq('id',userObj.id).single(),
         new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000)),
       ]);
       const rol=ADMIN_EMAILS.includes(userObj.email)?'admin':(data?.rol||'cliente');
       console.log('[SGI auth] user=',userObj.email,' role=',rol,' raw=',data);
       setUserRol(rol);
-      if(isAdmin(rol)){
-        const saved=localStorage.getItem('sgm-perfil');
-        if(saved)setPerfil(saved);
+      const dbTipo=data?.tipo_perfil||null;
+      const storedP=localStorage.getItem('sgm-perfil');
+      const storedUid=localStorage.getItem('sgm-perfil-uid');
+      let nextPhase='app';
+      if(dbTipo){
+        setPerfil(dbTipo);localStorage.setItem('sgm-perfil',dbTipo);localStorage.setItem('sgm-perfil-uid',userObj.id);
+      } else if(storedP&&storedUid===userObj.id){
+        setPerfil(storedP);
       } else {
-        setPerfil('cliente');
-        localStorage.setItem('sgm-perfil','cliente');
+        localStorage.removeItem('sgm-perfil');localStorage.removeItem('sgm-perfil-uid');nextPhase='onboarding';
       }
       // Vincular presupuestos anónimos recientes (últimas 24h)
       supa.from('presupuestos').update({user_id:userObj.id})
         .is('user_id',null)
         .gte('created_at',new Date(Date.now()-24*60*60*1000).toISOString())
         .catch(()=>{});
-      setPhase('app');
+      setPhase(nextPhase);
       mostrarPermisosModal();
       if(!localStorage.getItem('sgm_webauthn_id')&&window.PublicKeyCredential){
         PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok=>{if(ok){setWebAuthnModalStatus('idle');setShowWebAuthnModal(true);}}).catch(()=>{});
       }
     }catch(e){
       console.error('[SGI auth error]',e);
-      // Timeout or Supabase unavailable — continue with email-based role, never block login
       const rol=ADMIN_EMAILS.includes(userObj.email)?'admin':'cliente';
       setUserRol(rol);
-      if(isAdmin(rol)){const saved=localStorage.getItem('sgm-perfil');if(saved)setPerfil(saved);}
-      else{setPerfil('cliente');localStorage.setItem('sgm-perfil','cliente');}
+      const storedP=localStorage.getItem('sgm-perfil');
+      const storedUid=localStorage.getItem('sgm-perfil-uid');
+      if(storedP&&storedUid===userObj.id){setPerfil(storedP);}
+      else{localStorage.removeItem('sgm-perfil');localStorage.removeItem('sgm-perfil-uid');setPerfil('cliente');localStorage.setItem('sgm-perfil','cliente');localStorage.setItem('sgm-perfil-uid',userObj.id);}
       setPhase('app');
     }
   }
@@ -4383,6 +4391,9 @@ function SGMApp() {
     if(!supa) return;
     await supa.auth.signOut();
     setUser(null);setLoggedIn(false);setUserRol('cliente');
+    setPerfil(null);
+    localStorage.removeItem('sgm-perfil');
+    localStorage.removeItem('sgm-perfil-uid');
     setPhase('login');
   }
 
@@ -4497,7 +4508,7 @@ function SGMApp() {
     </div>
   );
 
-  if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{localStorage.setItem('sgm-perfil',p);setPerfil(p);setPhase('app');}}/></div>;
+  if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{localStorage.setItem('sgm-perfil',p);localStorage.setItem('sgm-perfil-uid',user?.id||'');if(supa&&user?.id)supa.from('perfiles').update({tipo_perfil:p}).eq('id',user.id).catch(()=>{});setPerfil(p);setPhase('app');}}/></div>;
 
   const screens={
     home:!isAdmin(userRol)
