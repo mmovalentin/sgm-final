@@ -1460,6 +1460,9 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
   const [yaFuePagado,setYaFuePagado]=useState(false);
   const [registrando,setRegistrando]=useState(false);
   const [pagoMsg,setPagoMsg]=useState(null);
+  const [cambiosEtapas,setCambiosEtapas]=useState({});
+  const [creandoEtapas,setCreandoEtapas]=useState(false);
+  const [guardandoEtapaId,setGuardandoEtapaId]=useState(null);
 
   const cargarPagos=()=>{
     if(!supa||!obra?.cliente_nombre) return;
@@ -1471,20 +1474,24 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
       }).catch(()=>{});
   };
 
+  const cargarEtapas=()=>{
+    if(!supa||!user?.id||!obra?.id) return;
+    console.log('[etapas] buscando por obras_constructor id:',obra.id);
+    supa.from('avance_obra').select('*').eq('user_id',user.id).ilike('notas','%obras_constructor:'+obra.id+'%').order('etapa_numero',{ascending:true})
+      .then(({data,error:etErr})=>{
+        console.log('[etapas] encontradas:',data,'error:',etErr);
+        const lista=data||[];
+        setEtapas(lista);
+        const init={};
+        lista.forEach(e=>{init[e.id]={porcentaje:e.porcentaje||0,completada:e.completada||false};});
+        setCambiosEtapas(init);
+      }).catch(()=>{});
+  };
+
   useEffect(()=>{
     if(!supa||!obra) return;
-    if(obra.cliente_nombre){
-      console.log('[etapas] buscando cliente_nombre:',obra.cliente_nombre);
-      supa.from('presupuestos').select('id,cliente_nombre').ilike('cliente_nombre','%'+obra.cliente_nombre+'%')
-        .then(({data:pres,error:presErr})=>{
-          console.log('[etapas] presupuestos encontrados:',pres,'error:',presErr);
-          if(!pres||pres.length===0) return;
-          const ids=pres.map(p=>p.id);
-          supa.from('avance_obra').select('*').in('presupuesto_id',ids).order('etapa_numero',{ascending:true})
-            .then(({data,error:etErr})=>{console.log('[etapas] etapas encontradas:',data,'error:',etErr);setEtapas(data||[]);}).catch(()=>{});
-        }).catch(()=>{});
-      cargarPagos();
-    }
+    cargarEtapas();
+    cargarPagos();
   },[obra]);
 
   async function registrarPago(){
@@ -1508,6 +1515,33 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
     setConcepto('Pago anticipo');setMontoPago('');setFechaPago(hoyISO);setTipoPago('pago');setYaFuePagado(false);
     setPagoMsg('Pago registrado.');setTimeout(()=>setPagoMsg(null),2500);
     cargarPagos();
+  }
+
+  async function crearEtapasEstandar(){
+    if(!supa||!user?.id||!obra?.id) return;
+    setCreandoEtapas(true);
+    const nombres=['Proyecto y RT','Fundaciones','Estructura Steel Frame','Instalaciones','Terminaciones gruesas','Terminaciones finas','Revisión y documentación','Cierre y garantía'];
+    const rows=nombres.map((nombre,i)=>({presupuesto_id:null,user_id:user.id,notas:'obras_constructor:'+obra.id,etapa_numero:i+1,etapa_nombre:nombre,porcentaje:0,completada:false}));
+    const{error}=await supa.from('avance_obra').insert(rows);
+    if(error){console.error('[crearEtapas]',error);setCreandoEtapas(false);return;}
+    setCreandoEtapas(false);
+    cargarEtapas();
+  }
+
+  async function guardarEtapa(etapaId){
+    if(!supa) return;
+    setGuardandoEtapaId(etapaId);
+    const c=cambiosEtapas[etapaId];
+    const{error}=await supa.from('avance_obra').update({porcentaje:c.porcentaje,completada:c.completada}).eq('id',etapaId);
+    if(error){console.error('[guardarEtapa]',error);setGuardandoEtapaId(null);return;}
+    const actualizadas=etapas.map(e=>e.id===etapaId?{...e,...c}:e);
+    const avg=Math.round(actualizadas.reduce((s,e)=>s+(cambiosEtapas[e.id]?.porcentaje??e.porcentaje??0),0)/actualizadas.length);
+    if(obra?.id){
+      await supa.from('obras_constructor').update({avance:avg}).eq('id',obra.id);
+      setAvanceLocal(avg);
+    }
+    setEtapas(actualizadas);
+    setGuardandoEtapaId(null);
   }
 
   async function guardarAvance(){
@@ -1567,17 +1601,44 @@ function ConstructorObraDetalleScreen({obra,onNav,user}) {
         <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'14px'}}>
           <div style={{color:C.t3,fontSize:10,textTransform:'uppercase',letterSpacing:.5,marginBottom:10}}>Etapas de obra</div>
           {etapas.length===0
-            ?<div style={{color:C.t3,fontSize:13,textAlign:'center',padding:'12px 0'}}>Sin etapas registradas aún</div>
-            :etapas.map(e=>(
-              <div key={e.id} style={{marginBottom:10}}>
-                <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:C.t2,marginBottom:4}}>
-                  <span>{e.etapa_nombre}</span><span style={{fontWeight:700}}>{e.porcentaje||0}%</span>
-                </div>
-                <div style={{background:'rgba(255,255,255,.08)',borderRadius:3,height:5}}>
-                  <div style={{background:e.completada?'#4ADE80':'#4A9FFF',width:`${e.porcentaje||0}%`,height:'100%',borderRadius:3}}/>
-                </div>
-              </div>
-            ))
+            ?<div style={{textAlign:'center',padding:'12px 0'}}>
+               <div style={{color:C.t3,fontSize:13,marginBottom:12}}>Sin etapas registradas</div>
+               <button onClick={crearEtapasEstandar} disabled={creandoEtapas} style={{padding:'10px 20px',background:'#2563EB',border:'none',borderRadius:10,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:creandoEtapas?0.6:1}}>
+                 {creandoEtapas?'Creando...':'Crear etapas estándar'}
+               </button>
+             </div>
+            :etapas.map(e=>{
+               const c=cambiosEtapas[e.id]||{porcentaje:e.porcentaje||0,completada:e.completada||false};
+               const saving=guardandoEtapaId===e.id;
+               return (
+                 <div key={e.id} style={{marginBottom:14,paddingBottom:14,borderBottom:`.5px solid ${C.border}`}}>
+                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                     <div>
+                       <span style={{color:C.t3,fontSize:10,marginRight:6}}>#{e.etapa_numero}</span>
+                       <span style={{color:C.t1,fontSize:13,fontWeight:700}}>{e.etapa_nombre}</span>
+                     </div>
+                     <span style={{color:C.acc,fontSize:13,fontWeight:700}}>{c.porcentaje}%</span>
+                   </div>
+                   <div style={{background:'rgba(255,255,255,.08)',borderRadius:3,height:5,marginBottom:8}}>
+                     <div style={{background:c.completada?'#4ADE80':'#4A9FFF',width:`${c.porcentaje}%`,height:'100%',borderRadius:3,transition:'width .2s'}}/>
+                   </div>
+                   <input type="range" min={0} max={100} value={c.porcentaje}
+                     onChange={ev=>setCambiosEtapas(prev=>({...prev,[e.id]:{...prev[e.id],porcentaje:Number(ev.target.value)}}))}
+                     style={{width:'100%',marginBottom:8,accentColor:'#4A9FFF'}}/>
+                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                     <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer'}}>
+                       <input type="checkbox" checked={c.completada}
+                         onChange={ev=>setCambiosEtapas(prev=>({...prev,[e.id]:{...prev[e.id],completada:ev.target.checked}}))}
+                         style={{width:15,height:15,accentColor:'#4ADE80'}}/>
+                       <span style={{color:C.t2,fontSize:11}}>Completada</span>
+                     </label>
+                     <button onClick={()=>guardarEtapa(e.id)} disabled={saving} style={{padding:'6px 14px',background:saving?'rgba(37,99,235,.4)':'#2563EB',border:'none',borderRadius:8,color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                       {saving?'Guardando...':'Guardar'}
+                     </button>
+                   </div>
+                 </div>
+               );
+             })
           }
         </div>
         {/* Finanzas */}
