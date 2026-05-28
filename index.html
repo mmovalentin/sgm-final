@@ -779,43 +779,44 @@ function generarPDF(pres, clienteNombre) {
   const{jsPDF}=window.jspdf;
   const doc=new jsPDF();
   const nro='N° '+String(pres.numero_presupuesto||pres.id||1).padStart(5,'0');
-  const navy=[13,27,42],acc=[74,159,255],naranja=[230,100,50];
+  const navy=[0,27,42],blue=[37,99,235],gris=[150,150,150];
   const hoy=new Date();
   const venc=new Date(hoy.getTime()+30*24*60*60*1000);
   const fmt=d=>d.toLocaleDateString('es-AR');
   const calMap={economico:'Económico',standard:'Standard',premium:'Premium'};
-  const W=210;
+  const W=210,M=20;
 
-  // HEADER
-  doc.setFillColor(...navy);doc.rect(0,0,W,40,'F');
-  doc.setFillColor(...acc);doc.rect(0,40,W,2,'F');
+  // ── HEADER (0–45)
+  doc.setFillColor(...navy);doc.rect(0,0,W,45,'F');
+  doc.setFillColor(...blue);doc.rect(0,45,W,2,'F');
   doc.setTextColor(255,255,255);
-  doc.setFontSize(26);doc.setFont('helvetica','bold');doc.text('SGI',14,22);
-  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('Construcciones · Steel Frame',14,30);
-  doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('PRESUPUESTO',W-14,18,{align:'right'});
-  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text(nro,W-14,27,{align:'right'});
-  doc.setFontSize(8);doc.setTextColor(180,200,220);
-  doc.text('Emitido: '+fmt(hoy),W-14,35,{align:'right'});
-  doc.text('Vence: '+fmt(venc),W-14,35+6,{align:'right'});
+  doc.setFontSize(24);doc.setFont('helvetica','bold');doc.text('SGI',M,28);
+  doc.setFontSize(11);doc.setFont('helvetica','normal');doc.text('Construcciones · Steel Frame',M,37);
+  doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('PRESUPUESTO',W-M,24,{align:'right'});
+  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(180,200,220);
+  doc.text(nro,W-M,32,{align:'right'});
+  doc.setFontSize(8);doc.text('Emitido: '+fmt(hoy)+'  ·  Vence: '+fmt(venc),W-M,39,{align:'right'});
 
-  // CLIENTE / CONTACTO
-  let y=52;
-  doc.setTextColor(...naranja);doc.setFontSize(9);doc.setFont('helvetica','bold');
-  doc.text('CLIENTE',14,y);
-  doc.text('CONTACTO SGI',W/2+6,y);
-  doc.setTextColor(40,40,40);doc.setFont('helvetica','normal');doc.setFontSize(10);
+  // ── CLIENTE / CONTACTO (55–84)
+  let y=55;
+  doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...blue);
+  doc.text('CLIENTE',M,y);
+  doc.text('CONTACTO SGI',110,y);
+  doc.setTextColor(40,40,40);doc.setFont('helvetica','normal');
+  doc.setFontSize(10);
   const nombreLines=doc.splitTextToSize(clienteNombre||'Cliente SGI',80);
-  doc.text(nombreLines,14,y+7);
+  doc.text(nombreLines,M,y+8);
   doc.setFontSize(9);
-  doc.text('Tel: +54 358 422-3386',W/2+6,y+7);
-  doc.text('Email: mmovalentin@gmail.com',W/2+6,y+14);
-  doc.text('sgm-final.vercel.app',W/2+6,y+21);
+  doc.text('Tel: +54 351 261-8232',110,y+8);
+  doc.text('Email: mmovalentin@gmail.com',110,y+15);
+  doc.text('sgm-final.vercel.app',110,y+22);
 
-  y+=34;
-  doc.setDrawColor(...acc);doc.setLineWidth(0.4);doc.line(14,y,W-14,y);
-  y+=8;
+  // ── SEPARADOR (84)
+  y=84;
+  doc.setDrawColor(...blue);doc.setLineWidth(0.4);doc.line(M,y,W-M,y);
+  y+=6;
 
-  // TABLA ESPECIFICACIONES
+  // ── TABLA ESPECIFICACIONES
   const detalles=[
     ['Tipo de obra',pres.tipo||'Casa habitación'],
     ['Sistema constructivo',pres.sistema||'Steel Frame'],
@@ -827,56 +828,52 @@ function generarPDF(pres, clienteNombre) {
     startY:y,
     head:[['Especificación','Detalle']],
     body:detalles,
-    margin:{left:14,right:14},
+    margin:{left:M,right:M},
     styles:{fontSize:9,cellPadding:4,textColor:[40,40,40],overflow:'linebreak'},
     headStyles:{fillColor:navy,textColor:[255,255,255],fontStyle:'bold',fontSize:9},
-    alternateRowStyles:{fillColor:[245,247,250]},
-    columnStyles:{0:{fontStyle:'bold',cellWidth:70},1:{cellWidth:'auto'}},
-    tableLineColor:[220,220,220],tableLineWidth:0.2,
+    alternateRowStyles:{fillColor:[248,250,252]},
+    columnStyles:{0:{fontStyle:'bold',cellWidth:80},1:{cellWidth:'auto'}},
+    tableLineColor:[226,232,240],tableLineWidth:0.2,
   });
 
-  y=doc.lastAutoTable.finalY+10;
+  y=doc.lastAutoTable.finalY+12;
 
-  // PRECIO DESTACADO
-  doc.setFillColor(...navy);doc.roundedRect(W/2,y,W/2-14,18,3,3,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(14);
-  doc.text('USD '+(pres.total_usd||0).toLocaleString('es-AR'),W-20,y+12,{align:'right'});
+  // ── CAJA TOTAL
+  doc.setFillColor(...navy);doc.roundedRect(M,y,W-M*2,22,3,3,'F');
   doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(180,200,220);
-  doc.text('PRECIO TOTAL',W/2+4,y+12);
+  doc.text('PRECIO TOTAL',M+4,y+8);
+  doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+  doc.text('USD '+(pres.total_usd||0).toLocaleString('es-AR'),W-M-4,y+16,{align:'right'});
 
-  y+=30;
+  y+=34;
 
-  // FIRMA
-  doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);doc.line(14,y,80,y);
+  // ── FIRMA (izquierda) + TOTALES (derecha) — sin superposición
+  const firmaY=y;
+  doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);doc.line(M,firmaY,85,firmaY);
   doc.setTextColor(60,60,60);doc.setFont('helvetica','normal');doc.setFontSize(8);
-  doc.text('Valentín Campos',14,y+6);
-  doc.text('Maestro Mayor de Obras · Exp. Antisísmico MP 5582/1',14,y+12);
+  doc.text('Valentín Campos',M,firmaY+6);
+  doc.text('MMO · Exp. Antisísmico MP 5582/1',M,firmaY+12);
 
-  // TOTALES
   doc.autoTable({
-    startY:y-2,
+    startY:firmaY-2,
     body:[
       ['Subtotal','USD '+(pres.total_usd||0).toLocaleString('es-AR')],
       ['IVA / Impuestos','0%'],
       ['TOTAL','USD '+(pres.total_usd||0).toLocaleString('es-AR')],
     ],
-    margin:{left:W/2,right:14},
+    margin:{left:105,right:M},
     styles:{fontSize:9,cellPadding:3,textColor:[40,40,40]},
-    bodyStyles:{fillColor:[245,247,250]},
+    bodyStyles:{fillColor:[248,250,252]},
     columnStyles:{0:{fontStyle:'bold'},1:{halign:'right'}},
     didParseCell:data=>{
-      if(data.row.index===2){
-        data.cell.styles.fillColor=navy;
-        data.cell.styles.textColor=[255,255,255];
-        data.cell.styles.fontStyle='bold';
-      }
+      if(data.row.index===2){data.cell.styles.fillColor=navy;data.cell.styles.textColor=[255,255,255];data.cell.styles.fontStyle='bold';}
     },
-    tableLineColor:[220,220,220],tableLineWidth:0.2,
+    tableLineColor:[226,232,240],tableLineWidth:0.2,
   });
 
-  // PIE
+  // ── FOOTER
   const pageH=doc.internal.pageSize.getHeight();
-  doc.setFontSize(7);doc.setTextColor(150,150,150);
+  doc.setFontSize(7);doc.setTextColor(...gris);
   doc.text('Presupuesto válido por 30 días desde la fecha de emisión. Sujeto a disponibilidad de materiales.',W/2,pageH-10,{align:'center'});
 
   doc.save('Presupuesto-SGI-'+String(pres.numero_presupuesto||pres.id||1).padStart(5,'0')+'.pdf');
@@ -993,45 +990,74 @@ function ClienteHomeScreen({onNav,t,user}) {
   }
 
   const generarRecibo=async(evento)=>{
+    if(!window.jspdf){alert('jsPDF no disponible. Verificá tu conexión.');return;}
     const{jsPDF}=window.jspdf;
     const doc=new jsPDF();
-    // Header
-    doc.setFillColor(0,27,42);
-    doc.rect(0,0,210,35,'F');
+    const navy=[0,27,42],blue=[37,99,235],grisClaro=[180,200,220];
+    const W=210,M=20;
+    const hoy=new Date();
+    const fmt=d=>d.toLocaleDateString('es-AR');
+    const clienteNombre=user?.user_metadata?.full_name||user?.email||'Cliente';
+
+    // ── HEADER (0–50)
+    doc.setFillColor(...navy);doc.rect(0,0,W,50,'F');
     doc.setTextColor(255,255,255);
-    doc.setFontSize(20);
-    doc.setFont('helvetica','bold');
-    doc.text('SGI - RECIBO DE PAGO',105,20,{align:'center'});
+    doc.setFontSize(28);doc.setFont('helvetica','bold');doc.text('SGI',W/2,22,{align:'center'});
+    doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(...blue);
+    doc.text('RECIBO DE PAGO',W/2,33,{align:'center'});
+    doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(...grisClaro);
+    doc.text('Sistema de Gestión Integral',W/2,42,{align:'center'});
+
+    // ── SEPARADOR + N° RECIBO (52–65)
+    doc.setDrawColor(...blue);doc.setLineWidth(0.5);doc.line(M,52,W-M,52);
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(120,120,120);
+    doc.text('N° '+String(Date.now()).slice(-8),M,62);
+    doc.text(fmt(hoy),W-M,62,{align:'right'});
+
+    // ── DATOS (75–108)
     doc.setFontSize(10);
-    doc.text('Sistema de Gestión Integral',105,28,{align:'center'});
-    // Datos
-    doc.setTextColor(0,0,0);
-    doc.setFontSize(12);
+    doc.setFont('helvetica','bold');doc.setTextColor(40,40,40);doc.text('Fecha:',M,75);
+    doc.setFont('helvetica','normal');doc.text(fmt(hoy),65,75);
+    doc.setFont('helvetica','bold');doc.text('Cliente:',M,85);
+    doc.setFont('helvetica','normal');doc.text(clienteNombre,65,85);
+    doc.setFont('helvetica','bold');doc.text('Concepto:',M,95);
     doc.setFont('helvetica','normal');
-    const hoy=new Date().toLocaleDateString('es-AR');
-    doc.text('Fecha: '+hoy,20,50);
-    doc.text('Concepto: '+(evento.titulo||''),20,60);
-    doc.text('Monto: USD '+(evento.monto_usd?.toLocaleString()||'0'),20,70);
-    // Caja monto
-    doc.setFillColor(0,27,42);
-    doc.rect(20,85,170,25,'F');
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(16);
-    doc.setFont('helvetica','bold');
-    doc.text('TOTAL: USD '+(evento.monto_usd?.toLocaleString()||'0'),105,101,{align:'center'});
-    // Firma
-    doc.setTextColor(0,0,0);
-    doc.setFontSize(10);
-    doc.setFont('helvetica','normal');
-    doc.line(20,140,90,140);
-    doc.text('Firma',50,148,{align:'center'});
-    // Descargar
-    doc.save('recibo-'+(evento.titulo||'pago').replace(/\s+/g,'-')+'.pdf');
+    const tituloLines=doc.splitTextToSize(evento.titulo||'Pago programado',120);
+    doc.text(tituloLines,65,95);
+    const yPostDatos=95+tituloLines.length*6;
+
+    // ── CAJA MONTO TOTAL
+    const cajaY=Math.max(yPostDatos+10,115);
+    doc.setFillColor(...navy);doc.roundedRect(M,cajaY,W-M*2,26,3,3,'F');
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(...grisClaro);
+    doc.text('TOTAL A PAGAR',W/2,cajaY+9,{align:'center'});
+    doc.setFontSize(20);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+    doc.text('USD '+(evento.monto_usd||0).toLocaleString('es-AR'),W/2,cajaY+21,{align:'center'});
+
+    // ── SELLO PAGADO (si recibo ya fue generado antes)
+    if(evento.recibo_generado){
+      doc.setFontSize(42);doc.setFont('helvetica','bold');doc.setTextColor(16,185,129);
+      doc.text('PAGADO',W/2,cajaY+60,{align:'center',angle:20});
+    }
+
+    // ── FIRMA
+    const firmaY=cajaY+55+(evento.recibo_generado?30:0);
+    doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);doc.line(M,firmaY,85,firmaY);
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
+    doc.text('Valentín Campos',M,firmaY+7);
+    doc.text('Maestro Mayor de Obras · MP 5582/1',M,firmaY+13);
+
+    // ── FOOTER
+    const pageH=doc.internal.pageSize.getHeight();
+    doc.setFontSize(7);doc.setTextColor(150,150,150);
+    doc.text('Recibo válido por 24 horas desde la fecha de emisión.',W/2,pageH-10,{align:'center'});
+
+    doc.save('Recibo-SGI-'+(evento.titulo||'pago').replace(/\s+/g,'-')+'.pdf');
+
     // Marcar como generado en Supabase
     if(supa&&evento.id){
-      await supa.from('agenda_eventos').update({recibo_generado:true,recibo_fecha:new Date().toISOString().split('T')[0]}).eq('id',evento.id);
+      await supa.from('agenda_eventos').update({recibo_generado:true,recibo_fecha:hoy.toISOString().split('T')[0]}).eq('id',evento.id);
     }
-    // Actualizar estado local
     setPagosHoy(prev=>prev.map(e=>e.id===evento.id?{...e,recibo_generado:true}:e));
   };
 
