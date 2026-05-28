@@ -2496,7 +2496,8 @@ function StatsScreen({t,perfil,userRol}) {
 }
 
 const TIPO_COLOR={pago:'#C62828',inspeccion:'#E65100',hito:'#4A9FFF',reunion:'#64748B',vencimiento:'#C62828'};
-const FORM_EMPTY={titulo:'',fecha:'',hora:'',tipo:'hito',cliente_id:'',monto_usd:'',notas:'',visible_cliente:false};
+const FORM_EMPTY={titulo:'',fecha:'',hora:'',tipo:'hito',cliente_id:'',monto_usd:'',notas:'',visible_cliente:true};
+function visiblePorTipo(tipo){return tipo==='hito'||tipo==='inspeccion'||tipo==='reunion';}
 
 function AgendaScreen({t,perfil,userRol,user}) {
   const [mesActual,setMesActual]=useState(new Date());
@@ -2543,6 +2544,12 @@ function AgendaScreen({t,perfil,userRol,user}) {
         setEtapas(et||[]);
         clearTimeout(t2);setLoading(false);
       })().catch(()=>{clearTimeout(t2);setLoading(false);});
+    } else {
+      setLoading(true);
+      supa.from('agenda_eventos').select('*').eq('visible_cliente',true).is('cliente_id',null).order('fecha',{ascending:true})
+        .then(({data})=>setEventosDB(data||[]))
+        .catch(()=>{})
+        .finally(()=>{clearTimeout(t2);setLoading(false);});
     }
     return()=>clearTimeout(t2);
   },[user,userRol]);
@@ -2722,7 +2729,7 @@ function AgendaScreen({t,perfil,userRol,user}) {
               </div>
               <div>
                 <div style={{fontSize:11,color:C.t3,marginBottom:4}}>Tipo</div>
-                <select value={form.tipo} onChange={e=>setForm(f=>({...f,tipo:e.target.value}))} style={{width:'100%',padding:'9px 12px',borderRadius:9,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,outline:'none',fontFamily:'inherit'}}>
+                <select value={form.tipo} onChange={e=>{const tp=e.target.value;setForm(f=>({...f,tipo:tp,visible_cliente:visiblePorTipo(tp)}));}} style={{width:'100%',padding:'9px 12px',borderRadius:9,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,outline:'none',fontFamily:'inherit'}}>
                   <option value="pago">🔴 Pago</option>
                   <option value="inspeccion">🟡 Inspección</option>
                   <option value="hito">🔵 Hito de obra</option>
