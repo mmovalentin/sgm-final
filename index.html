@@ -905,6 +905,18 @@ function ClienteHomeScreen({onNav,t,user}) {
   const [descSaved,setDescSaved]=useState(false);
   const [descError,setDescError]=useState(null);
   const [proyectoId,setProyectoId]=useState(null);
+  const [pagosHoy,setPagosHoy]=useState([]);
+
+  useEffect(()=>{
+    if(!supa||!user?.id) return;
+    const hoyStr=new Date().toISOString().split('T')[0];
+    supa.from('agenda_eventos').select('*')
+      .eq('cliente_id',user.id)
+      .eq('fecha',hoyStr)
+      .in('tipo',['pago','vencimiento'])
+      .then(({data})=>{console.log('[pagosHoy]',data);setPagosHoy(data||[]);})
+      .catch(e=>console.error('[pagosHoy error]',e));
+  },[user]);
 
   useEffect(()=>{
     let localCot=null;
