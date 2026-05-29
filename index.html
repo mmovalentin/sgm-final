@@ -1364,7 +1364,14 @@ function ClienteHomeScreen({onNav,t,user}) {
             </div>
             <div style={{display:'flex',gap:6}}>
               <button onClick={()=>onNav('detalle_cot',{cot:lastCot,estadoProyecto})} style={{flex:1,padding:'8px',borderRadius:9,background:'none',border:`1px solid ${C.border2}`,color:C.acc,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Ver detalle</button>
-              <button onClick={()=>{localStorage.removeItem('sgi_last_cot');setLastCot(null);}} style={{padding:'8px 13px',borderRadius:9,background:'none',border:'1px solid rgba(255,80,80,.3)',color:'#FF5252',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>✕</button>
+              <button onClick={()=>{
+                localStorage.removeItem('sgi_last_cot');
+                localStorage.removeItem('sgm_presupuesto_id');
+                setLastCot(null);
+                setAvanceRows([]);
+                setEstadoProyecto(null);
+                setProyectoId(null);
+              }} style={{padding:'8px 13px',borderRadius:9,background:'none',border:'1px solid rgba(255,80,80,.3)',color:'#FF5252',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>✕</button>
             </div>
           </div>
         </div>
