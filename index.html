@@ -964,6 +964,17 @@ function generarPDFAvance(obra,etapas) {
   doc.save('avance-'+(obra.cliente_nombre||'obra').replace(/\s+/g,'-')+'.pdf');
 }
 
+function generarPDFAvanceCliente(etapas,presupuesto) {
+  const avance=etapas.length>0?Math.round(etapas.reduce((s,e)=>s+(e.porcentaje||0),0)/etapas.length):0;
+  generarPDFAvance({
+    cliente_nombre:presupuesto?.cliente_nombre||presupuesto?.archivo_nombre||'Mi obra',
+    tipo:presupuesto?.tipo||'—',
+    sistema:presupuesto?.sistema||'—',
+    m2:presupuesto?.m2||null,
+    avance,
+  },etapas);
+}
+
 function generarReciboConstructor(pago,obra) {
   if(!window.jspdf){alert('jsPDF no disponible. Verificá tu conexión.');return;}
   const{jsPDF}=window.jspdf;
@@ -2290,6 +2301,12 @@ function MiObraScreen({t,user}) {
             </div>
           )}
         </div>
+
+        {hasAvance&&(
+          <button onClick={()=>generarPDFAvanceCliente(avanceRows,lastCot)} style={{width:'100%',padding:'13px',background:C.navy,border:`1px solid ${C.border2}`,borderRadius:12,color:C.acc,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontFamily:'inherit'}}>
+            📄 Descargar avance de obra
+          </button>
+        )}
 
         <button onClick={()=>openWA(false,'Hola, quiero consultar sobre el avance de mi obra.')} style={{width:'100%',padding:'13px',background:'#25D366',color:'#fff',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
           💬 Consultar sobre mi obra
