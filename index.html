@@ -5382,10 +5382,11 @@ function SGMApp() {
             console.log('[SGI splash] user=',session.user.email,' role=',rol,' raw=',data);
             setUserRol(rol);
             const dbTipo=data?.tipo_perfil||null;
-            const localKey='sgi_perfil_'+session.user.id;
+            const savedUid=localStorage.getItem('sgi_user_id');
+            if(savedUid!==session.user.id){localStorage.removeItem('sgi_tipo_perfil');localStorage.setItem('sgi_user_id',session.user.id);}
             localStorage.setItem('sgm_active_uid',session.user.id);
             if(dbTipo){
-              setPerfil(dbTipo);localStorage.setItem(localKey,dbTipo);storeSplashResult('app');
+              setPerfil(dbTipo);localStorage.setItem('sgi_tipo_perfil',dbTipo);storeSplashResult('app');
             } else {
               storeSplashResult('onboarding');
             }
@@ -5395,8 +5396,7 @@ function SGMApp() {
           }catch(e){
             console.error('[SGI splash error]',e);
             setUserRol('cliente');
-            const localKey='sgi_perfil_'+session.user.id;
-            const storedP=localStorage.getItem(localKey);
+            const storedP=localStorage.getItem('sgi_tipo_perfil');
             if(storedP){setPerfil(storedP);storeSplashResult('app');}
             else{storeSplashResult('onboarding');}
           }
@@ -5478,6 +5478,8 @@ function SGMApp() {
 
   async function handleAuthenticatedUser(userObj){
     setUser(userObj);setLoggedIn(true);
+    const savedUid=localStorage.getItem('sgi_user_id');
+    if(savedUid!==userObj.id){localStorage.removeItem('sgi_tipo_perfil');localStorage.setItem('sgi_user_id',userObj.id);}
     const timeout5s=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000));
     try{
       await Promise.race([
@@ -5495,11 +5497,10 @@ function SGMApp() {
       console.log('[SGI auth] user=',userObj.email,' role=',rol,' raw=',data);
       setUserRol(rol);
       const dbTipo=data?.tipo_perfil||null;
-      const localKey='sgi_perfil_'+userObj.id;
       localStorage.setItem('sgm_active_uid',userObj.id);
       let nextPhase='app';
       if(dbTipo){
-        setPerfil(dbTipo);localStorage.setItem(localKey,dbTipo);
+        setPerfil(dbTipo);localStorage.setItem('sgi_tipo_perfil',dbTipo);
       } else {
         nextPhase='onboarding';
       }
@@ -5517,8 +5518,7 @@ function SGMApp() {
       console.error('[SGI auth error]',e);
       const rol=ADMIN_EMAILS.includes(userObj.email)?'admin':'cliente';
       setUserRol(rol);
-      const localKey='sgi_perfil_'+userObj.id;
-      const storedP=localStorage.getItem(localKey);
+      const storedP=localStorage.getItem('sgi_tipo_perfil');
       if(storedP){setPerfil(storedP);setPhase('app');}
       else{setPhase('onboarding');}
     }
@@ -5739,7 +5739,7 @@ function SGMApp() {
     </div>
   );
 
-  if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={p=>{if(user?.id){const lk='sgi_perfil_'+user.id;localStorage.setItem(lk,p);localStorage.setItem('sgm_active_uid',user.id);if(supa)supa.from('perfiles').update({tipo_perfil:p}).eq('id',user.id).catch(()=>{});}else{localStorage.setItem('sgm-perfil',p);}setPerfil(p);setPhase('app');}}/></div>;
+  if(phase==='onboarding') return <div style={{position:'absolute',inset:0}}><Onboarding onSelect={async p=>{localStorage.setItem('sgi_tipo_perfil',p);if(user?.id&&supa){localStorage.setItem('sgm_active_uid',user.id);localStorage.setItem('sgi_user_id',user.id);const{data:upd}=await supa.from('perfiles').update({tipo_perfil:p}).eq('id',user.id).select();if(!upd||upd.length===0){await supa.from('perfiles').insert({id:user.id,email:user.email,tipo_perfil:p,rol:'cliente'}).catch(()=>{});}}setPerfil(p);setPhase('app');}}/></div>;
 
   const efectivoPerfil=isAdmin(userRol)&&adminView?adminView:perfil;
   const efectivoRol=isAdmin(userRol)&&adminView?'cliente':userRol;
