@@ -5152,12 +5152,9 @@ function SGMApp() {
             setUserRol(rol);
             const dbTipo=data?.tipo_perfil||null;
             const localKey='sgi_perfil_'+session.user.id;
-            const storedP=localStorage.getItem(localKey);
             localStorage.setItem('sgm_active_uid',session.user.id);
             if(dbTipo){
               setPerfil(dbTipo);localStorage.setItem(localKey,dbTipo);storeSplashResult('app');
-            } else if(storedP){
-              setPerfil(storedP);storeSplashResult('app');
             } else {
               storeSplashResult('onboarding');
             }
@@ -5268,13 +5265,10 @@ function SGMApp() {
       setUserRol(rol);
       const dbTipo=data?.tipo_perfil||null;
       const localKey='sgi_perfil_'+userObj.id;
-      const storedP=localStorage.getItem(localKey);
       localStorage.setItem('sgm_active_uid',userObj.id);
       let nextPhase='app';
       if(dbTipo){
         setPerfil(dbTipo);localStorage.setItem(localKey,dbTipo);
-      } else if(storedP){
-        setPerfil(storedP);
       } else {
         nextPhase='onboarding';
       }
