@@ -1076,36 +1076,25 @@ function ClienteHomeScreen({onNav,t,user}) {
       setLastCot(null);setAvanceRows([]);setEstadoProyecto(null);setProyectoId(null);
       return;
     }
-    let localCot=null;
-    try{const s=localStorage.getItem('sgi_last_cot');if(s){localCot=JSON.parse(s);setLastCot(localCot);}}catch(e){}
-    if(!supa) return;
-    const anonPresId=localStorage.getItem('sgm_presupuesto_id');
-    const cargarAvancePorPresId=pid=>{
-      supa.from('avance_obra').select('*').eq('presupuesto_id',pid).order('etapa_numero',{ascending:true})
-        .then(({data})=>{if(data&&data.length>0)setAvanceRows(data);}).catch(()=>{});
-    };
-    const cargarPresByAnon=()=>{
-      if(!anonPresId) return;
-      supa.from('presupuestos').select('*').eq('id',anonPresId).single()
-        .then(({data})=>{if(data){setEstadoProyecto(data.estado||'pendiente');setProyectoId(data.id);cargarAvancePorPresId(data.id);}})
-        .catch(()=>{});
-    };
-    if(!user){cargarPresByAnon();return;}
+    if(!supa||!user?.id) return;
     supa.from('presupuestos').select('*').eq('user_id',user.id)
-      .order('created_at',{ascending:false}).limit(1).single()
+      .order('created_at',{ascending:false}).limit(1).maybeSingle()
       .then(({data:dbPres})=>{
         if(dbPres){
-          const normalized={...dbPres,cal:localCot?.cal||null,fecha:dbPres.created_at,tiempo_meses:localCot?.tiempo_meses||Math.round((dbPres.m2||80)/15)};
+          const normalized={...dbPres,fecha:dbPres.created_at,tiempo_meses:Math.round((dbPres.m2||80)/15)};
           setLastCot(normalized);
           setEstadoProyecto(dbPres.estado||'pendiente');
           setProyectoId(dbPres.id);
           try{localStorage.setItem('sgi_last_cot',JSON.stringify(normalized));}catch(e){}
-          cargarAvancePorPresId(dbPres.id);
+          supa.from('avance_obra').select('*').eq('presupuesto_id',dbPres.id).order('etapa_numero',{ascending:true})
+            .then(({data})=>{if(data&&data.length>0)setAvanceRows(data);}).catch(()=>{});
         } else {
-          if(localCot) setEstadoProyecto('pendiente');
-          cargarPresByAnon();
+          setLastCot(null);setEstadoProyecto(null);setProyectoId(null);setAvanceRows([]);
+          localStorage.removeItem('sgi_last_cot');localStorage.removeItem('sgm_presupuesto_id');
         }
-      }).catch(()=>{cargarPresByAnon();});
+      }).catch(()=>{
+        setLastCot(null);setEstadoProyecto(null);setProyectoId(null);setAvanceRows([]);
+      });
   },[user]);
 
   useEffect(()=>{
@@ -1369,16 +1358,17 @@ function ClienteHomeScreen({onNav,t,user}) {
             </div>
             <div style={{display:'flex',gap:6}}>
               <button onClick={()=>onNav('detalle_cot',{cot:lastCot,estadoProyecto})} style={{flex:1,padding:'8px',borderRadius:9,background:'none',border:`1px solid ${C.border2}`,color:C.acc,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Ver detalle</button>
-              <button onClick={()=>{
+              <button onClick={async()=>{
                 const id=lastCot?.id;
+                console.log('[eliminar cot] id=',id,'lastCot=',lastCot);
                 localStorage.removeItem('sgi_last_cot');
                 localStorage.removeItem('sgm_presupuesto_id');
                 sessionStorage.setItem('sgi_cot_eliminada','1');
-                setLastCot(null);
-                setAvanceRows([]);
-                setEstadoProyecto(null);
-                setProyectoId(null);
-                if(supa&&id) supa.from('presupuestos').delete().eq('id',id).then(()=>{}).catch(()=>{});
+                setLastCot(null);setAvanceRows([]);setEstadoProyecto(null);setProyectoId(null);
+                if(supa&&id){
+                  const{error}=await supa.from('presupuestos').delete().eq('id',id);
+                  console.log('[eliminar cot] resultado:',error?'error: '+error.message:'ok');
+                }
               }} style={{padding:'8px 13px',borderRadius:9,background:'none',border:'1px solid rgba(255,80,80,.3)',color:'#FF5252',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>✕</button>
             </div>
           </div>
