@@ -342,6 +342,17 @@
           terminada: "Terminada",
           presupuestando: "Presupuestando",
           guardarAvance: "Guardar avance",
+          presupuestos: "PRESUPUESTOS",
+          obrasActivas: "OBRAS ACTIVAS",
+          facturacion: "FACTURACIÓN",
+          clientes: "CLIENTES",
+          pagosVencidos: "pagos vencidos",
+          pendientesRevision: "Pendientes de revisión",
+          revisar: "Revisar",
+          notificaciones: "Notificaciones",
+          sinNotificaciones: "Sin notificaciones nuevas",
+          vistas: "Vistas",
+          verBtn: "Ver",
           explora_items: [
             ["Cronograma de obra", "Etapas y plazos de tu proyecto", "agenda"],
             ["Modelos disponibles", "Ver renders y precios", "modelos"],
@@ -545,6 +556,17 @@
           terminada: "Completed",
           presupuestando: "Quoting",
           guardarAvance: "Save progress",
+          presupuestos: "BUDGETS",
+          obrasActivas: "ACTIVE PROJECTS",
+          facturacion: "BILLING",
+          clientes: "CLIENTS",
+          pagosVencidos: "overdue payments",
+          pendientesRevision: "Pending review",
+          revisar: "Review",
+          notificaciones: "Notifications",
+          sinNotificaciones: "No new notifications",
+          vistas: "Views",
+          verBtn: "View",
           explora_items: [
             [
               "Project schedule",
@@ -2236,22 +2258,22 @@
               >
                 {[
                   {
-                    label: "Presupuestos",
+                    label: t.presupuestos||"PRESUPUESTOS",
                     value: metricas.totalPresup,
                     accent: "#3B82F6",
                   },
                   {
-                    label: "Obras activas",
+                    label: t.obrasActivas||"OBRAS ACTIVAS",
                     value: metricas.obrasActivas,
                     accent: "#22C55E",
                   },
                   {
-                    label: "Facturación",
+                    label: t.facturacion||"FACTURACIÓN",
                     value: fmtUSD(metricas.facturacion),
                     accent: "#F59E0B",
                   },
                   {
-                    label: "Clientes",
+                    label: t.clientes||"CLIENTES",
                     value: metricas.clientesActivos,
                     accent: "#06B6D4",
                   },
@@ -2308,8 +2330,7 @@
                       marginBottom: 8,
                     }}
                   >
-                    ⚠️ {vencidos.length} pago{vencidos.length > 1 ? "s" : ""}{" "}
-                    vencido{vencidos.length > 1 ? "s" : ""}
+                    ⚠️ {vencidos.length} {t.pagosVencidos||"pagos vencidos"}
                   </div>
                   {vencidos.map((v) => (
                     <div
@@ -2353,7 +2374,7 @@
                           flexShrink: 0,
                         }}
                       >
-                        Ver
+                        {t.verBtn||"Ver"}
                       </button>
                     </div>
                   ))}
@@ -2378,7 +2399,7 @@
                       color: C.t1,
                     }}
                   >
-                    📋 Pendientes de revisión
+                    📋 {t.pendientesRevision||"Pendientes de revisión"}
                   </div>
                   {pendientes.map((p) => (
                     <div
@@ -2429,7 +2450,7 @@
                           marginLeft: 8,
                         }}
                       >
-                        Revisar
+                        {t.revisar||"Revisar"}
                       </button>
                     </div>
                   ))}
@@ -2582,7 +2603,7 @@
                       gap: 8,
                     }}
                   >
-                    🔔 Notificaciones
+                    🔔 {t.notificaciones||"Notificaciones"}
                     {notifs.filter((n) => !n.leida).length > 0 && (
                       <span
                         style={{
@@ -2608,7 +2629,7 @@
                       textAlign: "center",
                     }}
                   >
-                    Sin notificaciones nuevas
+                    {t.sinNotificaciones||"Sin notificaciones nuevas"}
                   </div>
                 )}
                 {notifs.map((n) => (
@@ -23388,7 +23409,7 @@
                         boxShadow: "0 4px 16px rgba(0,0,0,.4)",
                       }}
                     >
-                      🔧 Vistas
+                      🔧 {t.vistas||"Vistas"}
                     </button>
                     {showAdminSwitch && (
                       <div
