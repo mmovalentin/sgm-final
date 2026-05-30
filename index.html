@@ -467,10 +467,14 @@ function BottomNav({screen,onNav,t,perfil,userRol}) {
 }
 
 // ── HOME
+function tiempoRelativo(ts){const diff=Date.now()-new Date(ts).getTime();const m=Math.floor(diff/60000);if(m<1)return'ahora';if(m<60)return`hace ${m}m`;const h=Math.floor(m/60);if(h<24)return`hace ${h}h`;return`hace ${Math.floor(h/24)}d`;}
+const NOTIF_ICON={Consulta:'💬',Problema:'⚠️',Sugerencia:'💡',Pago:'💰'};
 function HomeScreen({onNav,t,user,perfil,userRol}) {
   const [lastCot,setLastCot]=useState(null);
   const [met,setMet]=useState({avance:0,presup:0,proveed:0,op:0,ingresos:0,egresos:0,ahorro:0,saldo:0});
   const [alertas,setAlertas]=useState([]);
+  const [notifs,setNotifs]=useState([]);
+  const [notifExpandida,setNotifExpandida]=useState(null);
 
   useEffect(()=>{
     try{
@@ -484,6 +488,22 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
     }catch(e){}
   },[]);
 
+  useEffect(()=>{
+    if(!supa) return;
+    supa.from('notificaciones').select('*').order('created_at',{ascending:false}).limit(10)
+      .then(({data})=>setNotifs(data||[])).catch(()=>{});
+    const ch=supa.channel('notificaciones-admin')
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'notificaciones'},payload=>{
+        setNotifs(prev=>[payload.new,...prev].slice(0,10));
+      }).subscribe();
+    return()=>{supa.removeChannel(ch);};
+  },[]);
+
+  async function marcarLeida(id){
+    setNotifs(prev=>prev.map(n=>n.id===id?{...n,leida:true}:n));
+    if(supa) await supa.from('notificaciones').update({leida:true}).eq('id',id);
+  }
+
   function fmtUSD(v){if(!v)return'USD 0';if(v>=1000)return`USD ${(v/1000).toFixed(v%1000===0?0:1)}K`;return`USD ${v.toLocaleString()}`;}
   const pct=met.avance;
 
@@ -491,6 +511,7 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
     <div>
       <div style={{background:C.navy,padding:'16px 14px 20px',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',top:-50,right:-50,width:160,height:160,background:'rgba(74,159,255,.05)',borderRadius:'50%'}}/>
+        {notifs.filter(n=>!n.leida).length>0&&<div style={{position:'absolute',top:12,right:12,background:'#EF4444',borderRadius:12,padding:'3px 9px',fontSize:10,fontWeight:700,color:'#fff'}}>{notifs.filter(n=>!n.leida).length}</div>}
         <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1.5}}>{t.bienvenido}</div>
         <div style={{color:C.onNavy,fontSize:19,fontWeight:700,marginTop:3}}>{t.mi_proyecto}</div>
         <div style={{color:C.t3,fontSize:10,marginTop:2}}>{new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</div>
@@ -534,6 +555,29 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
             ))}
           </div>
         )}
+        <div style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,overflow:'hidden',marginBottom:12}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 13px',borderBottom:`.5px solid ${C.border}`}}>
+            <div style={{fontSize:13,fontWeight:700,display:'flex',alignItems:'center',gap:8}}>🔔 Notificaciones{notifs.filter(n=>!n.leida).length>0&&<span style={{background:'#EF4444',color:'#fff',borderRadius:10,padding:'2px 8px',fontSize:10,fontWeight:700}}>{notifs.filter(n=>!n.leida).length}</span>}</div>
+          </div>
+          {notifs.length===0&&<div style={{padding:'16px',color:C.t3,fontSize:12,textAlign:'center'}}>Sin notificaciones nuevas</div>}
+          {notifs.map(n=>(
+            <div key={n.id} onClick={async()=>{if(!n.leida)await marcarLeida(n.id);setNotifExpandida(notifExpandida===n.id?null:n.id);}} style={{padding:'10px 13px',borderBottom:`.5px solid ${C.border}`,cursor:'pointer',background:n.leida?'transparent':'rgba(74,159,255,.04)'}}>
+              <div style={{display:'flex',alignItems:'flex-start',gap:8}}>
+                <span style={{fontSize:16,flexShrink:0,lineHeight:1.4}}>{NOTIF_ICON[n.tipo]||'📩'}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:2}}>
+                    <div style={{color:C.t1,fontSize:12,fontWeight:700,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{n.titulo}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0,marginLeft:6}}>
+                      {!n.leida&&<span style={{background:'#2563EB',color:'#fff',borderRadius:8,padding:'2px 6px',fontSize:9,fontWeight:700}}>Nueva</span>}
+                      <span style={{color:C.t3,fontSize:9}}>{tiempoRelativo(n.created_at)}</span>
+                    </div>
+                  </div>
+                  <div style={{color:C.t3,fontSize:11,wordBreak:'break-word',whiteSpace:notifExpandida===n.id?'pre-wrap':'nowrap',overflow:'hidden',textOverflow:notifExpandida===n.id?'clip':'ellipsis'}}>{n.mensaje||''}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
         <div style={{marginBottom:12}}>
           <div style={{fontSize:11,fontWeight:700,color:C.t2,textTransform:'uppercase',letterSpacing:.5,marginBottom:10}}>{t.acceso}</div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
@@ -1056,6 +1100,41 @@ const ESTADO_BANNER={
   cancelado:{color:'#EF4444',bg:'rgba(239,68,68,.08)',border:'rgba(239,68,68,.2)',icon:'🔴',label:'Cancelado',msg:'Este proyecto fue cancelado. Contactanos si querés retomarlo.'},
 };
 
+function ReportarModal({user,onClose}){
+  const [tipo,setTipo]=useState('Consulta');
+  const [mensaje,setMensaje]=useState('');
+  const [enviando,setEnviando]=useState(false);
+  const [enviado,setEnviado]=useState(false);
+  async function enviar(){
+    if(!mensaje.trim()||!supa||!user?.id)return;
+    setEnviando(true);
+    const{error}=await supa.from('notificaciones').insert({user_id:user.id,tipo,titulo:tipo+' de '+(user.email||user.id),mensaje:mensaje.trim(),leida:false});
+    setEnviando(false);
+    if(!error){setEnviado(true);setTimeout(onClose,1500);}
+  }
+  return(
+    <div style={{position:'fixed',inset:0,zIndex:500,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
+      <div onClick={onClose} style={{position:'absolute',inset:0,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)'}}/>
+      <div style={{background:C.card,borderRadius:'20px 20px 0 0',padding:'20px 16px 32px',position:'relative',zIndex:1}}>
+        <div style={{color:C.t1,fontSize:16,fontWeight:800,marginBottom:14}}>📢 Reportar / Consultar</div>
+        {enviado?(
+          <div style={{textAlign:'center',padding:'20px 0',color:'#22C55E',fontSize:15,fontWeight:700}}>✓ Enviado correctamente</div>
+        ):(
+          <>
+            <select value={tipo} onChange={e=>setTipo(e.target.value)} style={{width:'100%',padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none',marginBottom:10}}>
+              <option>Consulta</option><option>Problema</option><option>Sugerencia</option><option>Pago</option>
+            </select>
+            <textarea value={mensaje} onChange={e=>setMensaje(e.target.value)} rows={4} placeholder="Describí tu consulta..." style={{width:'100%',padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,resize:'none',outline:'none',fontFamily:'inherit',marginBottom:12}}/>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={onClose} style={{flex:1,padding:'11px',borderRadius:10,background:'none',border:`.5px solid ${C.border}`,color:C.t2,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+              <button onClick={enviar} disabled={!mensaje.trim()||enviando} style={{flex:2,padding:'11px',borderRadius:10,background:'#2563EB',border:'none',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:!mensaje.trim()||enviando?0.5:1}}>{enviando?'Enviando...':'Enviar'}</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 function ClienteHomeScreen({onNav,t,user}) {
   const nombre=user?.user_metadata?.full_name?.split(' ')[0]||user?.email?.split('@')[0]||null;
   const [lastCot,setLastCot]=useState(null);
@@ -1069,6 +1148,7 @@ function ClienteHomeScreen({onNav,t,user}) {
   const [descError,setDescError]=useState(null);
   const [proyectoId,setProyectoId]=useState(null);
   const [pagosHoy,setPagosHoy]=useState([]);
+  const [showReportar,setShowReportar]=useState(false);
 
   useEffect(()=>{
     if(!supa||!user?.id) return;
@@ -1406,8 +1486,12 @@ function ClienteHomeScreen({onNav,t,user}) {
         <button onClick={()=>onNav('cot')} style={{width:'100%',marginTop:8,padding:'11px',background:'#1E293B',border:'.5px solid rgba(255,255,255,.1)',borderRadius:12,color:'rgba(255,255,255,.7)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
           💰 Cotizar sin IA
         </button>
+        <button onClick={()=>setShowReportar(true)} style={{width:'100%',marginTop:8,padding:'11px',background:'none',border:'.5px solid rgba(255,255,255,.15)',borderRadius:12,color:'rgba(255,255,255,.6)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+          📢 Reportar / Consultar
+        </button>
       </div>
 
+      {showReportar&&<ReportarModal user={user} onClose={()=>setShowReportar(false)}/>}
     </div>
   );
 }
@@ -1427,6 +1511,7 @@ function ConstructorHomeScreen({onNav,t,user}) {
   const [nuevoPresup,setNuevoPresup]=useState('');
   const [nuevoEstado,setNuevoEstado]=useState('presupuestando');
   const hoy=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  const [showReportar,setShowReportar]=useState(false);
 
   const cargarObras=()=>{
     if(!supa||!user?.id){setLoading(false);return;}
@@ -1547,7 +1632,12 @@ function ConstructorHomeScreen({onNav,t,user}) {
         <button onClick={()=>onNav('miobrascreen')} style={{width:'100%',padding:'12px',background:C.card,border:`.5px solid ${C.border}`,borderRadius:12,color:C.acc,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
           Ver pipeline completo →
         </button>
+        <button onClick={()=>setShowReportar(true)} style={{width:'100%',marginTop:8,padding:'11px',background:'none',border:`.5px solid ${C.border}`,borderRadius:12,color:'rgba(255,255,255,.6)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+          📢 Reportar / Consultar
+        </button>
       </div>
+
+      {showReportar&&<ReportarModal user={user} onClose={()=>setShowReportar(false)}/>}
 
       {/* Modal nueva obra */}
       {showModal&&(
