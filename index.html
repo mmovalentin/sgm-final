@@ -6093,6 +6093,8 @@ function SGMApp() {
   const splashMinReadyRef=useRef(false);
   const touchStartXRef=useRef(0);
   const touchStartYRef=useRef(0);
+  const [navHistory,setNavHistory]=useState([]);
+  const [swipeHint,setSwipeHint]=useState(false);
   const t=T[lang];
   function exitSplash(next){pendingPhaseRef.current=next;setSplashExiting(true);}
   function storeSplashResult(next){
@@ -6368,9 +6370,13 @@ function SGMApp() {
   function handleNav(id,params) {
     if(id==='more'){setShowMore(true);return;}
     if(!isAdmin(userRol)&&ADMIN_SCREENS.includes(id)){return;}
+    if(id!==screen)setNavHistory(h=>[...h,screen]);
     setScreen(id);
     setScreenParams(params||{});
     setShowMore(false);
+  }
+  function goBack(){
+    if(navHistory.length>0){const prev=navHistory[navHistory.length-1];setNavHistory(h=>h.slice(0,-1));setScreen(prev);setScreenParams({});setShowMore(false);}
   }
 
   function playTap() {
@@ -6515,7 +6521,8 @@ function SGMApp() {
     <div style={{display:'flex',flexDirection:'column',height:'100vh',width:'100%',background:C.card,position:'relative',overflow:'hidden',fontFamily:"system-ui,sans-serif"}}>
       <style>{`:root{--c-navy:#0D1B2A;--c-bg:#0A1628;--c-card:#0D1B2A;--c-off:#0F2035;--c-t1:#F0F6FF;--c-t2:rgba(240,246,255,.55);--c-t3:rgba(240,246,255,.35);--c-border:rgba(255,255,255,.07);--c-border2:rgba(255,255,255,.14);--c-on-navy:#FFFFFF;--c-nav-dim:rgba(255,255,255,.3);--c-nav-border:rgba(255,255,255,.06);--c-dolar-bg:rgba(100,255,218,.1);--c-dolar-text:#64FFDA;--c-chip-bg:#1E293B;--c-chip-text:#94A3B8;--c-drop-bg:#1E293B;--c-drop-text:#F0F6FF;--c-drop-border:rgba(255,255,255,.12)}body.theme-light{--c-navy:#FFFFFF;--c-bg:#F0F4F8;--c-card:#FFFFFF;--c-off:#F1F5F9;--c-t1:#0F172A;--c-t2:#475569;--c-t3:#94A3B8;--c-border:#E2E8F0;--c-border2:#CBD5E1;--c-on-navy:#0F172A;--c-nav-dim:#64748B;--c-nav-border:#E2E8F0;--c-dolar-bg:rgba(37,99,235,.08);--c-dolar-text:#2563EB;--c-chip-bg:#F1F5F9;--c-chip-text:#475569;--c-drop-bg:#FFFFFF;--c-drop-text:#0F172A;--c-drop-border:#E2E8F0}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}input,select,textarea{color:var(--c-t1);background-color:var(--c-off)}input,select,button,textarea{font-family:inherit}`}</style>
       <Topbar screen={screen} perfil={perfil} dolar={dolar} onAyuda={()=>handleNav('faq')} loggedIn={loggedIn} t={t} user={user} onSignOut={signOut} onGoogleSignIn={loginWithGoogle} theme={theme} onThemeChange={setTheme} lang={lang} onLang={l=>{setLang(l);localStorage.setItem('sgi_lang',l);}}/>
-      <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch'}} onClick={playTap} onTouchStart={e=>{touchStartXRef.current=e.touches[0].clientX;touchStartYRef.current=e.touches[0].clientY;}} onTouchEnd={e=>{const dx=e.changedTouches[0].clientX-touchStartXRef.current;const dy=Math.abs(e.changedTouches[0].clientY-touchStartYRef.current);if(touchStartXRef.current<30&&dx>80&&dy<80&&screen!=='home')handleNav('home');}}>
+      <div style={{flex:1,overflowY:'auto',overflowX:'hidden',background:C.bg,WebkitOverflowScrolling:'touch',position:'relative'}} onClick={playTap} onTouchStart={e=>{const x=e.touches[0].clientX;touchStartXRef.current=x;touchStartYRef.current=e.touches[0].clientY;if(x<60&&screen!=='home')setSwipeHint(true);}} onTouchEnd={e=>{setSwipeHint(false);const dx=e.changedTouches[0].clientX-touchStartXRef.current;const dy=Math.abs(e.changedTouches[0].clientY-touchStartYRef.current);if(touchStartXRef.current<60&&dx>60&&dy<80&&screen!=='home')goBack();}}>
+        {swipeHint&&<div style={{position:'absolute',left:0,top:0,bottom:0,width:40,background:'linear-gradient(to right,rgba(74,159,255,.25),transparent)',pointerEvents:'none',zIndex:10,transition:'opacity .15s',borderRadius:'0 8px 8px 0'}}/>}
         {screens[screen]||screens.home}
       </div>
       <BottomNav screen={screen} onNav={handleNav} t={t} perfil={efectivoPerfil} userRol={efectivoRol}/>
