@@ -504,6 +504,12 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
     if(supa) await supa.from('notificaciones').update({leida:true}).eq('id',id);
   }
 
+  async function eliminarNotif(id){
+    if(!window.confirm('¿Eliminar notificación?')) return;
+    setNotifs(prev=>prev.filter(n=>n.id!==id));
+    if(supa) await supa.from('notificaciones').delete().eq('id',id);
+  }
+
   function fmtUSD(v){if(!v)return'USD 0';if(v>=1000)return`USD ${(v/1000).toFixed(v%1000===0?0:1)}K`;return`USD ${v.toLocaleString()}`;}
   const pct=met.avance;
 
@@ -570,6 +576,7 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
                     <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0,marginLeft:6}}>
                       {!n.leida&&<span style={{background:'#2563EB',color:'#fff',borderRadius:8,padding:'2px 6px',fontSize:9,fontWeight:700}}>Nueva</span>}
                       <span style={{color:C.t3,fontSize:9}}>{tiempoRelativo(n.created_at)}</span>
+                      {isAdmin(userRol)&&<button onClick={e=>{e.stopPropagation();eliminarNotif(n.id);}} style={{background:'none',border:'none',cursor:'pointer',padding:'0 2px',fontSize:13,lineHeight:1,color:'rgba(255,82,82,.7)'}}>🗑️</button>}
                     </div>
                   </div>
                   <div style={{color:C.t3,fontSize:11,wordBreak:'break-word',whiteSpace:notifExpandida===n.id?'pre-wrap':'nowrap',overflow:'hidden',textOverflow:notifExpandida===n.id?'clip':'ellipsis'}}>{n.mensaje||''}</div>
