@@ -89,7 +89,7 @@ const MODELOS = [
 const ADMIN_EMAILS=['mmovalentin@gmail.com'];
 const isAdmin=(rol,email='')=>rol==='admin'||ADMIN_EMAILS.includes(email);
 const isConstructor=(tp)=>tp==='constructor';
-const isEmpresa=(tp)=>tp==='empresa';
+const isEmpresa=(tp)=>tp==='empresa'||tp==='proveedor';
 const isCliente=(tp)=>!tp||tp==='cliente';
 
 const CAL = {
@@ -452,8 +452,15 @@ function BottomNav({screen,onNav,t,perfil,userRol}) {
     {id:'mapa',icon:'📍',label:t.mapa_lbl||'Mapa'},
     {id:'more',icon:'☰',label:t.mas||'Más'},
   ];
+  const empresaItems=[
+    {id:'home',icon:'🏠',label:'Inicio'},
+    {id:'empresaclientes',icon:'👥',label:'Clientes'},
+    {id:'empresacomparar',icon:'📊',label:'Comparar'},
+    {id:'empresaeconomia',icon:'💰',label:'Economía'},
+    {id:'more',icon:'☰',label:t.mas||'Más'},
+  ];
   const defaultItems=[{id:'home',icon:'🏠',label:t.inicio},{id:'modelos',icon:'🏘️',label:t.modelos},{id:'cot',icon:'✨',label:t.cotizar},{id:'chat',icon:'🤖',label:t.ia},{id:'more',icon:'☰',label:t.mas}];
-  const items=isAdmin(userRol)?defaultItems:clienteItems;
+  const items=isAdmin(userRol)?defaultItems:isEmpresa(perfil)?empresaItems:clienteItems;
   return (
     <div style={{display:'flex',background:C.navy,padding:'6px 0',flexShrink:0,borderTop:`1px solid ${C.navBorder}`}}>
       {items.map(it=>(
@@ -5216,11 +5223,470 @@ function AvanceObraAdminScreen({userRol,user,t={}}) {
   );
 }
 
+// ── EMPRESA PERFIL
+const EP='#7C3AED';
+const CAT_ICON={materiales:'🧱',herramientas:'🔧',servicios:'🏗️',otros:'📦'};
+const STOCK_BADGE_E={ok:{bg:'rgba(34,197,94,.15)',color:'#4ADE80',label:'OK'},bajo:{bg:'rgba(245,158,11,.15)',color:'#FBBF24',label:'Bajo'},sin_stock:{bg:'rgba(239,68,68,.15)',color:'#F87171',label:'Sin stock'}};
+
+function StockEditor({prod,onSave,onCancel}){
+  const [qty,setQty]=useState(String(prod.stock_cantidad||0));
+  const [estado,setEstado]=useState(prod.stock_estado||'ok');
+  return(
+    <div style={{display:'flex',gap:8,marginTop:6,alignItems:'center'}}>
+      <input value={qty} onChange={e=>setQty(e.target.value)} type="number" min="0" style={{width:70,padding:'6px 8px',borderRadius:8,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,fontFamily:'inherit',outline:'none'}}/>
+      <select value={estado} onChange={e=>setEstado(e.target.value)} style={{flex:1,padding:'6px 8px',borderRadius:8,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,fontFamily:'inherit',outline:'none'}}>
+        <option value="ok">OK</option><option value="bajo">Bajo</option><option value="sin_stock">Sin stock</option>
+      </select>
+      <button onClick={()=>onSave(prod,qty,estado)} style={{padding:'6px 12px',borderRadius:8,background:EP,border:'none',color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓</button>
+      <button onClick={onCancel} style={{padding:'6px 10px',borderRadius:8,background:'none',border:`.5px solid ${C.border}`,color:C.t2,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>✕</button>
+    </div>
+  );
+}
+
+function EmpresaHomeScreen({onNav,user}){
+  const nombre=user?.user_metadata?.full_name?.split(' ')[0]||user?.email?.split('@')[0]||'Empresa';
+  const inicial=(user?.user_metadata?.full_name||user?.email||'E')[0].toUpperCase();
+  const [productos,setProductos]=useState([]);
+  const [pedidos,setPedidos]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const hoy=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+
+  useEffect(()=>{
+    if(!supa||!user?.id){setLoading(false);return;}
+    Promise.all([
+      supa.from('empresa_productos').select('*').eq('empresa_id',user.id),
+      supa.from('empresa_pedidos').select('*').eq('empresa_id',user.id).order('created_at',{ascending:false}).limit(20),
+    ]).then(([{data:prods},{data:peds}])=>{
+      setProductos(prods||[]);setPedidos(peds||[]);setLoading(false);
+    }).catch(()=>setLoading(false));
+  },[user]);
+
+  const hoyMes=new Date().getMonth();const hoyAnio=new Date().getFullYear();
+  const ventasMes=pedidos.filter(p=>p.estado==='entregado'&&new Date(p.created_at).getMonth()===hoyMes&&new Date(p.created_at).getFullYear()===hoyAnio).reduce((s,p)=>s+(p.total_usd||0),0);
+  const pedidosNuevos=pedidos.filter(p=>p.estado==='nuevo'||p.estado==='pendiente').length;
+  const stockBajo=productos.filter(p=>p.stock_estado!=='ok').length;
+  const alertasStock=productos.filter(p=>p.stock_estado!=='ok');
+
+  return(
+    <div style={{background:C.bg,minHeight:'100%',paddingBottom:16}}>
+      <div style={{background:C.navy,padding:'20px 16px 22px',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',top:-50,right:-30,width:130,height:130,background:'rgba(124,58,237,.06)',borderRadius:'50%',pointerEvents:'none'}}/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+          <div>
+            <div style={{color:'rgba(167,139,250,.7)',fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:2,marginBottom:4}}>EMPRESA · PROVEEDOR</div>
+            <div style={{color:C.onNavy,fontSize:21,fontWeight:800,lineHeight:1.2,marginBottom:3}}>{nombre?`¡Hola ${nombre}!`:'Panel Logístico'}</div>
+            <div style={{color:C.t3,fontSize:11,textTransform:'capitalize'}}>{hoy}</div>
+          </div>
+          <div style={{width:42,height:42,borderRadius:'50%',background:`linear-gradient(135deg,${EP},#A78BFA)`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <span style={{color:'#fff',fontSize:18,fontWeight:800}}>{inicial}</span>
+          </div>
+        </div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,margin:'12px 16px 0'}}>
+        {[
+          {label:'Productos',value:productos.length,accent:EP},
+          {label:'Pedidos nuevos',value:pedidosNuevos,accent:'#3B82F6'},
+          {label:'Ventas mes',value:'USD '+(ventasMes).toLocaleString(),accent:'#22C55E'},
+          {label:'Stock bajo',value:stockBajo,accent:stockBajo>0?'#EF4444':'#22C55E'},
+        ].map((s,i)=>(
+          <div key={i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'14px 12px',borderLeft:`3px solid ${s.accent}`}}>
+            <div style={{color:C.t1,fontSize:19,fontWeight:800,lineHeight:1}}>{s.value}</div>
+            <div style={{color:C.t3,fontSize:10,textTransform:'uppercase',letterSpacing:.5,marginTop:4}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+      {alertasStock.length>0&&(
+        <div style={{margin:'12px 16px 0',background:'rgba(239,68,68,.08)',borderRadius:12,border:'1px solid rgba(239,68,68,.3)',padding:'12px 14px'}}>
+          <div style={{color:'#F87171',fontSize:13,fontWeight:700,marginBottom:8}}>⚠️ {alertasStock.length} producto{alertasStock.length>1?'s':''} con stock bajo</div>
+          {alertasStock.map(p=>(
+            <div key={p.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:'.5px solid rgba(239,68,68,.15)'}}>
+              <div>
+                <div style={{color:C.t1,fontSize:12,fontWeight:600}}>{p.nombre}</div>
+                <div style={{color:'#F87171',fontSize:10,marginTop:2}}>{p.stock_estado||'Sin stock'} · {p.stock_cantidad||0} {p.unidad||'u.'}</div>
+              </div>
+              <button onClick={()=>onNav('empresacatalogo')} style={{background:'rgba(239,68,68,.2)',border:'none',borderRadius:8,padding:'5px 12px',color:'#F87171',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>🛒 Ver</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{margin:'12px 16px 0'}}>
+        <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Acceso rápido</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {[
+            {icon:'📦',label:'Catálogo',sub:'Productos y stock',id:'empresacatalogo',bg:'#1E0A3C'},
+            {icon:'👥',label:'Clientes',sub:'Gestión contactos',id:'empresaclientes',bg:'#0A1628'},
+            {icon:'📊',label:'Comparar',sub:'Presupuestos',id:'empresacomparar',bg:'#0A1A2E'},
+            {icon:'💰',label:'Economía',sub:'Ventas y margen',id:'empresaeconomia',bg:'#071A07'},
+          ].map(b=>(
+            <button key={b.id} onClick={()=>onNav(b.id)} style={{background:b.bg,border:'.5px solid rgba(124,58,237,.2)',borderRadius:12,padding:'14px 12px',cursor:'pointer',textAlign:'left',color:'#fff',fontFamily:'inherit'}}>
+              <div style={{fontSize:22,marginBottom:6}}>{b.icon}</div>
+              <div style={{fontSize:12,fontWeight:700}}>{b.label}</div>
+              <div style={{fontSize:9,opacity:.55,marginTop:2}}>{b.sub}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmpresaClientesScreen({user,onNav}){
+  const [clientes,setClientes]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [showModal,setShowModal]=useState(false);
+  const [guardando,setGuardando]=useState(false);
+  const [form,setForm]=useState({nombre:'',empresa:'',telefono:'',email:'',localidad:'',notas:''});
+
+  const cargar=()=>{
+    if(!supa||!user?.id){setLoading(false);return;}
+    supa.from('empresa_clientes').select('*').eq('empresa_id',user.id).order('created_at',{ascending:false})
+      .then(({data})=>{setClientes(data||[]);setLoading(false);}).catch(()=>setLoading(false));
+  };
+  useEffect(()=>{cargar();},[user]);
+
+  async function agregarCliente(){
+    if(!form.nombre.trim()||!supa||!user?.id) return;
+    setGuardando(true);
+    const{error}=await supa.from('empresa_clientes').insert({empresa_id:user.id,...form});
+    setGuardando(false);
+    if(!error){setShowModal(false);setForm({nombre:'',empresa:'',telefono:'',email:'',localidad:'',notas:''});cargar();}
+  }
+
+  async function eliminarCliente(id){
+    if(!window.confirm('¿Eliminar cliente?')) return;
+    await supa.from('empresa_clientes').delete().eq('id',id);
+    setClientes(prev=>prev.filter(c=>c.id!==id));
+  }
+
+  return(
+    <div style={{background:C.bg,minHeight:'100%',paddingBottom:16}}>
+      <div style={{background:C.navy,padding:'16px 16px 18px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          <div style={{color:'rgba(167,139,250,.7)',fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:2}}>EMPRESA</div>
+          <div style={{color:C.onNavy,fontSize:17,fontWeight:800,marginTop:2}}>Clientes</div>
+        </div>
+        <button onClick={()=>setShowModal(true)} style={{background:EP,border:'none',borderRadius:10,padding:'8px 14px',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>+ Agregar</button>
+      </div>
+      <div style={{padding:'12px 16px'}}>
+        {loading&&<div style={{color:C.t3,textAlign:'center',padding:20}}>Cargando...</div>}
+        {!loading&&clientes.length===0&&(
+          <div style={{textAlign:'center',padding:'32px 0'}}>
+            <div style={{fontSize:40,marginBottom:12}}>👥</div>
+            <div style={{color:C.t1,fontSize:15,fontWeight:700,marginBottom:6}}>Sin clientes aún</div>
+            <button onClick={()=>setShowModal(true)} style={{padding:'10px 24px',background:EP,border:'none',borderRadius:12,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>Agregar primer cliente</button>
+          </div>
+        )}
+        {clientes.map(c=>{
+          const ini=(c.nombre||'C')[0].toUpperCase();
+          return(
+            <div key={c.id} style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'12px 14px',marginBottom:10,display:'flex',alignItems:'center',gap:12}}>
+              <div style={{width:40,height:40,borderRadius:'50%',background:`linear-gradient(135deg,${EP},#A78BFA)`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                <span style={{color:'#fff',fontSize:16,fontWeight:800}}>{ini}</span>
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{color:C.t1,fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.nombre}</div>
+                {c.empresa&&<div style={{color:'#A78BFA',fontSize:11,marginTop:1}}>{c.empresa}</div>}
+                <div style={{color:C.t3,fontSize:10,marginTop:2}}>{[c.telefono,c.email,c.localidad].filter(Boolean).join(' · ')}</div>
+              </div>
+              <button onClick={()=>eliminarCliente(c.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:18,padding:'4px',color:'rgba(255,82,82,.6)',flexShrink:0}}>🗑️</button>
+            </div>
+          );
+        })}
+      </div>
+      {showModal&&(
+        <div style={{position:'fixed',inset:0,zIndex:500,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
+          <div onClick={()=>setShowModal(false)} style={{position:'absolute',inset:0,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)'}}/>
+          <div style={{background:C.card,borderRadius:'20px 20px 0 0',padding:'20px 16px 32px',position:'relative',zIndex:1,maxHeight:'90vh',overflowY:'auto'}}>
+            <div style={{color:C.t1,fontSize:16,fontWeight:800,marginBottom:16}}>Nuevo cliente</div>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {[['nombre','Nombre *'],['empresa','Empresa'],['telefono','Teléfono'],['email','Email'],['localidad','Localidad'],['notas','Notas']].map(([k,ph])=>(
+                <input key={k} value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} placeholder={ph} style={{padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+              ))}
+            </div>
+            <button onClick={agregarCliente} disabled={guardando||!form.nombre.trim()} style={{width:'100%',marginTop:14,padding:'12px',background:EP,border:'none',borderRadius:12,color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:guardando||!form.nombre.trim()?0.5:1}}>
+              {guardando?'Guardando...':'Guardar cliente'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EmpresaCompararScreen({user,onNav}){
+  const [presupuestos,setPresupuestos]=useState([]);
+  const [uploading,setUploading]=useState(false);
+  const [tipo,setTipo]=useState('propio');
+  const [totalInput,setTotalInput]=useState('');
+  const fileRef=useRef(null);
+
+  const cargar=()=>{
+    if(!supa||!user?.id) return;
+    supa.from('empresa_presupuestos').select('*').eq('empresa_id',user.id).order('created_at',{ascending:false})
+      .then(({data})=>setPresupuestos(data||[])).catch(()=>{});
+  };
+  useEffect(()=>{cargar();},[user]);
+
+  async function subirPresupuesto(ev){
+    const file=ev.target.files?.[0];
+    if(!file||!supa||!user?.id){return;}
+    const total=parseFloat(totalInput)||0;
+    setUploading(true);
+    const path=`empresa/${user.id}/${Date.now()}_${file.name}`;
+    const{error:upErr}=await supa.storage.from('obra-archivos').upload(path,file,{upsert:true});
+    if(upErr){setUploading(false);alert('Error al subir archivo');ev.target.value='';return;}
+    const{data:{publicUrl}}=supa.storage.from('obra-archivos').getPublicUrl(path);
+    const{error}=await supa.from('empresa_presupuestos').insert({empresa_id:user.id,nombre:file.name,total_usd:total,tipo,archivo_url:publicUrl});
+    setUploading(false);
+    if(!error){setTotalInput('');cargar();}
+    ev.target.value='';
+  }
+
+  const propio=presupuestos.find(p=>p.tipo==='propio');
+  const competencia=presupuestos.find(p=>p.tipo==='competencia');
+  const diferencia=propio&&competencia?(competencia.total_usd-propio.total_usd):null;
+  const pctDif=propio&&competencia&&competencia.total_usd>0?Math.round(Math.abs(diferencia)/competencia.total_usd*100):null;
+
+  return(
+    <div style={{background:C.bg,minHeight:'100%',paddingBottom:16}}>
+      <div style={{background:C.navy,padding:'16px 16px 18px'}}>
+        <div style={{color:'rgba(167,139,250,.7)',fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:2}}>EMPRESA</div>
+        <div style={{color:C.onNavy,fontSize:17,fontWeight:800,marginTop:2}}>Comparar presupuestos</div>
+      </div>
+      <div style={{padding:'12px 16px'}}>
+        {diferencia!==null&&diferencia>0&&(
+          <div style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.3)',borderRadius:12,padding:'14px 16px',marginBottom:12}}>
+            <div style={{color:'#4ADE80',fontSize:13,fontWeight:700,marginBottom:4}}>✅ Ventaja competitiva</div>
+            <div style={{color:C.t1,fontSize:14,fontWeight:800}}>USD {diferencia.toLocaleString()} más bajo ({pctDif}%)</div>
+          </div>
+        )}
+        {diferencia!==null&&diferencia<=0&&(
+          <div style={{background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.3)',borderRadius:12,padding:'14px 16px',marginBottom:12}}>
+            <div style={{color:'#F87171',fontSize:13,fontWeight:700,marginBottom:4}}>⚠️ Competencia más económica</div>
+            <div style={{color:C.t1,fontSize:14,fontWeight:800}}>USD {Math.abs(diferencia).toLocaleString()} más caro ({pctDif}%)</div>
+          </div>
+        )}
+        <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'14px',marginBottom:12}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.t1,marginBottom:10}}>📎 Subir presupuesto</div>
+          <select value={tipo} onChange={e=>setTipo(e.target.value)} style={{width:'100%',padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,fontFamily:'inherit',outline:'none',marginBottom:8}}>
+            <option value="propio">Mi presupuesto</option>
+            <option value="competencia">Competencia</option>
+          </select>
+          <input value={totalInput} onChange={e=>setTotalInput(e.target.value)} placeholder="Total USD (ej: 45000)" type="number" min="0" style={{width:'100%',padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:13,fontFamily:'inherit',outline:'none',marginBottom:8}}/>
+          <input ref={fileRef} type="file" accept=".pdf,.jpg,.png" onChange={subirPresupuesto} style={{display:'none'}}/>
+          <button onClick={()=>fileRef.current?.click()} disabled={uploading} style={{width:'100%',padding:'10px',background:EP,border:'none',borderRadius:10,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:uploading?0.5:1}}>
+            {uploading?'Subiendo...':'📎 Seleccionar archivo'}
+          </button>
+        </div>
+        {presupuestos.length===0&&<div style={{color:C.t3,textAlign:'center',padding:'16px 0',fontSize:12}}>Sin presupuestos cargados aún</div>}
+        {presupuestos.length>0&&(
+          <div>
+            <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:.5,marginBottom:8}}>Cargados</div>
+            {presupuestos.map(p=>(
+              <div key={p.id} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px',marginBottom:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{color:C.t1,fontSize:12,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.nombre}</div>
+                  <div style={{display:'flex',gap:6,marginTop:4,alignItems:'center'}}>
+                    <span style={{background:p.tipo==='propio'?`rgba(124,58,237,.2)`:'rgba(59,130,246,.2)',color:p.tipo==='propio'?'#A78BFA':'#60A5FA',borderRadius:6,padding:'2px 8px',fontSize:10,fontWeight:700}}>{p.tipo==='propio'?'Mío':'Competencia'}</span>
+                    {p.total_usd>0&&<span style={{color:C.t3,fontSize:11}}>USD {(p.total_usd||0).toLocaleString()}</span>}
+                  </div>
+                </div>
+                {p.archivo_url&&<a href={p.archivo_url} target="_blank" rel="noreferrer" style={{color:'#A78BFA',fontSize:12,fontWeight:600,textDecoration:'none',flexShrink:0,marginLeft:8}}>Ver →</a>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EmpresaEconomiaScreen({user,onNav}){
+  const [pedidos,setPedidos]=useState([]);
+
+  useEffect(()=>{
+    if(!supa||!user?.id) return;
+    supa.from('empresa_pedidos').select('*').eq('empresa_id',user.id)
+      .then(({data})=>setPedidos(data||[])).catch(()=>{});
+  },[user]);
+
+  const entregados=pedidos.filter(p=>p.estado==='entregado');
+  const ventas=entregados.reduce((s,p)=>s+(p.total_usd||0),0);
+  const costos=Math.round(ventas*0.6);
+  const ganancia=ventas-costos;
+  const margen=ventas>0?Math.round(ganancia/ventas*100):0;
+
+  const topProds={};
+  entregados.forEach(p=>{try{(JSON.parse(p.items||'[]')||[]).forEach(it=>{topProds[it.nombre]=(topProds[it.nombre]||0)+(it.cantidad||1);});}catch{}});
+  const topProdsList=Object.entries(topProds).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const topCls={};
+  entregados.forEach(p=>{if(p.cliente_nombre)topCls[p.cliente_nombre]=(topCls[p.cliente_nombre]||0)+(p.total_usd||0);});
+  const topClsList=Object.entries(topCls).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  return(
+    <div style={{background:C.bg,minHeight:'100%',paddingBottom:16}}>
+      <div style={{background:C.navy,padding:'16px 16px 18px'}}>
+        <div style={{color:'rgba(167,139,250,.7)',fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:2}}>EMPRESA</div>
+        <div style={{color:C.onNavy,fontSize:17,fontWeight:800,marginTop:2}}>Economía</div>
+      </div>
+      <div style={{padding:'12px 16px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+          {[
+            {label:'Ventas totales',value:'USD '+(ventas).toLocaleString(),accent:'#22C55E'},
+            {label:'Costos (est.)',value:'USD '+(costos).toLocaleString(),accent:'#F59E0B'},
+            {label:'Ganancia',value:'USD '+(ganancia).toLocaleString(),accent:EP},
+            {label:'Margen',value:`${margen}%`,accent:margen>=30?'#22C55E':margen>=15?'#F59E0B':'#EF4444'},
+          ].map((m,i)=>(
+            <div key={i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'14px 12px',borderLeft:`3px solid ${m.accent}`}}>
+              <div style={{color:C.t1,fontSize:18,fontWeight:800,lineHeight:1}}>{m.value}</div>
+              <div style={{color:C.t3,fontSize:10,textTransform:'uppercase',letterSpacing:.5,marginTop:4}}>{m.label}</div>
+            </div>
+          ))}
+        </div>
+        {topProdsList.length>0&&(
+          <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,overflow:'hidden',marginBottom:12}}>
+            <div style={{padding:'11px 13px',borderBottom:`.5px solid ${C.border}`,fontSize:12,fontWeight:700,color:C.t1}}>📦 Top productos</div>
+            {topProdsList.map(([nombre,qty],i)=>(
+              <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'9px 13px',borderBottom:`.5px solid ${C.border}`,fontSize:12}}>
+                <span style={{color:C.t2}}>{nombre}</span>
+                <span style={{color:'#A78BFA',fontWeight:700}}>{qty} u.</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {topClsList.length>0&&(
+          <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,overflow:'hidden',marginBottom:12}}>
+            <div style={{padding:'11px 13px',borderBottom:`.5px solid ${C.border}`,fontSize:12,fontWeight:700,color:C.t1}}>👥 Top clientes</div>
+            {topClsList.map(([nombre,monto],i)=>(
+              <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'9px 13px',borderBottom:`.5px solid ${C.border}`,fontSize:12}}>
+                <span style={{color:C.t2}}>{nombre}</span>
+                <span style={{color:'#A78BFA',fontWeight:700}}>USD {monto.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {entregados.length===0&&<div style={{color:C.t3,textAlign:'center',padding:'24px 0',fontSize:12}}>Sin pedidos entregados aún</div>}
+      </div>
+    </div>
+  );
+}
+
+function EmpresaCatalogoScreen({user,onNav}){
+  const [productos,setProductos]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [showModal,setShowModal]=useState(false);
+  const [guardando,setGuardando]=useState(false);
+  const [editStock,setEditStock]=useState(null);
+  const [form,setForm]=useState({nombre:'',categoria:'materiales',precio_usd:'',unidad:'u.',stock_cantidad:'',stock_estado:'ok'});
+
+  const cargar=()=>{
+    if(!supa||!user?.id){setLoading(false);return;}
+    supa.from('empresa_productos').select('*').eq('empresa_id',user.id).order('nombre',{ascending:true})
+      .then(({data})=>{setProductos(data||[]);setLoading(false);}).catch(()=>setLoading(false));
+  };
+  useEffect(()=>{cargar();},[user]);
+
+  async function agregarProducto(){
+    if(!form.nombre.trim()||!supa||!user?.id) return;
+    setGuardando(true);
+    const{error}=await supa.from('empresa_productos').insert({empresa_id:user.id,nombre:form.nombre.trim(),categoria:form.categoria,precio_usd:parseFloat(form.precio_usd)||null,unidad:form.unidad||'u.',stock_cantidad:parseInt(form.stock_cantidad)||0,stock_estado:form.stock_estado||'ok'});
+    setGuardando(false);
+    if(!error){setShowModal(false);setForm({nombre:'',categoria:'materiales',precio_usd:'',unidad:'u.',stock_cantidad:'',stock_estado:'ok'});cargar();}
+  }
+
+  async function eliminarProducto(id){
+    if(!window.confirm('¿Eliminar producto?')) return;
+    await supa.from('empresa_productos').delete().eq('id',id);
+    setProductos(prev=>prev.filter(p=>p.id!==id));
+  }
+
+  async function guardarStock(prod,qty,estado){
+    const{error}=await supa.from('empresa_productos').update({stock_cantidad:parseInt(qty)||0,stock_estado:estado}).eq('id',prod.id);
+    if(!error){setProductos(prev=>prev.map(p=>p.id===prod.id?{...p,stock_cantidad:parseInt(qty)||0,stock_estado:estado}:p));setEditStock(null);}
+  }
+
+  return(
+    <div style={{background:C.bg,minHeight:'100%',paddingBottom:16}}>
+      <div style={{background:C.navy,padding:'16px 16px 18px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          <div style={{color:'rgba(167,139,250,.7)',fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:2}}>EMPRESA</div>
+          <div style={{color:C.onNavy,fontSize:17,fontWeight:800,marginTop:2}}>Catálogo</div>
+        </div>
+        <button onClick={()=>setShowModal(true)} style={{background:EP,border:'none',borderRadius:10,padding:'8px 14px',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>+ Producto</button>
+      </div>
+      <div style={{padding:'12px 16px'}}>
+        {loading&&<div style={{color:C.t3,textAlign:'center',padding:20}}>Cargando...</div>}
+        {!loading&&productos.length===0&&(
+          <div style={{textAlign:'center',padding:'32px 0'}}>
+            <div style={{fontSize:40,marginBottom:12}}>📦</div>
+            <div style={{color:C.t1,fontSize:15,fontWeight:700,marginBottom:6}}>Sin productos aún</div>
+            <button onClick={()=>setShowModal(true)} style={{padding:'10px 24px',background:EP,border:'none',borderRadius:12,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>Agregar primer producto</button>
+          </div>
+        )}
+        {productos.map(p=>{
+          const badge=STOCK_BADGE_E[p.stock_estado]||STOCK_BADGE_E.ok;
+          const catIcon=CAT_ICON[p.categoria]||'📦';
+          const isEditing=editStock===p.id;
+          return(
+            <div key={p.id} style={{background:C.card,borderRadius:14,border:`.5px solid ${C.border}`,padding:'12px 14px',marginBottom:10}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:isEditing?0:4}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,flex:1,minWidth:0}}>
+                  <span style={{fontSize:20,flexShrink:0}}>{catIcon}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{color:C.t1,fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.nombre}</div>
+                    <div style={{color:C.t3,fontSize:10,marginTop:1}}>{p.categoria}{p.precio_usd?` · USD ${p.precio_usd.toLocaleString()}/${p.unidad||'u.'}`:''}</div>
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:4,alignItems:'center',flexShrink:0,marginLeft:6}}>
+                  <span style={{background:badge.bg,color:badge.color,borderRadius:8,padding:'3px 8px',fontSize:10,fontWeight:700}}>{badge.label}</span>
+                  <button onClick={()=>setEditStock(isEditing?null:p.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:14,padding:'2px',color:'rgba(167,139,250,.7)'}}>✏️</button>
+                  <button onClick={()=>eliminarProducto(p.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:14,padding:'2px',color:'rgba(255,82,82,.6)'}}>🗑️</button>
+                </div>
+              </div>
+              {!isEditing&&<div style={{color:C.t3,fontSize:11}}>Stock: {p.stock_cantidad||0} {p.unidad||'u.'}</div>}
+              {isEditing&&<StockEditor prod={p} onSave={guardarStock} onCancel={()=>setEditStock(null)}/>}
+            </div>
+          );
+        })}
+      </div>
+      {showModal&&(
+        <div style={{position:'fixed',inset:0,zIndex:500,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
+          <div onClick={()=>setShowModal(false)} style={{position:'absolute',inset:0,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)'}}/>
+          <div style={{background:C.card,borderRadius:'20px 20px 0 0',padding:'20px 16px 32px',position:'relative',zIndex:1,maxHeight:'90vh',overflowY:'auto'}}>
+            <div style={{color:C.t1,fontSize:16,fontWeight:800,marginBottom:16}}>Nuevo producto</div>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              <input value={form.nombre} onChange={e=>setForm(f=>({...f,nombre:e.target.value}))} placeholder="Nombre *" style={{padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+              <select value={form.categoria} onChange={e=>setForm(f=>({...f,categoria:e.target.value}))} style={{padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}>
+                <option value="materiales">Materiales</option><option value="herramientas">Herramientas</option><option value="servicios">Servicios</option><option value="otros">Otros</option>
+              </select>
+              <div style={{display:'flex',gap:8}}>
+                <input value={form.precio_usd} onChange={e=>setForm(f=>({...f,precio_usd:e.target.value}))} placeholder="Precio USD" type="number" min="0" style={{flex:2,padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+                <input value={form.unidad} onChange={e=>setForm(f=>({...f,unidad:e.target.value}))} placeholder="Unidad" style={{flex:1,padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+              </div>
+              <div style={{display:'flex',gap:8}}>
+                <input value={form.stock_cantidad} onChange={e=>setForm(f=>({...f,stock_cantidad:e.target.value}))} placeholder="Stock" type="number" min="0" style={{flex:1,padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}/>
+                <select value={form.stock_estado} onChange={e=>setForm(f=>({...f,stock_estado:e.target.value}))} style={{flex:1,padding:'10px 12px',borderRadius:10,border:`.5px solid ${C.border2}`,background:C.off,color:C.t1,fontSize:14,fontFamily:'inherit',outline:'none'}}>
+                  <option value="ok">OK</option><option value="bajo">Bajo</option><option value="sin_stock">Sin stock</option>
+                </select>
+              </div>
+            </div>
+            <button onClick={agregarProducto} disabled={guardando||!form.nombre.trim()} style={{width:'100%',marginTop:14,padding:'12px',background:EP,border:'none',borderRadius:12,color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:guardando||!form.nombre.trim()?0.5:1}}>
+              {guardando?'Guardando...':'Guardar producto'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const CLIENTE_HIDDEN=['rubros','presup','stats','clientes'];
 function MoreMenu({onNav,onClose,t,lang,onLang,perfil,userRol}) {
   const avanceItem=isConstructor(perfil)?['🏗️',t.avance_obra_title||'Avance obra','constructoravance']:['🏗️',t.avance_obra_title||'Avance obra','avance_admin'];
   const allItems=[['📦',t.rubros_title,'rubros'],['📍','Mapa','mapa'],['📅',t.agenda_title,'agenda'],['📎',t.presup_title,'presup'],['📊',t.stats_title,'stats'],['❓',t.faq_title,'faq'],['👥',t.clientes_title||'Clientes','clientes'],avanceItem];
-  const items=isAdmin(userRol)?allItems:allItems.filter(([,,id])=>!CLIENTE_HIDDEN.includes(id));
+  const empresaMoreItems=[['📦','Catálogo','empresacatalogo'],['❓',t.faq_title||'FAQ','faq']];
+  const items=isEmpresa(perfil)?empresaMoreItems:isAdmin(userRol)?allItems:allItems.filter(([,,id])=>!CLIENTE_HIDDEN.includes(id));
   return (
     <div style={{position:'absolute',inset:0,zIndex:200,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}>
       <div onClick={onClose} style={{position:'absolute',inset:0,background:'rgba(10,22,40,.7)',backdropFilter:'blur(4px)'}}/>
@@ -5897,7 +6363,9 @@ function SGMApp() {
       ?<HomeScreen onNav={handleNav} t={t} user={user} perfil={efectivoPerfil} userRol={efectivoRol}/>
       :isConstructor(efectivoPerfil)
         ?<ConstructorHomeScreen onNav={handleNav} t={t} user={user}/>
-        :<ClienteHomeScreen onNav={handleNav} t={t} user={user} dolar={dolar}/>,
+        :isEmpresa(efectivoPerfil)
+          ?<EmpresaHomeScreen onNav={handleNav} user={user}/>
+          :<ClienteHomeScreen onNav={handleNav} t={t} user={user} dolar={dolar}/>,
     modelos:<ModelosScreen onNav={handleNav} t={t}/>,
     cot:<CotizadorScreen t={t} initParams={screenParams} lang={lang} user={user}/>,
     chat:<ChatScreen t={t}/>,
@@ -5914,6 +6382,10 @@ function SGMApp() {
     constructoravance:<ConstructorAvanceScreen user={user} onNav={handleNav}/>,
     clientes:<ClientesScreen perfil={efectivoPerfil} userRol={efectivoRol} t={t} lang={lang}/>,
     empresa:<EmpresaScreen onNav={handleNav} user={user}/>,
+    empresaclientes:<EmpresaClientesScreen user={user} onNav={handleNav}/>,
+    empresacomparar:<EmpresaCompararScreen user={user} onNav={handleNav}/>,
+    empresaeconomia:<EmpresaEconomiaScreen user={user} onNav={handleNav}/>,
+    empresacatalogo:<EmpresaCatalogoScreen user={user} onNav={handleNav}/>,
   };
 
   return (
