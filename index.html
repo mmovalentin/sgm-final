@@ -475,6 +475,9 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
   const [alertas,setAlertas]=useState([]);
   const [notifs,setNotifs]=useState([]);
   const [notifExpandida,setNotifExpandida]=useState(null);
+  const [metricas,setMetricas]=useState({totalPresup:0,obrasActivas:0,facturacion:0,clientesActivos:0});
+  const [vencidos,setVencidos]=useState([]);
+  const [pendientes,setPendientes]=useState([]);
 
   useEffect(()=>{
     try{
@@ -510,6 +513,25 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
     if(supa) await supa.from('notificaciones').delete().eq('id',id);
   }
 
+  useEffect(()=>{
+    if(!supa) return;
+    const hoyStr=new Date().toISOString().split('T')[0];
+    Promise.all([
+      supa.from('presupuestos').select('*',{count:'exact',head:true}),
+      supa.from('presupuestos').select('*',{count:'exact',head:true}).eq('estado','en_obra'),
+      supa.from('presupuestos').select('total_usd').eq('estado','aprobado'),
+      supa.from('perfiles').select('*',{count:'exact',head:true}).eq('tipo_perfil','cliente'),
+    ]).then(([{count:tp},{count:oa},{data:fac},{count:ca}])=>{
+      const facturacion=(fac||[]).reduce((s,r)=>s+(r.total_usd||0),0);
+      setMetricas({totalPresup:tp||0,obrasActivas:oa||0,facturacion,clientesActivos:ca||0});
+    }).catch(()=>{});
+    supa.from('agenda_eventos').select('*').lt('fecha',hoyStr).eq('recibo_generado',false).in('tipo',['pago','vencimiento'])
+      .order('fecha',{ascending:true})
+      .then(({data})=>setVencidos(data||[])).catch(()=>{});
+    supa.from('presupuestos').select('*').eq('estado','pendiente').order('created_at',{ascending:false}).limit(3)
+      .then(({data})=>setPendientes(data||[])).catch(()=>{});
+  },[]);
+
   function fmtUSD(v){if(!v)return'USD 0';if(v>=1000)return`USD ${(v/1000).toFixed(v%1000===0?0:1)}K`;return`USD ${v.toLocaleString()}`;}
   const pct=met.avance;
 
@@ -521,20 +543,49 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
         <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1.5}}>{t.bienvenido}</div>
         <div style={{color:C.onNavy,fontSize:19,fontWeight:700,marginTop:3}}>{t.mi_proyecto}</div>
         <div style={{color:C.t3,fontSize:10,marginTop:2}}>{new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</div>
-        <div style={{display:'flex',marginTop:12,background:C.border,borderRadius:10,overflow:'hidden'}}>
-          {[[`${pct}%`,t.avance],[fmtUSD(met.presup),t.presup_lbl],[`${met.proveed}`,t.proveed],[`${met.op}`,t.op]].map(([v,l])=>(
-            <div key={l} style={{flex:1,padding:'9px 5px',textAlign:'center',borderRight:`1px solid ${C.border}`}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.onNavy}}>{v}</div>
-              <div style={{fontSize:9,color:C.t3,marginTop:1}}>{l}</div>
+      </div>
+      <div style={{padding:'12px 14px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+          {[
+            {label:'Presupuestos',value:metricas.totalPresup,accent:'#3B82F6'},
+            {label:'Obras activas',value:metricas.obrasActivas,accent:'#22C55E'},
+            {label:'Facturación',value:fmtUSD(metricas.facturacion),accent:'#F59E0B'},
+            {label:'Clientes',value:metricas.clientesActivos,accent:'#06B6D4'},
+          ].map((m,i)=>(
+            <div key={i} style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'14px 12px',borderLeft:`3px solid ${m.accent}`}}>
+              <div style={{color:C.t1,fontSize:22,fontWeight:800,lineHeight:1}}>{m.value}</div>
+              <div style={{color:C.t3,fontSize:10,textTransform:'uppercase',letterSpacing:.5,marginTop:5}}>{m.label}</div>
             </div>
           ))}
         </div>
-        <div style={{marginTop:10}}>
-          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:C.t3,marginBottom:4}}><span>{t.progreso}</span><span>{pct}%</span></div>
-          <div style={{background:'rgba(255,255,255,.08)',borderRadius:3,height:4}}><div style={{background:'linear-gradient(90deg,#4A9FFF,#64FFDA)',width:`${pct}%`,height:'100%',borderRadius:3}}/></div>
-        </div>
-      </div>
-      <div style={{padding:'12px 14px'}}>
+        {vencidos.length>0&&(
+          <div style={{background:'rgba(239,68,68,.08)',borderRadius:12,border:'1px solid rgba(239,68,68,.3)',padding:'12px 14px',marginBottom:12}}>
+            <div style={{color:'#F87171',fontSize:13,fontWeight:700,marginBottom:8}}>⚠️ {vencidos.length} pago{vencidos.length>1?'s':''} vencido{vencidos.length>1?'s':''}</div>
+            {vencidos.map(v=>(
+              <div key={v.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:'.5px solid rgba(239,68,68,.15)'}}>
+                <div>
+                  <div style={{color:C.t1,fontSize:12,fontWeight:600}}>{v.titulo||'Sin título'}</div>
+                  <div style={{color:'#F87171',fontSize:10,marginTop:2}}>{v.fecha}</div>
+                </div>
+                <button onClick={()=>onNav('agenda')} style={{background:'rgba(239,68,68,.2)',border:'none',borderRadius:8,padding:'5px 12px',color:'#F87171',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>Ver</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {pendientes.length>0&&(
+          <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,overflow:'hidden',marginBottom:12}}>
+            <div style={{padding:'11px 13px',borderBottom:`.5px solid ${C.border}`,fontSize:13,fontWeight:700,color:C.t1}}>📋 Pendientes de revisión</div>
+            {pendientes.map(p=>(
+              <div key={p.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 13px',borderBottom:`.5px solid ${C.border}`}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{color:C.t1,fontSize:12,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.cliente_nombre||'—'}</div>
+                  <div style={{color:C.t3,fontSize:10,marginTop:2}}>{p.m2?p.m2+'m²':''}{p.total_usd?' · USD '+(p.total_usd||0).toLocaleString():''}</div>
+                </div>
+                <button onClick={()=>onNav('presup')} style={{background:'rgba(74,159,255,.15)',border:'none',borderRadius:8,padding:'5px 12px',color:C.acc,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0,marginLeft:8}}>Revisar</button>
+              </div>
+            ))}
+          </div>
+        )}
         {lastCot&&(
           <div style={{background:C.card,borderRadius:12,border:`.5px solid ${C.border}`,padding:'12px 14px',marginBottom:12}}>
             <div style={{fontSize:10,fontWeight:700,color:C.t3,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>{t.ultima_cot||'Última cotización'}</div>
