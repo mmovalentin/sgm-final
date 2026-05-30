@@ -457,7 +457,7 @@ function BottomNav({screen,onNav,t,perfil,userRol}) {
     {id:'empresaclientes',icon:'👥',label:'Clientes'},
     {id:'empresacomparar',icon:'📊',label:'Comparar'},
     {id:'empresaeconomia',icon:'💰',label:'Economía'},
-    {id:'more',icon:'☰',label:t.mas||'Más'},
+    {id:'empresamapa',icon:'🗺️',label:'Mapa'},
   ];
   const defaultItems=[{id:'home',icon:'🏠',label:t.inicio},{id:'modelos',icon:'🏘️',label:t.modelos},{id:'cot',icon:'✨',label:t.cotizar},{id:'chat',icon:'🤖',label:t.ia},{id:'more',icon:'☰',label:t.mas}];
   const items=isAdmin(userRol)?defaultItems:isEmpresa(perfil)?empresaItems:clienteItems;
@@ -5253,12 +5253,23 @@ function EmpresaHomeScreen({onNav,user}){
 
   useEffect(()=>{
     if(!supa||!user?.id){setLoading(false);return;}
-    Promise.all([
-      supa.from('empresa_productos').select('*').eq('empresa_id',user.id),
-      supa.from('empresa_pedidos').select('*').eq('empresa_id',user.id).order('created_at',{ascending:false}).limit(20),
-    ]).then(([{data:prods},{data:peds}])=>{
-      setProductos(prods||[]);setPedidos(peds||[]);setLoading(false);
-    }).catch(()=>setLoading(false));
+    (async()=>{
+      try{
+        const[{data:prods},{data:peds}]=await Promise.all([
+          supa.from('empresa_productos').select('*').eq('empresa_id',user.id),
+          supa.from('empresa_pedidos').select('*').eq('empresa_id',user.id).order('created_at',{ascending:false}).limit(20),
+        ]);
+        if(!prods||prods.length===0){
+          await seedEmpresaEjemplo(user.id);
+          const{data:newProds}=await supa.from('empresa_productos').select('*').eq('empresa_id',user.id);
+          setProductos(newProds||[]);
+        } else {
+          setProductos(prods||[]);
+        }
+        setPedidos(peds||[]);
+      }catch(e){}
+      setLoading(false);
+    })();
   },[user]);
 
   const hoyMes=new Date().getMonth();const hoyAnio=new Date().getFullYear();
@@ -5677,6 +5688,90 @@ function EmpresaCatalogoScreen({user,onNav}){
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+async function seedEmpresaEjemplo(uid){
+  if(!supa||!uid) return;
+  await supa.from('empresa_productos').insert([
+    {empresa_id:uid,nombre:'Perfil SF C89',categoria:'materiales',precio_usd:12.50,unidad:'metro',stock_cantidad:500,stock_estado:'ok'},
+    {empresa_id:uid,nombre:'Placa OSB 15mm',categoria:'materiales',precio_usd:28.00,unidad:'unidad',stock_cantidad:5,stock_estado:'bajo'},
+    {empresa_id:uid,nombre:'Membrana hidrófuga',categoria:'materiales',precio_usd:45.00,unidad:'rollo',stock_cantidad:0,stock_estado:'sin_stock'},
+    {empresa_id:uid,nombre:'Tornillería galvanizada',categoria:'materiales',precio_usd:0.15,unidad:'unidad',stock_cantidad:2000,stock_estado:'ok'},
+  ]);
+  await supa.from('empresa_clientes').insert([
+    {empresa_id:uid,nombre:'Constructor Valentín',empresa:'Steel Frame',telefono:'+54 351 422-3386',email:'mmovalentin@gmail.com',localidad:'Córdoba Capital'},
+    {empresa_id:uid,nombre:'SGI Admin',empresa:'Administración',telefono:'+54 351 422-3386',email:'admin@sgi.com',localidad:'Córdoba Capital'},
+    {empresa_id:uid,nombre:'Constructor Roberto',empresa:'Steel Frame',telefono:'+54 11 5555-1234',email:'roberto@mail.com',localidad:'Carlos Paz'},
+  ]);
+  await supa.from('empresa_presupuestos').insert([
+    {empresa_id:uid,nombre:'Mi presupuesto',tipo:'propio',total_usd:131250},
+    {empresa_id:uid,nombre:'Competencia A',tipo:'competencia',total_usd:147000},
+  ]);
+}
+
+function EmpresaMapaScreen({user,onNav}){
+  const mapRef=useRef(null);
+  const mapInst=useRef(null);
+  const [clientes,setClientes]=useState([]);
+  const [geocodificando,setGeocodificando]=useState(false);
+  const [cargando,setCargando]=useState(true);
+
+  useEffect(()=>{
+    if(!supa||!user?.id){setCargando(false);return;}
+    supa.from('empresa_clientes').select('*').eq('empresa_id',user.id)
+      .then(({data})=>{setClientes(data||[]);setCargando(false);}).catch(()=>setCargando(false));
+  },[user]);
+
+  useEffect(()=>{
+    if(!window.L) return;
+    const t=setTimeout(()=>{
+      if(!mapRef.current||mapInst.current) return;
+      const map=window.L.map(mapRef.current,{zoomControl:true}).setView([-31.4135,-64.1811],10);
+      mapInst.current=map;
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:19}).addTo(map);
+    },100);
+    return()=>{clearTimeout(t);if(mapInst.current){mapInst.current.remove();mapInst.current=null;}};
+  },[]);
+
+  useEffect(()=>{
+    if(!mapInst.current||!window.L||cargando) return;
+    const conLoc=clientes.filter(c=>c.localidad);
+    if(conLoc.length===0) return;
+    setGeocodificando(true);
+    (async()=>{
+      for(const c of conLoc){
+        if(!mapInst.current) break;
+        try{
+          const q=encodeURIComponent(c.localidad+', Argentina');
+          const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=ar`,{headers:{'Accept-Language':'es','User-Agent':'SGM-Construccion/1.0'}});
+          const d=await r.json();
+          if(d?.[0]&&mapInst.current){
+            const lat=parseFloat(d[0].lat),lng=parseFloat(d[0].lon);
+            const ico=window.L.divIcon({html:`<div style="background:#7C3AED;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)">👤</div>`,className:'',iconSize:[34,34],iconAnchor:[17,17]});
+            window.L.marker([lat,lng],{icon:ico}).addTo(mapInst.current)
+              .bindPopup(`<b style="font-size:13px">${c.nombre}</b>${c.empresa?`<br/><span style="font-size:11px;color:#555">${c.empresa}</span>`:''}${c.localidad?`<br/><span style="font-size:10px;color:#777">📍 ${c.localidad}</span>`:''}`);
+          }
+          await new Promise(res=>setTimeout(res,1100));
+        }catch(e){}
+      }
+      setGeocodificando(false);
+    })();
+  },[clientes,cargando]);
+
+  const conLoc=clientes.filter(c=>c.localidad).length;
+  return(
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div style={{background:C.navy,padding:'12px 14px 14px',flexShrink:0}}>
+        <div style={{color:'rgba(167,139,250,.7)',fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:2}}>EMPRESA</div>
+        <div style={{color:C.onNavy,fontSize:15,fontWeight:700,marginTop:2,display:'flex',alignItems:'center',gap:8}}>
+          Mapa de clientes
+          {geocodificando&&<span style={{fontSize:10,color:'#A78BFA',fontWeight:400}}>cargando...</span>}
+        </div>
+        <div style={{color:C.t3,fontSize:10,marginTop:2}}>{conLoc} cliente{conLoc!==1?'s':''} con ubicación</div>
+      </div>
+      <div ref={mapRef} style={{flex:1,minHeight:300,width:'100%'}}/>
     </div>
   );
 }
@@ -6386,6 +6481,7 @@ function SGMApp() {
     empresacomparar:<EmpresaCompararScreen user={user} onNav={handleNav}/>,
     empresaeconomia:<EmpresaEconomiaScreen user={user} onNav={handleNav}/>,
     empresacatalogo:<EmpresaCatalogoScreen user={user} onNav={handleNav}/>,
+    empresamapa:<EmpresaMapaScreen user={user} onNav={handleNav}/>,
   };
 
   return (
