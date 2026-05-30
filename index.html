@@ -24,6 +24,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;width:100%;overflow:hidden;background:#07111F}
 #root{height:100%;width:100%}
+@keyframes sgm-pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 </style>
 </head>
 <body>
@@ -485,6 +486,7 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
   const [metricas,setMetricas]=useState({totalPresup:0,obrasActivas:0,facturacion:0,clientesActivos:0});
   const [vencidos,setVencidos]=useState([]);
   const [pendientes,setPendientes]=useState([]);
+  const [cargando,setCargando]=useState(true);
 
   useEffect(()=>{
     try{
@@ -521,26 +523,51 @@ function HomeScreen({onNav,t,user,perfil,userRol}) {
   }
 
   useEffect(()=>{
-    if(!supa) return;
+    if(!supa){setCargando(false);return;}
     const hoyStr=new Date().toISOString().split('T')[0];
     Promise.all([
       supa.from('presupuestos').select('*',{count:'exact',head:true}),
       supa.from('presupuestos').select('*',{count:'exact',head:true}).eq('estado','en_obra'),
       supa.from('presupuestos').select('total_usd').eq('estado','aprobado'),
       supa.from('perfiles').select('*',{count:'exact',head:true}).eq('tipo_perfil','cliente'),
-    ]).then(([{count:tp},{count:oa},{data:fac},{count:ca}])=>{
+      supa.from('agenda_eventos').select('*').lt('fecha',hoyStr).eq('recibo_generado',false).in('tipo',['pago','vencimiento']).order('fecha',{ascending:true}),
+      supa.from('presupuestos').select('*').eq('estado','pendiente').order('created_at',{ascending:false}).limit(3),
+    ]).then(([{count:tp},{count:oa},{data:fac},{count:ca},{data:venc},{data:pend}])=>{
       const facturacion=(fac||[]).reduce((s,r)=>s+(r.total_usd||0),0);
       setMetricas({totalPresup:tp||0,obrasActivas:oa||0,facturacion,clientesActivos:ca||0});
-    }).catch(()=>{});
-    supa.from('agenda_eventos').select('*').lt('fecha',hoyStr).eq('recibo_generado',false).in('tipo',['pago','vencimiento'])
-      .order('fecha',{ascending:true})
-      .then(({data})=>setVencidos(data||[])).catch(()=>{});
-    supa.from('presupuestos').select('*').eq('estado','pendiente').order('created_at',{ascending:false}).limit(3)
-      .then(({data})=>setPendientes(data||[])).catch(()=>{});
+      setVencidos(venc||[]);
+      setPendientes(pend||[]);
+    }).catch(()=>{}).finally(()=>setCargando(false));
   },[]);
 
   function fmtUSD(v){if(!v)return'USD 0';if(v>=1000)return`USD ${(v/1000).toFixed(v%1000===0?0:1)}K`;return`USD ${v.toLocaleString()}`;}
   const pct=met.avance;
+  const SK={background:'#1E293B',borderRadius:12,animation:'sgm-pulse 1.5s ease-in-out infinite'};
+
+  if(cargando) return (
+    <div>
+      <div style={{background:C.navy,padding:'16px 14px 20px',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',top:-50,right:-50,width:160,height:160,background:'rgba(74,159,255,.05)',borderRadius:'50%'}}/>
+        <div style={{color:C.t3,fontSize:9,textTransform:'uppercase',letterSpacing:1.5}}>{t.bienvenido}</div>
+        <div style={{color:C.onNavy,fontSize:19,fontWeight:700,marginTop:3}}>{t.mi_proyecto}</div>
+        <div style={{color:C.t3,fontSize:10,marginTop:2}}>{new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</div>
+      </div>
+      <div style={{padding:'12px 14px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+          {[0,1,2,3].map(i=><div key={i} style={{...SK,height:72}}/>)}
+        </div>
+        <div style={{...SK,height:72,marginBottom:12}}/>
+        <div style={{...SK,height:88,marginBottom:12}}/>
+        <div style={{marginBottom:12}}>
+          <div style={{...SK,height:14,width:80,borderRadius:6,marginBottom:10}}/>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            {[0,1,2,3].map(i=><div key={i} style={{...SK,height:72,borderRadius:10}}/>)}
+          </div>
+        </div>
+        <div style={{...SK,height:44,borderRadius:10}}/>
+      </div>
+    </div>
+  );
 
   return (
     <div>
