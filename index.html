@@ -393,6 +393,28 @@
           saldo: "Saldo (40%)",
           consultarWhatsapp: "🟢 Consultar por WhatsApp",
           descargarPDF: "📄 Descargar presupuesto PDF",
+          obrasCurso: "OBRAS EN CURSO",
+          verPipeline: "Ver pipeline completo →",
+          avanceLabel: "Avance",
+          nuevaObra: "+ Nueva obra",
+          tusObrasActivas: "Tus obras activas",
+          productos: "PRODUCTOS",
+          pedidosNuevos: "PEDIDOS NUEVOS",
+          ventasMes: "VENTAS MES",
+          stockBajo: "STOCK BAJO",
+          productosStockBajo: "productos con stock bajo",
+          catalogoDesc: "Productos y stock",
+          clientesDesc: "Gestión contactos",
+          compararDesc: "Presupuestos",
+          economiaDesc: "Ventas y margen",
+          estadoBajo: "bajo",
+          estadoSinStock: "sin_stock",
+          entrega: "Entrega",
+          entregaEstimada: "Entrega estimada",
+          verCronograma: "Ver cronograma completo →",
+          sinDescripcion: "Sin descripción. Podés editar tu proyecto para agregar detalles.",
+          editarBtn: "Editar",
+          completado: "Completado ✓",
           explora_items: [
             ["Cronograma de obra", "Etapas y plazos de tu proyecto", "agenda"],
             ["Modelos disponibles", "Ver renders y precios", "modelos"],
@@ -647,6 +669,28 @@
           saldo: "Balance (40%)",
           consultarWhatsapp: "🟢 Contact via WhatsApp",
           descargarPDF: "📄 Download PDF quote",
+          obrasCurso: "ACTIVE PROJECTS",
+          verPipeline: "View full pipeline →",
+          avanceLabel: "Progress",
+          nuevaObra: "+ New project",
+          tusObrasActivas: "Your active projects",
+          productos: "PRODUCTS",
+          pedidosNuevos: "NEW ORDERS",
+          ventasMes: "MONTHLY SALES",
+          stockBajo: "LOW STOCK",
+          productosStockBajo: "products with low stock",
+          catalogoDesc: "Products & stock",
+          clientesDesc: "Contact management",
+          compararDesc: "Budgets",
+          economiaDesc: "Sales & margin",
+          estadoBajo: "low",
+          estadoSinStock: "out_of_stock",
+          entrega: "Delivery",
+          entregaEstimada: "Est. delivery",
+          verCronograma: "View full schedule →",
+          sinDescripcion: "No description. You can edit your project to add details.",
+          editarBtn: "Edit",
+          completado: "Completed ✓",
           explora_items: [
             [
               "Project schedule",
@@ -2983,13 +3027,13 @@
           completada: false,
         },
       ];
-      function avanceLabel(pct, hasData) {
-        if (!hasData || pct === 0) return "Sin datos";
+      function avanceLabel(pct, hasData, t={}) {
+        if (!hasData || pct === 0) return t.sinDatos||"Sin datos";
         if (pct <= 25) return "Planificación";
         if (pct <= 50) return "En proceso";
         if (pct <= 75) return "Avanzado";
         if (pct < 100) return "Casi listo";
-        return "Completado ✓";
+        return t.completado||"Completado ✓";
       }
 
       // ── DETALLE COTIZACIÓN CLIENTE
@@ -4634,7 +4678,7 @@
           ? avanceRows.filter((e) => e.completada || e.porcentaje >= 100).length
           : 0;
         const totalEtapas = hasAvance ? avanceRows.length : 8;
-        const etapaLabel = avanceLabel(avance, hasAvance);
+        const etapaLabel = avanceLabel(avance, hasAvance, t);
         const m2 = lastCot?.m2 || 0;
         const sistema = lastCot?.sistema || "";
         const diasEstimados = lastCot?.tiempo_meses
@@ -5093,8 +5137,8 @@
                   marginBottom: 12,
                 }}
               >
-                <span>Inicio</span>
-                <span>Entrega</span>
+                <span>{t.inicio||"Inicio"}</span>
+                <span>{t.entrega||"Entrega"}</span>
               </div>
               <button
                 onClick={() => onNav("miobrascreen")}
@@ -5115,7 +5159,7 @@
                   gap: 6,
                 }}
               >
-                📅 Ver cronograma completo →
+                📅 {t.verCronograma||"Ver cronograma completo →"}
               </button>
             </div>
 
@@ -5308,7 +5352,7 @@
                         }}
                       >
                         {descripcion ||
-                          "Sin descripción. Podés editar tu proyecto para agregar detalles."}
+                          (t.sinDescripcion||"Sin descripción. Podés editar tu proyecto para agregar detalles.")}
                       </div>
                       <button
                         onClick={() => {
@@ -5329,7 +5373,7 @@
                           fontFamily: "inherit",
                         }}
                       >
-                        Editar
+                        {t.editarBtn||"Editar"}
                       </button>
                     </div>
                   )}
@@ -5777,7 +5821,7 @@
                     {nombre ? `¡Hola ${nombre}! 🔨` : "¡Bienvenido! 🔨"}
                   </div>
                   <div style={{ color: C.t3, fontSize: 12 }}>
-                    Tus obras activas
+                    {t.tusObrasActivas||"Tus obras activas"}
                   </div>
                 </div>
                 <div
@@ -5818,7 +5862,7 @@
                   fontFamily: "inherit",
                 }}
               >
-                + Nueva obra
+                {t.nuevaObra||"+ Nueva obra"}
               </button>
             </div>
 
@@ -5900,7 +5944,7 @@
                   marginBottom: 10,
                 }}
               >
-                Obras en curso
+                {t.obrasCurso||"OBRAS EN CURSO"}
               </div>
               {loading && (
                 <div
@@ -5911,7 +5955,7 @@
                     padding: 20,
                   }}
                 >
-                  Cargando obras...
+                  {t.cargando||"Cargando obras..."}
                 </div>
               )}
               {!loading && obras.length === 0 && (
@@ -6014,7 +6058,7 @@
                         marginBottom: 4,
                       }}
                     >
-                      <span>Avance</span>
+                      <span>{t.avanceLabel||"Avance"}</span>
                       <span>{avance}%</span>
                     </div>
                     <div
@@ -6067,7 +6111,7 @@
                   fontFamily: "inherit",
                 }}
               >
-                Ver pipeline completo →
+                {t.verPipeline||"Ver pipeline completo →"}
               </button>
               <button
                 onClick={() => setShowReportar(true)}
@@ -6446,7 +6490,7 @@
                                 marginBottom: 3,
                               }}
                             >
-                              <span>Avance</span>
+                              <span>{t.avanceLabel||"Avance"}</span>
                               <span>{obra.avance || 0}%</span>
                             </div>
                             <div
@@ -8451,7 +8495,7 @@
         const m2Total = lastCot?.m2 || 0;
         const m2Construidos =
           avance > 0 ? Math.round((m2Total * avance) / 100) : 0;
-        const etapaLbl = avanceLabel(avance, hasAvance);
+        const etapaLbl = avanceLabel(avance, hasAvance, t);
 
         function barColor(e) {
           if (e.completada || e.porcentaje >= 100) return "#22C55E";
@@ -8720,8 +8764,8 @@
                     marginTop: 5,
                   }}
                 >
-                  <span>Inicio</span>
-                  <span>Entrega estimada</span>
+                  <span>{t.inicio||"Inicio"}</span>
+                  <span>{t.entregaEstimada||"Entrega estimada"}</span>
                 </div>
               </div>
 
@@ -18645,7 +18689,7 @@
                         <span style={{ fontSize: 18 }}>%</span>
                       </div>
                       <div style={{ color: C.t3, fontSize: 10, marginTop: 3 }}>
-                        {avanceLabel(avance, hasData)}
+                        {avanceLabel(avance, hasData, t)}
                       </div>
                     </div>
                     <div
@@ -19420,7 +19464,7 @@
         );
       }
 
-      function EmpresaHomeScreen({ onNav, user }) {
+      function EmpresaHomeScreen({ onNav, user, t={} }) {
         const nombre =
           user?.user_metadata?.full_name?.split(" ")[0] ||
           user?.email?.split("@")[0] ||
@@ -19584,19 +19628,19 @@
               }}
             >
               {[
-                { label: "Productos", value: productos.length, accent: EP },
+                { label: t.productos||"PRODUCTOS", value: productos.length, accent: EP },
                 {
-                  label: "Pedidos nuevos",
+                  label: t.pedidosNuevos||"PEDIDOS NUEVOS",
                   value: pedidosNuevos,
                   accent: "#3B82F6",
                 },
                 {
-                  label: "Ventas mes",
+                  label: t.ventasMes||"VENTAS MES",
                   value: "USD " + ventasMes.toLocaleString(),
                   accent: "#22C55E",
                 },
                 {
-                  label: "Stock bajo",
+                  label: t.stockBajo||"STOCK BAJO",
                   value: stockBajo,
                   accent: stockBajo > 0 ? "#EF4444" : "#22C55E",
                 },
@@ -19653,8 +19697,7 @@
                     marginBottom: 8,
                   }}
                 >
-                  ⚠️ {alertasStock.length} producto
-                  {alertasStock.length > 1 ? "s" : ""} con stock bajo
+                  ⚠️ {alertasStock.length} {t.productosStockBajo||"productos con stock bajo"}
                 </div>
                 {alertasStock.map((p) => (
                   <div
@@ -19725,28 +19768,28 @@
                   {
                     icon: "📦",
                     label: "Catálogo",
-                    sub: "Productos y stock",
+                    sub: t.catalogoDesc||"Productos y stock",
                     id: "empresacatalogo",
                     bg: "#1E0A3C",
                   },
                   {
                     icon: "👥",
-                    label: "Clientes",
-                    sub: "Gestión contactos",
+                    label: t.clientes_title||"Clientes",
+                    sub: t.clientesDesc||"Gestión contactos",
                     id: "empresaclientes",
                     bg: "#0A1628",
                   },
                   {
                     icon: "📊",
                     label: "Comparar",
-                    sub: "Presupuestos",
+                    sub: t.compararDesc||"Presupuestos",
                     id: "empresacomparar",
                     bg: "#0A1A2E",
                   },
                   {
                     icon: "💰",
                     label: "Economía",
-                    sub: "Ventas y margen",
+                    sub: t.economiaDesc||"Ventas y margen",
                     id: "empresaeconomia",
                     bg: "#071A07",
                   },
@@ -23239,7 +23282,7 @@
           ) : isConstructor(efectivoPerfil) ? (
             <ConstructorHomeScreen onNav={handleNav} t={t} user={user} />
           ) : isEmpresa(efectivoPerfil) ? (
-            <EmpresaHomeScreen onNav={handleNav} user={user} />
+            <EmpresaHomeScreen onNav={handleNav} user={user} t={t} />
           ) : (
             <ClienteHomeScreen
               onNav={handleNav}
