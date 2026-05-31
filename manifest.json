@@ -1,20 +1,45 @@
 {
-  "name": "SGI",
+  "name": "SGI - Sistema de Gestión Integral",
   "short_name": "SGI",
-  "description": "Sistema de Gestión Inteligente — Steel Life Design",
+  "description": "Gestión de obras y construcción",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0D1B2A",
   "theme_color": "#0D1B2A",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
+  "lang": "es-AR",
   "icons": [
     {
       "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["business", "productivity", "utilities"],
-  "lang": "es-AR"
+  "shortcuts": [
+    {
+      "name": "Cotizar",
+      "short_name": "Cotizar",
+      "url": "/?tab=cotizar",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mi Obra",
+      "short_name": "Mi Obra",
+      "url": "/?tab=obra",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }
