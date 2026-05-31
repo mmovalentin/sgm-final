@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
 
   const payload = JSON.stringify({
     title: title || 'SGI',
-    body: body || 'Tenés una notificación nueva',
+    body: body || 'Nueva notificacion SGI',
     icon: icon || '/icon-192.png',
     badge: '/icon-192.png',
     data: data || {}
