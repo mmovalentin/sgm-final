@@ -533,6 +533,39 @@
           sp9_desc: "Medición y documentación de construcciones ya realizadas",
           sp10_name: "Carpeta municipal completa",
           sp10_desc: "Toda la documentación necesaria para el expediente municipal",
+          terminos_titulo: "Términos y Condiciones",
+          privacidad_titulo: "Política de Privacidad",
+          terminos_link: "Términos y Condiciones",
+          privacidad_link: "Política de Privacidad",
+          terminos_btn: "📄 Términos y Privacidad",
+          tc_volver: "← Volver",
+          tc_ultima_actualizacion: "Última actualización: junio 2025",
+          tc_seccion1_titulo: "Aceptación de los términos",
+          tc_seccion1_texto: "Al usar SGI aceptás estos términos. Si no estás de acuerdo, no uses la plataforma.",
+          tc_seccion2_titulo: "Uso del servicio",
+          tc_seccion2_texto: "SGI es una plataforma de gestión de obras y construcción. Está prohibido el uso para fines ilegales o no autorizados.",
+          tc_seccion3_titulo: "Cuenta de usuario",
+          tc_seccion3_texto: "Sos responsable de mantener la confidencialidad de tu cuenta y contraseña.",
+          tc_seccion4_titulo: "Datos personales",
+          tc_seccion4_texto: "Recopilamos nombre, email y datos de tu proyecto. No vendemos tu información a terceros.",
+          tc_seccion5_titulo: "Cookies y almacenamiento",
+          tc_seccion5_texto: "Usamos localStorage para guardar preferencias de sesión. No usamos cookies de terceros.",
+          tc_seccion6_titulo: "Limitación de responsabilidad",
+          tc_seccion6_texto: "SGI no se responsabiliza por errores en cotizaciones automáticas. Los valores son orientativos.",
+          tc_seccion7_titulo: "Cambios en los términos",
+          tc_seccion7_texto: "Podemos actualizar estos términos. Te notificaremos ante cambios importantes.",
+          tc_seccion8_titulo: "Contacto",
+          tc_seccion8_texto: "Consultas: mmovalentin@gmail.com",
+          priv_seccion1_titulo: "Información que recopilamos",
+          priv_seccion1_texto: "Email, nombre, tipo de perfil (cliente/constructor/empresa), datos del proyecto cotizado.",
+          priv_seccion2_titulo: "Cómo usamos tu información",
+          priv_seccion2_texto: "Para gestionar tu obra, enviarte notificaciones de avance y mejorar el servicio.",
+          priv_seccion3_titulo: "Almacenamiento",
+          priv_seccion3_texto: "Tus datos se almacenan en Supabase con cifrado en tránsito y en reposo.",
+          priv_seccion4_titulo: "Tus derechos",
+          priv_seccion4_texto: "Podés solicitar la eliminación de tu cuenta y datos en cualquier momento escribiendo a mmovalentin@gmail.com.",
+          priv_seccion5_titulo: "Terceros",
+          priv_seccion5_texto: "Usamos Google OAuth para autenticación. Consultá la política de Google para más detalles.",
           explora_items: [
             ["Cronograma de obra", "Etapas y plazos de tu proyecto", "agenda"],
             ["Modelos disponibles", "Ver renders y precios", "modelos"],
@@ -927,6 +960,39 @@
           sp9_desc: "Measurement and documentation of existing constructions",
           sp10_name: "Complete municipal file",
           sp10_desc: "All documentation needed for the municipal permit",
+          terminos_titulo: "Terms and Conditions",
+          privacidad_titulo: "Privacy Policy",
+          terminos_link: "Terms and Conditions",
+          privacidad_link: "Privacy Policy",
+          terminos_btn: "📄 Terms & Privacy",
+          tc_volver: "← Back",
+          tc_ultima_actualizacion: "Last updated: June 2025",
+          tc_seccion1_titulo: "Acceptance of terms",
+          tc_seccion1_texto: "By using SGI you accept these terms. If you disagree, please do not use the platform.",
+          tc_seccion2_titulo: "Use of service",
+          tc_seccion2_texto: "SGI is a construction project management platform. Use for illegal or unauthorized purposes is prohibited.",
+          tc_seccion3_titulo: "User account",
+          tc_seccion3_texto: "You are responsible for maintaining the confidentiality of your account and password.",
+          tc_seccion4_titulo: "Personal data",
+          tc_seccion4_texto: "We collect your name, email and project data. We do not sell your information to third parties.",
+          tc_seccion5_titulo: "Cookies and storage",
+          tc_seccion5_texto: "We use localStorage to save session preferences. We do not use third-party cookies.",
+          tc_seccion6_titulo: "Limitation of liability",
+          tc_seccion6_texto: "SGI is not responsible for errors in automatic quotes. All values are estimates.",
+          tc_seccion7_titulo: "Changes to terms",
+          tc_seccion7_texto: "We may update these terms. We will notify you of any important changes.",
+          tc_seccion8_titulo: "Contact",
+          tc_seccion8_texto: "Questions: mmovalentin@gmail.com",
+          priv_seccion1_titulo: "Information we collect",
+          priv_seccion1_texto: "Email, name, profile type (client/contractor/company), quoted project data.",
+          priv_seccion2_titulo: "How we use your information",
+          priv_seccion2_texto: "To manage your project, send you progress notifications and improve the service.",
+          priv_seccion3_titulo: "Storage",
+          priv_seccion3_texto: "Your data is stored on Supabase with encryption in transit and at rest.",
+          priv_seccion4_titulo: "Your rights",
+          priv_seccion4_texto: "You can request deletion of your account and data at any time by writing to mmovalentin@gmail.com.",
+          priv_seccion5_titulo: "Third parties",
+          priv_seccion5_texto: "We use Google OAuth for authentication. See Google's policy for more details.",
           explora_items: [
             [
               "Project schedule",
@@ -21666,6 +21732,46 @@
       }
 
       const CLIENTE_HIDDEN = ["rubros", "presup", "stats", "clientes"];
+      function TermsScreen({ t, onClose, seccion = "terminos" }) {
+        const [tab, setTab] = React.useState(seccion);
+        return (
+          <div style={{position:"fixed",inset:0,background:"#fff",zIndex:1000,overflowY:"auto",padding:"20px 16px 40px"}}>
+            <div style={{maxWidth:600,margin:"0 auto"}}>
+              <button onClick={onClose} style={{background:"none",border:"none",fontSize:16,cursor:"pointer",marginBottom:16,color:"#1a73e8"}}>
+                {t.tc_volver||"← Volver"}
+              </button>
+              <div style={{display:"flex",gap:8,marginBottom:24}}>
+                <button onClick={()=>setTab("terminos")}
+                  style={{flex:1,padding:"10px",borderRadius:8,border:"none",cursor:"pointer",
+                    background:tab==="terminos"?"#1a73e8":"#f0f0f0",
+                    color:tab==="terminos"?"#fff":"#333",fontWeight:600}}>
+                  {t.terminos_titulo||"Términos y Condiciones"}
+                </button>
+                <button onClick={()=>setTab("privacidad")}
+                  style={{flex:1,padding:"10px",borderRadius:8,border:"none",cursor:"pointer",
+                    background:tab==="privacidad"?"#1a73e8":"#f0f0f0",
+                    color:tab==="privacidad"?"#fff":"#333",fontWeight:600}}>
+                  {t.privacidad_titulo||"Política de Privacidad"}
+                </button>
+              </div>
+              <p style={{fontSize:12,color:"#999",marginBottom:20}}>{t.tc_ultima_actualizacion}</p>
+              {tab==="terminos" && [1,2,3,4,5,6,7,8].map(n => (
+                <div key={n} style={{marginBottom:20}}>
+                  <h3 style={{fontSize:15,fontWeight:700,marginBottom:6}}>{t["tc_seccion"+n+"_titulo"]}</h3>
+                  <p style={{fontSize:14,color:"#555",lineHeight:1.6}}>{t["tc_seccion"+n+"_texto"]}</p>
+                </div>
+              ))}
+              {tab==="privacidad" && [1,2,3,4,5].map(n => (
+                <div key={n} style={{marginBottom:20}}>
+                  <h3 style={{fontSize:15,fontWeight:700,marginBottom:6}}>{t["priv_seccion"+n+"_titulo"]}</h3>
+                  <p style={{fontSize:14,color:"#555",lineHeight:1.6}}>{t["priv_seccion"+n+"_texto"]}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
       function MoreMenu({ onNav, onClose, t, lang, onLang, perfil, userRol }) {
         const avanceItem = isConstructor(perfil)
           ? ["🏗️", t.avance_obra_title || "Avance obra", "constructoravance"]
@@ -21787,6 +21893,14 @@
                   <span style={{ fontSize: 11, fontWeight: 500, color: C.t1 }}>
                     {t.traducir}
                   </span>
+                </button>
+              </div>
+              <div style={{borderTop:"1px solid rgba(255,255,255,.08)",marginTop:12,paddingTop:12}}>
+                <button onClick={()=>{onNav("terms");onClose();}}
+                  style={{width:"100%",background:"none",border:"none",textAlign:"left",
+                    padding:"10px 12px",borderRadius:8,cursor:"pointer",fontSize:13,
+                    color:C.t2,fontFamily:"inherit"}}>
+                  {t.terminos_btn||"📄 Términos y Privacidad"}
                 </button>
               </div>
             </div>
@@ -22242,6 +22356,7 @@
         const [screen, setScreen] = useState("home");
         const [screenParams, setScreenParams] = useState({});
         const [showMore, setShowMore] = useState(false);
+        const [showTerms, setShowTerms] = useState(false);
         const [showAyuda, setShowAyuda] = useState(false);
         const [dolar, setDolar] = useState(1390);
         const [loggedIn, setLoggedIn] = useState(false);
@@ -22810,6 +22925,11 @@
         function handleNav(id, params) {
           if (id === "more") {
             setShowMore(true);
+            return;
+          }
+          if (id === "terms") {
+            setShowMore(false);
+            setShowTerms(true);
             return;
           }
           if (!isAdmin(userRol) && ADMIN_SCREENS.includes(id)) {
@@ -23671,6 +23791,12 @@
                 onLang={() => setLang((l) => (l === "es" ? "en" : "es"))}
                 perfil={efectivoPerfil}
                 userRol={efectivoRol}
+              />
+            )}
+            {showTerms && (
+              <TermsScreen
+                t={t}
+                onClose={() => setShowTerms(false)}
               />
             )}
             {user && isAdmin(userRol) && (
