@@ -90,6 +90,7 @@
           const { supabaseUrl, supabaseAnonKey } = await r.json();
           if (supabaseUrl && supabaseAnonKey && window.supabase) {
             supa = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+            window._supabase = supa;
           }
         } catch (_) {}
       })();
