@@ -415,6 +415,33 @@
           sinDescripcion: "Sin descripción. Podés editar tu proyecto para agregar detalles.",
           editarBtn: "Editar",
           completado: "Completado ✓",
+          enRevisionLabel: "En revisión",
+          enRevisionMsg: "Tu proyecto está siendo revisado por nuestro equipo. Te contactaremos pronto.",
+          enRevisionMsg2: "Tu proyecto está siendo revisado por nuestro equipo de profesionales.",
+          enVerificacion: "En verificación",
+          enVerificacionMsg: "Tu proyecto fue recibido y está en verificación. En breve recibirás confirmación.",
+          obraEnMarcha: "Tu obra está en marcha. ¡Vamos!",
+          obraCompletada: "Obra completada",
+          obraCompletadaMsg: "¡Felicitaciones! Tu obra fue completada exitosamente.",
+          proyectoCancelado: "Este proyecto fue cancelado. Contactanos si querés retomarlo.",
+          planificacion: "Planificación",
+          enProceso: "En proceso",
+          avanzado: "Avanzado",
+          casiListo: "Casi listo",
+          obrasActivasLabel: "Obras activas",
+          m2Total: "M² total",
+          presupTotal: "Presup. total",
+          terminadasLabel: "Terminadas",
+          sinObrasAun: "Sin obras aún",
+          agregaPrimeraObra: "Agregá tu primera obra para empezar a gestionar tus proyectos",
+          agregarPrimeraObraBtn: "Agregar primera obra",
+          nuevaObraModal: "Nueva obra",
+          tuObraAvanza: "Tu obra avanza",
+          sinDatosAdmin: "(sin datos del admin aún)",
+          registrateDescargar: "🔒 Registrate para descargar PDF",
+          clienteVeEstado: "El cliente ve este estado en su dashboard al refrescar",
+          comparar: "Comparar",
+          economia: "Economía",
           explora_items: [
             ["Cronograma de obra", "Etapas y plazos de tu proyecto", "agenda"],
             ["Modelos disponibles", "Ver renders y precios", "modelos"],
@@ -691,6 +718,33 @@
           sinDescripcion: "No description. You can edit your project to add details.",
           editarBtn: "Edit",
           completado: "Completed ✓",
+          enRevisionLabel: "In review",
+          enRevisionMsg: "Your project is being reviewed by our team. We will contact you soon.",
+          enRevisionMsg2: "Your project is being reviewed by our team of professionals.",
+          enVerificacion: "In verification",
+          enVerificacionMsg: "Your project was received and is being verified. You will receive confirmation shortly.",
+          obraEnMarcha: "Your project is underway. Let's go!",
+          obraCompletada: "Project completed",
+          obraCompletadaMsg: "Congratulations! Your project was successfully completed.",
+          proyectoCancelado: "This project was cancelled. Contact us if you want to resume it.",
+          planificacion: "Planning",
+          enProceso: "In progress",
+          avanzado: "Advanced",
+          casiListo: "Almost done",
+          obrasActivasLabel: "Active projects",
+          m2Total: "Total m²",
+          presupTotal: "Total budget",
+          terminadasLabel: "Completed",
+          sinObrasAun: "No projects yet",
+          agregaPrimeraObra: "Add your first project to start managing your work",
+          agregarPrimeraObraBtn: "Add first project",
+          nuevaObraModal: "New project",
+          tuObraAvanza: "Your project is progressing",
+          sinDatosAdmin: "(no data from admin yet)",
+          registrateDescargar: "🔒 Sign up to download PDF",
+          clienteVeEstado: "The client sees this status on their dashboard when they refresh",
+          comparar: "Compare",
+          economia: "Economy",
           explora_items: [
             [
               "Project schedule",
@@ -1965,11 +2019,11 @@
           { id: "more", icon: "☰", label: t.mas || "Más" },
         ];
         const empresaItems = [
-          { id: "home", icon: "🏠", label: "Inicio" },
-          { id: "empresaclientes", icon: "👥", label: "Clientes" },
-          { id: "empresacomparar", icon: "📊", label: "Comparar" },
-          { id: "empresaeconomia", icon: "💰", label: "Economía" },
-          { id: "empresamapa", icon: "🗺️", label: "Mapa" },
+          { id: "home", icon: "🏠", label: t.inicio||"Inicio" },
+          { id: "empresaclientes", icon: "👥", label: t.clientes_title||"Clientes" },
+          { id: "empresacomparar", icon: "📊", label: t.comparar||"Comparar" },
+          { id: "empresaeconomia", icon: "💰", label: t.economia||"Economía" },
+          { id: "empresamapa", icon: "🗺️", label: t.mapa_lbl||"Mapa" },
         ];
         const defaultItems = [
           { id: "home", icon: "🏠", label: t.inicio },
@@ -3029,10 +3083,10 @@
       ];
       function avanceLabel(pct, hasData, t={}) {
         if (!hasData || pct === 0) return t.sinDatos||"Sin datos";
-        if (pct <= 25) return "Planificación";
-        if (pct <= 50) return "En proceso";
-        if (pct <= 75) return "Avanzado";
-        if (pct < 100) return "Casi listo";
+        if (pct <= 25) return t.planificacion||"Planificación";
+        if (pct <= 50) return t.enProceso||"En proceso";
+        if (pct <= 75) return t.avanzado||"Avanzado";
+        if (pct < 100) return t.casiListo||"Casi listo";
         return t.completado||"Completado ✓";
       }
 
@@ -3490,7 +3544,7 @@
                     </div>
                   ) : (
                     <div style={{ fontSize: 11, color: C.t3 }}>
-                      El cliente ve este estado en su dashboard al refrescar
+                      {t.clienteVeEstado||"El cliente ve este estado en su dashboard al refrescar"}
                     </div>
                   )}
                 </div>
@@ -3775,7 +3829,7 @@
                     boxSizing: "border-box",
                   }}
                 >
-                  🔒 Registrate para descargar PDF
+                  {t.registrateDescargar||"🔒 Registrate para descargar PDF"}
                 </div>
               )}
               <button
@@ -4321,24 +4375,24 @@
           bg: "rgba(245,158,11,.08)",
           border: "rgba(245,158,11,.2)",
           icon: "🟡",
-          label: "En revisión",
-          msg: "Tu proyecto está siendo revisado por nuestro equipo. Te contactaremos pronto.",
+          label: t.enRevisionLabel||"En revisión",
+          msg: t.enRevisionMsg||"Tu proyecto está siendo revisado por nuestro equipo. Te contactaremos pronto.",
         },
         en_revision: {
           color: "#3B82F6",
           bg: "rgba(59,130,246,.08)",
           border: "rgba(59,130,246,.2)",
           icon: "🔵",
-          label: "En revisión",
-          msg: "Tu proyecto está siendo revisado por nuestro equipo de profesionales.",
+          label: t.enRevisionLabel||"En revisión",
+          msg: t.enRevisionMsg2||"Tu proyecto está siendo revisado por nuestro equipo de profesionales.",
         },
         verificando: {
           color: "#3B82F6",
           bg: "rgba(59,130,246,.08)",
           border: "rgba(59,130,246,.2)",
           icon: "🔵",
-          label: "En verificación",
-          msg: "Tu proyecto fue recibido y está en verificación. En breve recibirás confirmación.",
+          label: t.enVerificacion||"En verificación",
+          msg: t.enVerificacionMsg||"Tu proyecto fue recibido y está en verificación. En breve recibirás confirmación.",
         },
         aprobado: {
           color: "#22C55E",
@@ -4346,7 +4400,7 @@
           border: "rgba(34,197,94,.2)",
           icon: "🟢",
           label: t.aprobado||"Aprobado",
-          msg: "¡Tu proyecto fue aprobado! Ya podemos comenzar a planificar tu obra.",
+          msg: t.tuProyectoRevisado||"¡Tu proyecto fue aprobado! Ya podemos comenzar a planificar tu obra.",
         },
         en_obra: {
           color: "#F97316",
@@ -4354,23 +4408,23 @@
           border: "rgba(249,115,22,.2)",
           icon: "🏗️",
           label: t.enObra||"En obra",
-          msg: "Tu obra está en marcha. ¡Vamos!",
+          msg: t.obraEnMarcha||"Tu obra está en marcha. ¡Vamos!",
         },
         completado: {
           color: "#22C55E",
           bg: "rgba(34,197,94,.08)",
           border: "rgba(34,197,94,.2)",
           icon: "✅",
-          label: "Obra completada",
-          msg: "¡Felicitaciones! Tu obra fue completada exitosamente.",
+          label: t.obraCompletada||"Obra completada",
+          msg: t.obraCompletadaMsg||"¡Felicitaciones! Tu obra fue completada exitosamente.",
         },
         cancelado: {
           color: "#EF4444",
           bg: "rgba(239,68,68,.08)",
           border: "rgba(239,68,68,.2)",
           icon: "🔴",
-          label: "Cancelado",
-          msg: "Este proyecto fue cancelado. Contactanos si querés retomarlo.",
+          label: t.cancelar||"Cancelado",
+          msg: t.proyectoCancelado||"Este proyecto fue cancelado. Contactanos si querés retomarlo.",
         },
       });
 
@@ -4903,7 +4957,7 @@
               >
                 {nombre ? `¡Hola ${nombre}! 🏗️` : "¡Bienvenido! 🏗️"}
               </div>
-              <div style={{ color: C.t3, fontSize: 12 }}>Tu obra avanza</div>
+              <div style={{ color: C.t3, fontSize: 12 }}>{t.tuObraAvanza||"Tu obra avanza"}</div>
             </div>
 
             {/* ── BANNER COTIZAR ── */}
@@ -5877,25 +5931,25 @@
             >
               {[
                 {
-                  label: "Obras activas",
+                  label: t.obrasActivasLabel||"Obras activas",
                   value: activas.length,
                   icon: "🏗️",
                   accent: "#3B82F6",
                 },
                 {
-                  label: "M² total",
+                  label: t.m2Total||"M² total",
                   value: m2Total + "m²",
                   icon: "📐",
                   accent: "#06B6D4",
                 },
                 {
-                  label: "Presup. total",
+                  label: t.presupTotal||"Presup. total",
                   value: "USD " + presupTotal.toLocaleString(),
                   icon: "💰",
                   accent: "#F59E0B",
                 },
                 {
-                  label: "Terminadas",
+                  label: t.terminadasLabel||"Terminadas",
                   value: terminadas.length,
                   icon: "✅",
                   accent: "#22C55E",
@@ -5969,11 +6023,10 @@
                       marginBottom: 6,
                     }}
                   >
-                    Sin obras aún
+                    {t.sinObrasAun||"Sin obras aún"}
                   </div>
                   <div style={{ color: C.t3, fontSize: 12, marginBottom: 16 }}>
-                    Agregá tu primera obra para empezar a gestionar tus
-                    proyectos
+                    {t.agregaPrimeraObra||"Agregá tu primera obra para empezar a gestionar tus proyectos"}
                   </div>
                   <button
                     onClick={() => setShowModal(true)}
@@ -5989,7 +6042,7 @@
                       fontFamily: "inherit",
                     }}
                   >
-                    Agregar primera obra
+                    {t.agregarPrimeraObraBtn||"Agregar primera obra"}
                   </button>
                 </div>
               )}
@@ -6182,7 +6235,7 @@
                       marginBottom: 16,
                     }}
                   >
-                    Nueva obra
+                    {t.nuevaObraModal||"Nueva obra"}
                   </div>
                   <div
                     style={{
@@ -8791,7 +8844,7 @@
                           fontSize: 9,
                         }}
                       >
-                        (sin datos del admin aún)
+                        {t.sinDatosAdmin||"(sin datos del admin aún)"}
                       </span>
                     )}
                   </div>
