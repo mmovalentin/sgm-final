@@ -442,6 +442,38 @@
           clienteVeEstado: "El cliente ve este estado en su dashboard al refrescar",
           comparar: "Comparar",
           economia: "Economía",
+          optPendiente: "🟡 Pendiente",
+          optEnRevision: "🔵 En revisión",
+          optAprobado: "🟢 Aprobado",
+          optEnObra: "🟠 En obra",
+          optCompletado: "✅ Completado",
+          optCancelado: "🔴 Cancelado",
+          optPresupuestando: "Presupuestando",
+          optEnObra2: "En obra",
+          optTerminada: "Terminada",
+          eliminarObra: "Eliminar obra",
+          editarObra: "Editar obra",
+          avanceObraSection: "Avance de obra",
+          avanceSpan: "Avance",
+          clientesScreen: "Clientes",
+          compararScreen: "Comparar presupuestos",
+          economiaScreen: "Economía",
+          catalogoScreen: "Catálogo",
+          mapaClientesScreen: "Mapa de clientes",
+          stockOk: "OK",
+          stockBajoOpt: "Bajo",
+          stockSinStock: "Sin stock",
+          catMateriales: "Materiales",
+          catHerramientas: "Herramientas",
+          catServicios: "Servicios",
+          catOtros: "Otros",
+          tiposPago: "Pago",
+          tiposInspeccion: "Inspección",
+          tiposHito: "Hito de obra",
+          tiposReunion: "Reunión",
+          tiposVencimiento: "Vencimiento",
+          seleccionaPresupuesto: "— Seleccioná un presupuesto —",
+          cargandoLabel: "Cargando...",
           explora_items: [
             ["Cronograma de obra", "Etapas y plazos de tu proyecto", "agenda"],
             ["Modelos disponibles", "Ver renders y precios", "modelos"],
@@ -745,6 +777,38 @@
           clienteVeEstado: "The client sees this status on their dashboard when they refresh",
           comparar: "Compare",
           economia: "Economy",
+          optPendiente: "🟡 Pending",
+          optEnRevision: "🔵 In review",
+          optAprobado: "🟢 Approved",
+          optEnObra: "🟠 On site",
+          optCompletado: "✅ Completed",
+          optCancelado: "🔴 Cancelled",
+          optPresupuestando: "Quoting",
+          optEnObra2: "On site",
+          optTerminada: "Finished",
+          eliminarObra: "Delete project",
+          editarObra: "Edit project",
+          avanceObraSection: "Project progress",
+          avanceSpan: "Progress",
+          clientesScreen: "Clients",
+          compararScreen: "Compare budgets",
+          economiaScreen: "Economy",
+          catalogoScreen: "Catalogue",
+          mapaClientesScreen: "Client map",
+          stockOk: "OK",
+          stockBajoOpt: "Low",
+          stockSinStock: "Out of stock",
+          catMateriales: "Materials",
+          catHerramientas: "Tools",
+          catServicios: "Services",
+          catOtros: "Others",
+          tiposPago: "Payment",
+          tiposInspeccion: "Inspection",
+          tiposHito: "Project milestone",
+          tiposReunion: "Meeting",
+          tiposVencimiento: "Due date",
+          seleccionaPresupuesto: "— Select a budget —",
+          cargandoLabel: "Loading...",
           explora_items: [
             [
               "Project schedule",
@@ -3524,12 +3588,12 @@
                         fontFamily: "inherit",
                       }}
                     >
-                      <option value="pendiente">🟡 Pendiente</option>
-                      <option value="en_revision">🔵 En revisión</option>
-                      <option value="aprobado">🟢 Aprobado</option>
-                      <option value="en_obra">🟠 En obra</option>
-                      <option value="completado">✅ Completado</option>
-                      <option value="cancelado">🔴 Cancelado</option>
+                      <option value="pendiente">{t.optPendiente||"🟡 Pendiente"}</option>
+                      <option value="en_revision">{t.optEnRevision||"🔵 En revisión"}</option>
+                      <option value="aprobado">{t.optAprobado||"🟢 Aprobado"}</option>
+                      <option value="en_obra">{t.optEnObra||"🟠 En obra"}</option>
+                      <option value="completado">{t.optCompletado||"✅ Completado"}</option>
+                      <option value="cancelado">{t.optCancelado||"🔴 Cancelado"}</option>
                     </select>
                   </div>
                   {savedMsg ? (
@@ -6337,9 +6401,9 @@
                         outline: "none",
                       }}
                     >
-                      <option value="presupuestando">Presupuestando</option>
-                      <option value="en_obra">En obra</option>
-                      <option value="terminada">Terminada</option>
+                      <option value="presupuestando">{t.optPresupuestando||"Presupuestando"}</option>
+                      <option value="en_obra">{t.optEnObra2||"En obra"}</option>
+                      <option value="terminada">{t.optTerminada||"Terminada"}</option>
                     </select>
                   </div>
                   <button
@@ -6979,7 +7043,7 @@
                     marginBottom: 6,
                   }}
                 >
-                  <span>Avance de obra</span>
+                  <span>{t.avanceObraSection||"Avance de obra"}</span>
                   <span style={{ fontWeight: 700, color: C.t1 }}>
                     {avanceLocal}%
                   </span>
@@ -7685,7 +7749,7 @@
                       fontFamily: "inherit",
                     }}
                   >
-                    🗑️ Eliminar obra
+                    🗑️ {t.eliminarObra||"Eliminar obra"}
                   </button>
                 ) : (
                   <div
@@ -7778,7 +7842,7 @@
                       marginBottom: 16,
                     }}
                   >
-                    Editar obra
+                    {t.editarObra||"Editar obra"}
                   </div>
                   <div
                     style={{
@@ -7880,9 +7944,9 @@
                         outline: "none",
                       }}
                     >
-                      <option value="presupuestando">Presupuestando</option>
-                      <option value="en_obra">En obra</option>
-                      <option value="terminada">Terminada</option>
+                      <option value="presupuestando">{t.optPresupuestando||"Presupuestando"}</option>
+                      <option value="en_obra">{t.optEnObra2||"En obra"}</option>
+                      <option value="terminada">{t.optTerminada||"Terminada"}</option>
                     </select>
                   </div>
                   <button
@@ -8281,7 +8345,7 @@
                 fontWeight: 800,
               }}
             >
-              Avance de obra
+              {t.avanceObraSection||"Avance de obra"}
             </div>
             {obras.length === 0 && (
               <div
@@ -8353,7 +8417,7 @@
                             marginBottom: 3,
                           }}
                         >
-                          <span>Avance</span>
+                          <span>{t.avanceSpan||"Avance"}</span>
                           <span>{obra.avance}%</span>
                         </div>
                         <div
@@ -8720,7 +8784,7 @@
                   fontSize: 12,
                 }}
               >
-                Cargando...
+                {t.cargandoLabel||"Cargando..."}
               </div>
             )}
             <div
@@ -14962,11 +15026,11 @@
                           fontFamily: "inherit",
                         }}
                       >
-                        <option value="pago">🔴 Pago</option>
-                        <option value="inspeccion">🟡 Inspección</option>
-                        <option value="hito">🔵 Hito de obra</option>
-                        <option value="reunion">⚫ Reunión</option>
-                        <option value="vencimiento">🔴 Vencimiento</option>
+                        <option value="pago">🔴 {t.tiposPago||"Pago"}</option>
+                        <option value="inspeccion">🟡 {t.tiposInspeccion||"Inspección"}</option>
+                        <option value="hito">🔵 {t.tiposHito||"Hito de obra"}</option>
+                        <option value="reunion">⚫ {t.tiposReunion||"Reunión"}</option>
+                        <option value="vencimiento">🔴 {t.tiposVencimiento||"Vencimiento"}</option>
                       </select>
                     </div>
                     {(form.tipo === "pago" || form.tipo === "vencimiento") && (
@@ -18677,7 +18741,7 @@
                     marginTop: 2,
                   }}
                 >
-                  Avance de obra
+                  {t.avanceObraSection||"Avance de obra"}
                 </div>
               </div>
               {loadingView && (
@@ -19424,17 +19488,17 @@
         servicios: "🏗️",
         otros: "📦",
       };
-      const STOCK_BADGE_E = {
-        ok: { bg: "rgba(34,197,94,.15)", color: "#4ADE80", label: "OK" },
-        bajo: { bg: "rgba(245,158,11,.15)", color: "#FBBF24", label: "Bajo" },
+      const STOCK_BADGE_E = (t={}) => ({
+        ok: { bg: "rgba(34,197,94,.15)", color: "#4ADE80", label: t.stockOk||"OK" },
+        bajo: { bg: "rgba(245,158,11,.15)", color: "#FBBF24", label: t.stockBajoOpt||"Bajo" },
         sin_stock: {
           bg: "rgba(239,68,68,.15)",
           color: "#F87171",
-          label: "Sin stock",
+          label: t.stockSinStock||"Sin stock",
         },
-      };
+      });
 
-      function StockEditor({ prod, onSave, onCancel }) {
+      function StockEditor({ prod, onSave, onCancel, t={} }) {
         const [qty, setQty] = useState(String(prod.stock_cantidad || 0));
         const [estado, setEstado] = useState(prod.stock_estado || "ok");
         return (
@@ -19478,9 +19542,9 @@
                 outline: "none",
               }}
             >
-              <option value="ok">OK</option>
-              <option value="bajo">Bajo</option>
-              <option value="sin_stock">Sin stock</option>
+              <option value="ok">{t.stockOk||"OK"}</option>
+              <option value="bajo">{t.stockBajoOpt||"Bajo"}</option>
+              <option value="sin_stock">{t.stockSinStock||"Sin stock"}</option>
             </select>
             <button
               onClick={() => onSave(prod, qty, estado)}
@@ -19878,7 +19942,7 @@
         );
       }
 
-      function EmpresaClientesScreen({ user, onNav }) {
+      function EmpresaClientesScreen({ user, onNav, t={} }) {
         const [clientes, setClientes] = useState([]);
         const [loading, setLoading] = useState(true);
         const [showModal, setShowModal] = useState(false);
@@ -19972,7 +20036,7 @@
                     marginTop: 2,
                   }}
                 >
-                  Clientes
+                  {t.clientesScreen||"Clientes"}
                 </div>
               </div>
               <button
@@ -19995,7 +20059,7 @@
             <div style={{ padding: "12px 16px" }}>
               {loading && (
                 <div style={{ color: C.t3, textAlign: "center", padding: 20 }}>
-                  Cargando...
+                  {t.cargandoLabel||"Cargando..."}
                 </div>
               )}
               {!loading && clientes.length === 0 && (
@@ -20214,7 +20278,7 @@
         );
       }
 
-      function EmpresaCompararScreen({ user, onNav }) {
+      function EmpresaCompararScreen({ user, onNav, t={} }) {
         const [presupuestos, setPresupuestos] = useState([]);
         const [uploading, setUploading] = useState(false);
         const [tipo, setTipo] = useState("propio");
@@ -20307,7 +20371,7 @@
                   marginTop: 2,
                 }}
               >
-                Comparar presupuestos
+                {t.compararScreen||"Comparar presupuestos"}
               </div>
             </div>
             <div style={{ padding: "12px 16px" }}>
@@ -20556,7 +20620,7 @@
         );
       }
 
-      function EmpresaEconomiaScreen({ user, onNav }) {
+      function EmpresaEconomiaScreen({ user, onNav, t={} }) {
         const [pedidos, setPedidos] = useState([]);
 
         useEffect(() => {
@@ -20622,7 +20686,7 @@
                   marginTop: 2,
                 }}
               >
-                Economía
+                {t.economiaScreen||"Economía"}
               </div>
             </div>
             <div style={{ padding: "12px 16px" }}>
@@ -20792,7 +20856,7 @@
         );
       }
 
-      function EmpresaCatalogoScreen({ user, onNav }) {
+      function EmpresaCatalogoScreen({ user, onNav, t={} }) {
         const [productos, setProductos] = useState([]);
         const [loading, setLoading] = useState(true);
         const [showModal, setShowModal] = useState(false);
@@ -20919,7 +20983,7 @@
                     marginTop: 2,
                   }}
                 >
-                  Catálogo
+                  {t.catalogoScreen||"Catálogo"}
                 </div>
               </div>
               <button
@@ -20942,7 +21006,7 @@
             <div style={{ padding: "12px 16px" }}>
               {loading && (
                 <div style={{ color: C.t3, textAlign: "center", padding: 20 }}>
-                  Cargando...
+                  {t.cargandoLabel||"Cargando..."}
                 </div>
               )}
               {!loading && productos.length === 0 && (
@@ -20977,7 +21041,7 @@
                 </div>
               )}
               {productos.map((p) => {
-                const badge = STOCK_BADGE_E[p.stock_estado] || STOCK_BADGE_E.ok;
+                const badge = STOCK_BADGE_E(t)[p.stock_estado] || STOCK_BADGE_E(t).ok;
                 const catIcon = CAT_ICON[p.categoria] || "📦";
                 const isEditing = editStock === p.id;
                 return (
@@ -21093,6 +21157,7 @@
                         prod={p}
                         onSave={guardarStock}
                         onCancel={() => setEditStock(null)}
+                        t={t}
                       />
                     )}
                   </div>
@@ -21180,10 +21245,10 @@
                         outline: "none",
                       }}
                     >
-                      <option value="materiales">Materiales</option>
-                      <option value="herramientas">Herramientas</option>
-                      <option value="servicios">Servicios</option>
-                      <option value="otros">Otros</option>
+                      <option value="materiales">{t.catMateriales||"Materiales"}</option>
+                      <option value="herramientas">{t.catHerramientas||"Herramientas"}</option>
+                      <option value="servicios">{t.catServicios||"Servicios"}</option>
+                      <option value="otros">{t.catOtros||"Otros"}</option>
                     </select>
                     <div style={{ display: "flex", gap: 8 }}>
                       <input
@@ -21384,7 +21449,7 @@
         ]);
       }
 
-      function EmpresaMapaScreen({ user, onNav }) {
+      function EmpresaMapaScreen({ user, onNav, t={} }) {
         const mapRef = useRef(null);
         const mapInst = useRef(null);
         const [clientes, setClientes] = useState([]);
@@ -21509,7 +21574,7 @@
                   gap: 8,
                 }}
               >
-                Mapa de clientes
+                {t.mapaClientesScreen||"Mapa de clientes"}
                 {geocodificando && (
                   <span
                     style={{ fontSize: 10, color: "#A78BFA", fontWeight: 400 }}
@@ -23424,18 +23489,18 @@
           ),
           empresa: <EmpresaScreen onNav={handleNav} user={user} />,
           empresaclientes: (
-            <EmpresaClientesScreen user={user} onNav={handleNav} />
+            <EmpresaClientesScreen user={user} onNav={handleNav} t={t} />
           ),
           empresacomparar: (
-            <EmpresaCompararScreen user={user} onNav={handleNav} />
+            <EmpresaCompararScreen user={user} onNav={handleNav} t={t} />
           ),
           empresaeconomia: (
-            <EmpresaEconomiaScreen user={user} onNav={handleNav} />
+            <EmpresaEconomiaScreen user={user} onNav={handleNav} t={t} />
           ),
           empresacatalogo: (
-            <EmpresaCatalogoScreen user={user} onNav={handleNav} />
+            <EmpresaCatalogoScreen user={user} onNav={handleNav} t={t} />
           ),
-          empresamapa: <EmpresaMapaScreen user={user} onNav={handleNav} />,
+          empresamapa: <EmpresaMapaScreen user={user} onNav={handleNav} t={t} />,
         };
 
         return (
