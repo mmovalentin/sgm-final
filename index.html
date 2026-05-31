@@ -22447,7 +22447,7 @@
                 setUser(session.user);
                 setLoggedIn(true);
                 if (session.user.id && window.subscribeToPush) {
-                  setTimeout(() => window.subscribeToPush(session.user.id), 2000);
+                  setTimeout(() => window.subscribeToPush(session.user.id), 5000);
                 }
                 try {
                   await supa
@@ -24188,7 +24188,13 @@
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
         });
         const { endpoint, keys } = sub.toJSON();
-        await window._supabase.from('push_subscriptions').upsert({
+        const supaClient = window._supabase || window.supa;
+        if (!supaClient) {
+          console.log('Push: supabase no disponible aún, reintentando...');
+          setTimeout(() => window.subscribeToPush(userId), 3000);
+          return;
+        }
+        await supaClient.from('push_subscriptions').upsert({
           user_id: userId,
           endpoint,
           p256dh: keys.p256dh,
