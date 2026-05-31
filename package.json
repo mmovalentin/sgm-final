@@ -1,5 +1,11 @@
 {
   "name": "sgm-construccion",
   "version": "2.0.0",
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
 }
