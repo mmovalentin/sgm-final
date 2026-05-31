@@ -474,6 +474,13 @@
           tiposVencimiento: "Vencimiento",
           seleccionaPresupuesto: "— Seleccioná un presupuesto —",
           cargandoLabel: "Cargando...",
+          opt_pago: "Pago",
+          opt_vencimiento: "Vencimiento",
+          opt_estas_aqui: "Estás aquí",
+          opt_mi_presupuesto: "Mi presupuesto",
+          opt_competencia: "Competencia",
+          opt_bajo: "Bajo",
+          opt_sin_stock: "Sin stock",
           explora_items: [
             ["Cronograma de obra", "Etapas y plazos de tu proyecto", "agenda"],
             ["Modelos disponibles", "Ver renders y precios", "modelos"],
@@ -809,6 +816,13 @@
           tiposVencimiento: "Due date",
           seleccionaPresupuesto: "— Select a budget —",
           cargandoLabel: "Loading...",
+          opt_pago: "Payment",
+          opt_vencimiento: "Due date",
+          opt_estas_aqui: "You are here",
+          opt_mi_presupuesto: "My budget",
+          opt_competencia: "Competition",
+          opt_bajo: "Low",
+          opt_sin_stock: "Out of stock",
           explora_items: [
             [
               "Project schedule",
@@ -4587,7 +4601,7 @@
                     <option>{t.consulta||"Consulta"}</option>
                     <option>{t.problema||"Problema"}</option>
                     <option>{t.sugerencia||"Sugerencia"}</option>
-                    <option>Pago</option>
+                    <option>{t.opt_pago||"Pago"}</option>
                   </select>
                   <textarea
                     value={mensaje}
@@ -7655,8 +7669,8 @@
                       outline: "none",
                     }}
                   >
-                    <option value="pago">Pago</option>
-                    <option value="vencimiento">Vencimiento</option>
+                    <option value="pago">{t.opt_pago||"Pago"}</option>
+                    <option value="vencimiento">{t.opt_vencimiento||"Vencimiento"}</option>
                   </select>
                   <div
                     style={{
@@ -11921,7 +11935,7 @@
               zIndexOffset: 1000,
             })
               .addTo(map)
-              .bindPopup("<b>Estás aquí</b>");
+              .bindPopup(`<b>${t.opt_estas_aqui||"Estás aquí"}</b>`);
           }
           window.L.tileLayer(
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -20461,8 +20475,8 @@
                     marginBottom: 8,
                   }}
                 >
-                  <option value="propio">Mi presupuesto</option>
-                  <option value="competencia">Competencia</option>
+                  <option value="propio">{t.opt_mi_presupuesto||"Mi presupuesto"}</option>
+                  <option value="competencia">{t.opt_competencia||"Competencia"}</option>
                 </select>
                 <input
                   value={totalInput}
@@ -21335,8 +21349,8 @@
                         }}
                       >
                         <option value="ok">OK</option>
-                        <option value="bajo">Bajo</option>
-                        <option value="sin_stock">Sin stock</option>
+                        <option value="bajo">{t.opt_bajo||"Bajo"}</option>
+                        <option value="sin_stock">{t.opt_sin_stock||"Sin stock"}</option>
                       </select>
                     </div>
                   </div>
