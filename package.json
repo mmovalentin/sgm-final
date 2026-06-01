@@ -6,6 +6,7 @@
     "sharp": "^0.34.5"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.2",
     "web-push": "^3.6.7"
   }
 }
