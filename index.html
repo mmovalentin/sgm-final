@@ -6142,26 +6142,6 @@
               </div>
             </div>
 
-            {/* Botón nueva obra */}
-            <div style={{ margin: "12px 16px 0" }}>
-              <button
-                onClick={() => setShowModal(true)}
-                style={{
-                  width: "100%",
-                  padding: "11px",
-                  background: "#2563EB",
-                  border: "none",
-                  borderRadius: 12,
-                  color: "#fff",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                }}
-              >
-                {t.nuevaObra||"+ Nueva obra"}
-              </button>
-            </div>
 
             {obras.length > 0 && (
               <div style={{ padding: '0 16px', marginBottom: 4 }}>
@@ -6193,6 +6173,26 @@
                 </div>
               </div>
             )}
+            {/* Botón nueva obra */}
+            <div style={{ margin: "12px 16px 0" }}>
+              <button
+                onClick={() => setShowModal(true)}
+                style={{
+                  width: "100%",
+                  padding: "11px",
+                  background: "#2563EB",
+                  border: "none",
+                  borderRadius: 12,
+                  color: "#fff",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                {t.nuevaObra||"+ Nueva obra"}
+              </button>
+            </div>
             {/* Cards resumen */}
             <div
               style={{
