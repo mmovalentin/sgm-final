@@ -43,6 +43,34 @@
     ></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
+      :root {
+        --c-bg: #07111f;
+        --c-bg2: #0D1B2A;
+        --c-card: #112240;
+        --c-card2: #1a3a5c;
+        --c-text: #e0e0e0;
+        --c-text2: #aab4c4;
+        --c-border: #1e3a5f;
+        --c-accent: #1a73e8;
+        --c-success: #4caf50;
+        --c-warning: #ff9800;
+        --c-danger: #f44336;
+      }
+
+      body.theme-light {
+        --c-bg: #f5f7fa;
+        --c-bg2: #ffffff;
+        --c-card: #ffffff;
+        --c-card2: #e8edf5;
+        --c-text: #1a1a2e;
+        --c-text2: #555e6e;
+        --c-border: #d0d8e4;
+        --c-accent: #1a73e8;
+        --c-success: #2e7d32;
+        --c-warning: #e65100;
+        --c-danger: #c62828;
+      }
+
       * {
         margin: 0;
         padding: 0;
@@ -53,7 +81,9 @@
         height: 100%;
         width: 100%;
         overflow: hidden;
-        background: #07111f;
+        background: var(--c-bg);
+        color: var(--c-text);
+        transition: background 0.3s ease, color 0.3s ease;
       }
       #root {
         height: 100%;
