@@ -6142,6 +6142,36 @@
               </div>
             </div>
 
+            {obras.length > 0 && (
+              <div style={{ padding: '0 16px', marginBottom: 4 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
+                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.obrasActivas||'Activas'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{activas.length}</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.m2Total||'m² total'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{m2Total}</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.terminadas||'Terminadas'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{terminadas.length}</div>
+                  </div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '12px', border: '1px solid rgba(74,159,255,0.1)', marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>{t.avancePorObra||'Avance por obra'}</div>
+                  {obras.slice(0,5).map((o, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', width: 90, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o.nombre_cliente||o.cliente||'Obra '+(i+1)}</div>
+                      <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', borderRadius: 3, background: (o.avance||0)>=100 ? '#1D9E75' : (o.avance||0)>0 ? '#378ADD' : 'rgba(74,159,255,0.2)', width: Math.min(o.avance||0,100)+'%' }}></div>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#F0F6FF', width: 30, textAlign: 'right' }}>{o.avance||0}%</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Botón nueva obra */}
             <div style={{ margin: "12px 16px 0" }}>
               <button
