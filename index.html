@@ -3196,20 +3196,25 @@
                 💬 {t.wa}
               </button>
               <button
-                onClick={() => {
-                  const uid = localStorage.getItem("sgm_active_uid");
-                  if (uid) {
-                    localStorage.removeItem("sgi_perfil_" + uid);
-                    if (supa)
-                      supa
+                onClick={async () => {
+                  try {
+                    const uid = localStorage.getItem("sgm_active_uid");
+                    if (uid) {
+                      localStorage.removeItem(`sgi_perfil_${uid}`);
+                      localStorage.removeItem("sgm_active_uid");
+                      await window._supabase
                         .from("perfiles")
                         .update({ tipo_perfil: null })
-                        .eq("id", uid)
-                        .catch(() => {});
-                  } else {
+                        .eq("user_id", uid);
+                    }
                     localStorage.removeItem("sgm-perfil");
+                    localStorage.removeItem("sgm_rol");
+                    localStorage.removeItem("sgm_perfil_tipo");
+                    await supa.auth.signOut();
+                    window.location.href = "/";
+                  } catch (e) {
+                    window.location.href = "/";
                   }
-                  window.location.reload();
                 }}
                 style={{
                   width: "100%",
@@ -23752,6 +23757,7 @@
               }}
               onClick={playTap}
               onTouchStart={(e) => {
+                if (["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(e.target.tagName)) return;
                 const x = e.touches[0].clientX;
                 touchStartXRef.current = x;
                 touchStartYRef.current = e.touches[0].clientY;
