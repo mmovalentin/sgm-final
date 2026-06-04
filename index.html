@@ -99,6 +99,7 @@
         }
       }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   </head>
   <body>
     <div id="root"></div>
@@ -5172,6 +5173,36 @@
               <div style={{ color: C.t3, fontSize: 12 }}>{t.tuObraAvanza||"Tu obra avanza"}</div>
             </div>
 
+            {avanceRows.length > 0 && (
+              <div style={{ padding: '12px 16px 0' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
+                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.avanceObra||'Avance'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{avance}%</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.etapas||'Etapas'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{etapasOk}/{totalEtapas}</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.diasEst||'Días est.'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{diasEstimados}</div>
+                  </div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '12px', border: '1px solid rgba(74,159,255,0.1)', marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>{t.avancePorEtapa||'Avance por etapa'}</div>
+                  {avanceRows.map((e, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', width: 100, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.etapa_nombre||e.nombre||'Etapa '+(i+1)}</div>
+                      <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', borderRadius: 3, background: (e.porcentaje||0)>=100 ? '#1D9E75' : (e.porcentaje||0)>0 ? '#378ADD' : 'rgba(74,159,255,0.2)', width: (e.porcentaje||0)+'%' }}></div>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#F0F6FF', width: 30, textAlign: 'right' }}>{e.porcentaje||0}%</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* ── BANNER COTIZAR ── */}
             {!lastCot && (
               <div
