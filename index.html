@@ -2657,6 +2657,24 @@
                 })}
               </div>
             </div>
+            {!cargando && (
+              <div style={{ padding: '12px 14px 4px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 4 }}>
+                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.obrasActivas||'Obras activas'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{metricas.obrasActivas}</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.presupuestos||'Presupuestos'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{metricas.totalPresup}</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.pagosVencidos||'Vencidos'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: vencidos.length > 0 ? '#E24B4A' : '#F0F6FF' }}>{vencidos.length}</div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div style={{ padding: "12px 14px" }}>
               <div
                 style={{
