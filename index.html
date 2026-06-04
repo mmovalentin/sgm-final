@@ -3195,42 +3195,6 @@
               >
                 💬 {t.wa}
               </button>
-              <button
-                onClick={async () => {
-                  try {
-                    const uid = localStorage.getItem("sgm_active_uid");
-                    if (uid) {
-                      localStorage.removeItem(`sgi_perfil_${uid}`);
-                      localStorage.removeItem("sgm_active_uid");
-                      await window._supabase
-                        .from("perfiles")
-                        .update({ tipo_perfil: null })
-                        .eq("user_id", uid);
-                    }
-                    localStorage.removeItem("sgm-perfil");
-                    localStorage.removeItem("sgm_rol");
-                    localStorage.removeItem("sgm_perfil_tipo");
-                    await supa.auth.signOut();
-                    window.location.href = "/";
-                  } catch (e) {
-                    window.location.href = "/";
-                  }
-                }}
-                style={{
-                  width: "100%",
-                  background: "none",
-                  border: `.5px solid ${C.border2}`,
-                  borderRadius: 10,
-                  padding: 10,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: C.t3,
-                  cursor: "pointer",
-                  marginTop: 8,
-                }}
-              >
-                👤 {t.cambiar_perfil}
-              </button>
             </div>
           </div>
         );
