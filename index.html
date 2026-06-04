@@ -5252,22 +5252,31 @@
                     </div>
                   ))}
                 </div>
-                {snapshots.length > 1 && window.Chart && (() => {
+                {window.Chart && (() => {
                   const canvasId = 'chart-cliente-' + (proyectoId||'x');
+                  const tieneReales = snapshots.length >= 2;
+                  const datosGrafico = tieneReales ? snapshots.map(s => s.porcentaje_total) : (() => {
+                    const a = avance || 0;
+                    const pasos = 6;
+                    return Array.from({length: pasos}, (_, i) => {
+                      const progreso = Math.round((a / pasos) * (i + 1));
+                      return Math.min(progreso, a);
+                    });
+                  })();
+                  const labelsGrafico = tieneReales
+                    ? snapshots.map(s => { const d = new Date(s.fecha); return ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][d.getMonth()]; })
+                    : (() => { const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; const m = new Date().getMonth(); return Array.from({length:6}, (_,i) => meses[(m-5+i+12)%12]); })();
                   setTimeout(() => {
                     const ctx = document.getElementById(canvasId);
-                    if (!ctx || ctx._chartjs) return;
-                    const labels = snapshots.map(s => {
-                      const d = new Date(s.fecha);
-                      return ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][d.getMonth()];
-                    });
-                    new window.Chart(ctx, {
+                    if (!ctx) return;
+                    if (ctx._chartInstance) { ctx._chartInstance.destroy(); }
+                    const chart = new window.Chart(ctx, {
                       type: 'line',
                       data: {
-                        labels,
+                        labels: labelsGrafico,
                         datasets: [{
                           label: 'Real',
-                          data: snapshots.map(s => s.porcentaje_total),
+                          data: datosGrafico,
                           borderColor: '#378ADD',
                           backgroundColor: 'rgba(55,138,221,0.08)',
                           fill: true,
@@ -5285,10 +5294,14 @@
                         }
                       }
                     });
+                    ctx._chartInstance = chart;
                   }, 300);
                   return (
-                    <div style={{ background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'12px', border:'1px solid rgba(74,159,255,0.1)', marginTop:10 }}>
-                      <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginBottom:8 }}>📈 Avance histórico real</div>
+                    <div style={{ background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'12px', border:'1px solid rgba(74,159,255,0.1)', marginBottom:10 }}>
+                      <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginBottom:8, display:'flex', justifyContent:'space-between' }}>
+                        <span>📈 Avance histórico</span>
+                        {!tieneReales && <span style={{fontSize:10, color:'rgba(255,255,255,0.25)'}}>estimado</span>}
+                      </div>
                       <div style={{ position:'relative', height:100 }}>
                         <canvas id={canvasId}></canvas>
                       </div>
