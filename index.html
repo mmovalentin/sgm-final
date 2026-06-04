@@ -19958,42 +19958,6 @@
                 </div>
               </div>
             </div>
-            {!loading && productos.length > 0 && (
-              <div style={{ padding: '12px 16px 4px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(124,58,237,0.2)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.productosActivos||'Productos'}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{productos.length}</div>
-                  </div>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(124,58,237,0.2)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.pedidosPendientes||'Pendientes'}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: pedidosNuevos > 0 ? '#E24B4A' : '#F0F6FF' }}>{pedidosNuevos}</div>
-                  </div>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(124,58,237,0.2)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.ventasMes||'Ventas mes'}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{ventasMes.toLocaleString(){'}'}</div>
-                  </div>
-                </div>
-                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '12px', border: '1px solid rgba(124,58,237,0.2)', marginBottom: 4 }}>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>{t.stockProductos||'Stock de productos'}</div>
-                  {productos.slice(0,5).map((p, i) => {
-                    const stock = p.stock || 0;
-                    const maxStock = 100;
-                    const pct = Math.min(Math.round((stock/maxStock)*100), 100);
-                    const color = stock === 0 ? '#E24B4A' : stock < 10 ? '#EF9F27' : '#1D9E75';
-                    return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', width: 90, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.nombre||'Producto '+(i+1)}</div>
-                        <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', borderRadius: 3, background: color, width: pct+'%' }}></div>
-                        </div>
-                        <div style={{ fontSize: 11, color: '#F0F6FF', width: 30, textAlign: 'right' }}>{stock}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
             <div
               style={{
                 display: "grid",
