@@ -4849,6 +4849,7 @@
           null;
         const [lastCot, setLastCot] = useState(null);
         const [avanceRows, setAvanceRows] = useState([]);
+        const [snapshots, setSnapshots] = useState([]);
         const [estadoProyecto, setEstadoProyecto] = useState(null);
         const [descripcion, setDescripcion] = useState("");
         const [editDesc, setEditDesc] = useState(false);
@@ -4918,6 +4919,14 @@
                     if (data && data.length > 0) setAvanceRows(data);
                   })
                   .catch(() => {});
+                supa.from('avance_snapshots')
+                  .select('porcentaje_total, fecha')
+                  .eq('presupuesto_id', dbPres.id)
+                  .order('fecha', { ascending: true })
+                  .limit(6)
+                  .then(({ data: snaps }) => {
+                    if (snaps && snaps.length > 0) setSnapshots(snaps);
+                  });
               } else {
                 setLastCot(null);
                 setEstadoProyecto(null);
@@ -5243,6 +5252,49 @@
                     </div>
                   ))}
                 </div>
+                {snapshots.length > 1 && window.Chart && (() => {
+                  const canvasId = 'chart-cliente-' + (proyectoId||'x');
+                  setTimeout(() => {
+                    const ctx = document.getElementById(canvasId);
+                    if (!ctx || ctx._chartjs) return;
+                    const labels = snapshots.map(s => {
+                      const d = new Date(s.fecha);
+                      return ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][d.getMonth()];
+                    });
+                    new window.Chart(ctx, {
+                      type: 'line',
+                      data: {
+                        labels,
+                        datasets: [{
+                          label: 'Real',
+                          data: snapshots.map(s => s.porcentaje_total),
+                          borderColor: '#378ADD',
+                          backgroundColor: 'rgba(55,138,221,0.08)',
+                          fill: true,
+                          tension: 0.4,
+                          pointRadius: 3
+                        }]
+                      },
+                      options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                          y: { min: 0, max: 100, ticks: { callback: v => v+'%', font:{size:10}, color:'#888' }, grid: { color:'rgba(128,128,128,0.1)' } },
+                          x: { ticks: { font:{size:10}, color:'#888' }, grid: { display:false } }
+                        }
+                      }
+                    });
+                  }, 300);
+                  return (
+                    <div style={{ background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'12px', border:'1px solid rgba(74,159,255,0.1)', marginTop:10 }}>
+                      <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginBottom:8 }}>📈 Avance histórico real</div>
+                      <div style={{ position:'relative', height:100 }}>
+                        <canvas id={canvasId}></canvas>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
             {/* ── BANNER COTIZAR ── */}
@@ -18894,6 +18946,28 @@
             }
           }
           setSaving(false);
+          // Guardar snapshot histórico
+          try {
+            const porcTotal = Math.round(
+              etapas.reduce((s, e) => s + (e.porcentaje || 0), 0) / etapas.length
+            );
+            const hoyStr = new Date().toISOString().split('T')[0];
+            const { data: presData } = await supa
+              .from('presupuestos')
+              .select('user_id')
+              .eq('id', selUserId)
+              .maybeSingle();
+            if (presData?.user_id) {
+              await supa.from('avance_snapshots').upsert({
+                presupuesto_id: selUserId,
+                user_id: presData.user_id,
+                porcentaje_total: porcTotal,
+                fecha: hoyStr,
+              }, { onConflict: 'presupuesto_id,fecha' });
+            }
+          } catch(snapErr) {
+            console.log('Snapshot error (no crítico):', snapErr);
+          }
           setSaved(true);
           setTimeout(() => setSaved(false), 3000);
         }
