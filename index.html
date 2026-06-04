@@ -335,6 +335,10 @@
           cambiar_cuenta: "Cambiar cuenta",
           agregar_cuenta: "Agregar cuenta",
           cerrar_sesion: "Cerrar sesión",
+          buscarPlaceholder: "Buscar clientes, presupuestos, obras...",
+          buscando: "Buscando...",
+          sinResultados: "Sin resultados para",
+          escribiParaBuscar: "Escribí para buscar...",
           switch_light: "Cambiar a tema claro",
           switch_dark: "Cambiar a tema oscuro",
           mapa_lbl: "Mapa",
@@ -762,6 +766,10 @@
           cambiar_cuenta: "Change account",
           agregar_cuenta: "Add account",
           cerrar_sesion: "Sign out",
+          buscarPlaceholder: "Search clients, quotes, projects...",
+          buscando: "Searching...",
+          sinResultados: "No results for",
+          escribiParaBuscar: "Type to search...",
           switch_light: "Switch to light theme",
           switch_dark: "Switch to dark theme",
           mapa_lbl: "Map",
@@ -1905,6 +1913,7 @@
         onThemeChange,
         lang,
         onLang,
+        onSearch,
       }) {
         const [showMenu, setShowMenu] = useState(false);
         const displayName =
@@ -1930,6 +1939,21 @@
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <button
+                onClick={() => onSearch && onSearch()}
+                style={{
+                  background: "none",
+                  border: "1px solid rgba(255,255,255,.15)",
+                  borderRadius: 6,
+                  padding: "4px 8px",
+                  fontSize: 14,
+                  color: "rgba(255,255,255,.6)",
+                  cursor: "pointer",
+                  lineHeight: 1,
+                }}
+              >
+                🔍
+              </button>
               <button
                 onClick={() => onLang && onLang(lang === "es" ? "en" : "es")}
                 style={{
@@ -21894,6 +21918,88 @@
         );
       }
 
+      function BusquedaScreen({ onClose, t, user, lang }) {
+        const [query, setQuery] = React.useState('');
+        const [resultados, setResultados] = React.useState([]);
+        const [buscando, setBuscando] = React.useState(false);
+        const inputRef = React.useRef(null);
+
+        React.useEffect(() => {
+          setTimeout(() => inputRef.current?.focus(), 100);
+        }, []);
+
+        React.useEffect(() => {
+          if (!query.trim() || query.length < 2) { setResultados([]); return; }
+          const timer = setTimeout(() => buscar(query), 400);
+          return () => clearTimeout(timer);
+        }, [query]);
+
+        async function buscar(q) {
+          if (!supa || !q.trim()) return;
+          setBuscando(true);
+          try {
+            const term = q.toLowerCase();
+            const [
+              { data: presups },
+              { data: clientes },
+              { data: obras }
+            ] = await Promise.all([
+              supa.from('presupuestos').select('id,user_id,m2,sistema,total_usd,created_at,estado').ilike('sistema', '%' + term + '%').limit(5),
+              supa.from('perfiles').select('id,user_id,nombre,email,tipo_perfil').or('nombre.ilike.%' + term + '%,email.ilike.%' + term + '%').limit(5),
+              supa.from('obras_constructor').select('id,cliente_nombre,tipo,sistema,m2,estado,avance').ilike('cliente_nombre', '%' + term + '%').limit(5),
+            ]);
+            const r = [];
+            (clientes||[]).forEach(cl => r.push({ tipo: 'cliente', icono: '👤', titulo: cl.nombre||cl.email||'Cliente', subtitulo: cl.tipo_perfil||'', id: cl.id }));
+            (presups||[]).forEach(p => r.push({ tipo: 'presupuesto', icono: '📋', titulo: 'Presup. ' + (p.m2||0) + 'm² — ' + (p.sistema||''), subtitulo: 'USD ' + (p.total_usd||0).toLocaleString() + ' · ' + (p.estado||''), id: p.id }));
+            (obras||[]).forEach(o => r.push({ tipo: 'obra', icono: '🏗️', titulo: o.cliente_nombre||'Obra', subtitulo: (o.tipo||'') + ' · ' + (o.m2||0) + 'm² · ' + (o.avance||0) + '%', id: o.id }));
+            setResultados(r);
+          } catch(e) {}
+          setBuscando(false);
+        }
+
+        return (
+          <div style={{ position:'fixed', inset:0, background:'var(--c-bg)', zIndex:999, display:'flex', flexDirection:'column' }}>
+            <div style={{ padding:'12px 16px', background:'var(--c-bg2)', borderBottom:'1px solid var(--c-border)', display:'flex', gap:10, alignItems:'center' }}>
+              <button onClick={onClose} style={{ background:'none', border:'none', color:'var(--c-text)', fontSize:20, cursor:'pointer', padding:'0 4px' }}>←</button>
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder={t.buscarPlaceholder||'Buscar clientes, presupuestos, obras...'}
+                style={{ flex:1, background:'var(--c-card)', border:'1px solid var(--c-border)', borderRadius:10, padding:'10px 14px', fontSize:14, color:'var(--c-text)', outline:'none', fontFamily:'inherit' }}
+              />
+              {query && <button onClick={() => setQuery('')} style={{ background:'none', border:'none', color:'var(--c-text2)', fontSize:18, cursor:'pointer' }}>✕</button>}
+            </div>
+            <div style={{ flex:1, overflowY:'auto', padding:'8px 0' }}>
+              {buscando && <div style={{ padding:'20px', textAlign:'center', color:'var(--c-text2)', fontSize:13 }}>🔍 {t.buscando||'Buscando...'}</div>}
+              {!buscando && query.length >= 2 && resultados.length === 0 && (
+                <div style={{ padding:'40px 20px', textAlign:'center', color:'var(--c-text2)', fontSize:13 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>🔍</div>
+                  {t.sinResultados||'Sin resultados para'} "{query}"
+                </div>
+              )}
+              {!buscando && query.length < 2 && (
+                <div style={{ padding:'40px 20px', textAlign:'center', color:'var(--c-text2)', fontSize:13 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>🔍</div>
+                  {t.escribiParaBuscar||'Escribí para buscar...'}
+                </div>
+              )}
+              {resultados.map((r, i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', borderBottom:'1px solid var(--c-border)', cursor:'pointer' }}
+                  onClick={() => onClose()}>
+                  <div style={{ width:36, height:36, borderRadius:10, background:'var(--c-card)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{r.icono}</div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:14, fontWeight:600, color:'var(--c-text)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{r.titulo}</div>
+                    <div style={{ fontSize:12, color:'var(--c-text2)', marginTop:2 }}>{r.subtitulo}</div>
+                  </div>
+                  <div style={{ fontSize:11, color:'var(--c-text2)', background:'var(--c-card)', padding:'2px 8px', borderRadius:6, flexShrink:0 }}>{r.tipo}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
       function MoreMenu({ onNav, onClose, t, lang, onLang, perfil, userRol }) {
         const avanceItem = isConstructor(perfil)
           ? ["🏗️", t.avance_obra_title || "Avance obra", "constructoravance"]
@@ -22479,6 +22585,7 @@
         const [screenParams, setScreenParams] = useState({});
         const [showMore, setShowMore] = useState(false);
         const [showTerms, setShowTerms] = useState(false);
+        const [showBusqueda, setShowBusqueda] = useState(false);
         const [showAyuda, setShowAyuda] = useState(false);
         const [dolar, setDolar] = useState(1390);
         const [loggedIn, setLoggedIn] = useState(false);
@@ -23849,6 +23956,7 @@
                 setLang(l);
                 localStorage.setItem("sgi_lang", l);
               }}
+              onSearch={() => setShowBusqueda(true)}
             />
             <div
               style={{
@@ -23923,6 +24031,14 @@
               <TermsScreen
                 t={t}
                 onClose={() => setShowTerms(false)}
+              />
+            )}
+            {showBusqueda && (
+              <BusquedaScreen
+                onClose={() => setShowBusqueda(false)}
+                t={t}
+                user={user}
+                lang={lang}
               />
             )}
             {user && isAdmin(userRol) && (
