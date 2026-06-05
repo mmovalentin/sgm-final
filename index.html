@@ -22148,56 +22148,55 @@
               <div style={{ overflowY:'auto', flex:1 }}>
                 <div style={{ fontSize:9, color:'rgba(255,255,255,0.3)', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>General</div>
                 {[
-                  { id:'home', icon:'📊', label:'Dashboard' },
-                  { id:'clientes', icon:'👥', label: t.clientes_title||'Clientes' },
-                  { id:'presup', icon:'📋', label: t.presupuestos||'Presupuestos' },
+                  { id:'home', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>, label:'Dashboard' },
+                  { id:'clientes', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, label: t.clientes_title||'Clientes' },
+                  { id:'presup', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>, label: t.presupuestos||'Presupuestos' },
                 ].map(item => (
-                  <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'rgba(255,255,255,0.6)', cursor:'pointer' }}
+                  <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'rgba(255,255,255,0.6)', cursor:'pointer', borderLeft:'2px solid transparent', transition:'all 0.15s' }}
                     onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.04)'; e.currentTarget.style.color='#F0F6FF'; }}
                     onMouseLeave={e => { e.currentTarget.style.background=''; e.currentTarget.style.color='rgba(255,255,255,0.6)'; }}>
-                    <span style={{ fontSize:16, width:20, textAlign:'center' }}>{item.icon}</span>
+                    <span style={{ color:'rgba(255,255,255,0.5)', display:'flex' }}>{item.icon}</span>
                     <span>{item.label}</span>
                   </div>
                 ))}
                 <div style={{ fontSize:9, color:'rgba(255,255,255,0.3)', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>Gestión</div>
                 {[
-                  { id:'avance_admin', icon:'🏗️', label:'Avance obra' },
-                  { id:'agenda', icon:'💰', label:'Pagos' },
-                  { id:'mapa', icon:'🗺️', label: t.mapa_lbl||'Mapa' },
+                  { id:'avance_admin', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 20h20M6 20V10l6-6 6 6v10"/><line x1="12" y1="10" x2="12" y2="20"/></svg>, label: t.avance_obra_title||'Avance obra' },
+                  { id:'agenda', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, label: t.pagos||'Pagos' },
+                  { id:'mapa', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, label: t.mapa_lbl||'Mapa' },
                 ].map(item => (
-                  <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'rgba(255,255,255,0.6)', cursor:'pointer' }}
+                  <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'rgba(255,255,255,0.6)', cursor:'pointer', borderLeft:'2px solid transparent', transition:'all 0.15s' }}
                     onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.04)'; e.currentTarget.style.color='#F0F6FF'; }}
                     onMouseLeave={e => { e.currentTarget.style.background=''; e.currentTarget.style.color='rgba(255,255,255,0.6)'; }}>
-                    <span style={{ fontSize:16, width:20, textAlign:'center' }}>{item.icon}</span>
+                    <span style={{ color:'rgba(255,255,255,0.5)', display:'flex' }}>{item.icon}</span>
                     <span>{item.label}</span>
                   </div>
                 ))}
                 <div style={{ fontSize:9, color:'rgba(255,255,255,0.3)', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>Herramientas</div>
                 {[
-                  { id:'cot', icon:'⭐', label: t.cotizar||'Cotizador IA' },
-                  { id:'chat', icon:'🤖', label: t.ia||'Asistente IA' },
-                  { id:'estadisticas', icon:'📈', label: t.estadisticas||'Estadísticas' },
-                  { id:'notificaciones', icon:'🔔', label: t.notificaciones||'Notificaciones' },
+                  { id:'cot', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-3"/><path d="M18 2h4v4"/><path d="M22 2L12 12"/></svg>, label: t.cotizar||'Cotizador IA' },
+                  { id:'chat', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, label: t.ia||'Asistente IA' },
+                  { id:'stats', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, label: t.estadisticas||'Estadísticas' },
+                  { id:'more', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>, label: t.notificaciones||'Notificaciones' },
                 ].map(item => (
-                  <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'rgba(255,255,255,0.6)', cursor:'pointer' }}
+                  <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'rgba(255,255,255,0.6)', cursor:'pointer', borderLeft:'2px solid transparent', transition:'all 0.15s' }}
                     onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.04)'; e.currentTarget.style.color='#F0F6FF'; }}
                     onMouseLeave={e => { e.currentTarget.style.background=''; e.currentTarget.style.color='rgba(255,255,255,0.6)'; }}>
-                    <span style={{ fontSize:16, width:20, textAlign:'center' }}>{item.icon}</span>
+                    <span style={{ color:'rgba(255,255,255,0.5)', display:'flex' }}>{item.icon}</span>
                     <span>{item.label}</span>
                   </div>
                 ))}
               </div>
               <div style={{ padding:'12px 14px', borderTop:'0.5px solid rgba(255,255,255,0.08)' }}>
                 <div onClick={() => { onClose(); }} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'rgba(255,255,255,0.35)', cursor:'pointer', padding:'6px 0' }}>
-                  <span style={{ fontSize:14 }}>🔄</span>
+                  <span style={{ display:'flex' }}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>
                   <span>Cambiar perfil</span>
                 </div>
                 <div onClick={() => { onSignOut && onSignOut(); onClose(); }} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'rgba(239,68,68,0.5)', cursor:'pointer', padding:'6px 0' }}>
-                  <span style={{ fontSize:14 }}>🚪</span>
+                  <span style={{ display:'flex' }}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
                   <span>Cerrar sesión</span>
                 </div>
               </div>
-            </div>
           </>
         );
       }
@@ -24281,11 +24280,11 @@
                       handleNav("home");
                     }}
                     style={{
-                      background: "#1E3A5F",
-                      border: "1px solid #4A9FFF",
-                      borderRadius: 20,
-                      padding: "8px 14px",
-                      color: "#4A9FFF",
+                      background: "rgba(26,115,232,0.15)",
+                      border: "0.5px solid rgba(74,159,255,0.3)",
+                      borderRadius: 10,
+                      padding: "6px 12px",
+                      color: "rgba(74,159,255,0.8)",
                       fontSize: 12,
                       fontWeight: 700,
                       cursor: "pointer",
