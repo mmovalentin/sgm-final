@@ -22148,9 +22148,9 @@
               <div style={{ overflowY:'auto', flex:1 }}>
                 <div style={{ fontSize:9, color:'rgba(255,255,255,0.3)', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>General</div>
                 {[
-                  { id:'home', icon:'▪', label:'Dashboard' },
-                  { id:'clientes', icon:'▪', label: t.clientes_title||'Clientes' },
-                  { id:'presup', icon:'▪', label: t.presupuestos||'Presupuestos' },
+                  { id:'home', icon:'◈', label:'Dashboard' },
+                  { id:'clientes', icon:'◈', label: t.clientes_title||'Clientes' },
+                  { id:'presup', icon:'◈', label: t.presupuestos||'Presupuestos' },
                 ].map(item => (
                   <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'rgba(255,255,255,0.6)', cursor:'pointer' }}
                     onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.04)'; e.currentTarget.style.color='#F0F6FF'; }}
@@ -24239,7 +24239,7 @@
               userRol={efectivoRol}
               onSidebar={() => setShowSidebar(true)}
             />
-            {showMore && (
+            {showMore && !isAdmin(userRol) && (
               <MoreMenu
                 onNav={handleNav}
                 onClose={() => setShowMore(false)}
