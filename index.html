@@ -22203,287 +22203,71 @@
       }
 
       function MoreMenu({ onNav, onClose, t, lang, onLang, perfil, userRol }) {
-        const avanceIconSVG = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 20h20M6 20V10l6-6 6 6v10"/><line x1="12" y1="10" x2="12" y2="20"/></svg>;
-        const avanceItem = isConstructor(perfil)
-          ? [avanceIconSVG, t.avance_obra_title||"Avance obra", "constructoravance"]
-          : [avanceIconSVG, t.avance_obra_title||"Avance obra", "avance_admin"];
-        const svgIcon = (path, viewBox="0 0 24 24") => (
-          <svg viewBox={viewBox} width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5">{path}</svg>
-        );
-        const allItems = [
-          [svgIcon(<><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></>), t.rubros_title||"Rubros", "rubros"],
-          [svgIcon(<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>), t.mapa_lbl||"Mapa", "mapa"],
-          [svgIcon(<><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>), t.agenda_title||"Agenda", "agenda"],
-          [svgIcon(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></>), t.presup_title||"Presupuestos", "presup"],
-          [svgIcon(<><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>), t.stats_title||"Estadísticas", "stats"],
-          [svgIcon(<><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></>), t.faq_title||"FAQ", "faq"],
-          [svgIcon(<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>), t.clientes_title||"Clientes", "clientes"],
-          [svgIcon(<><path d="M2 20h20M6 20V10l6-6 6 6v10"/></>), t.modelos||"Modelos", "modelos"],
-          avanceItem,
-        ];
-        const empresaMoreItems = [
-          [svgIcon(<><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>), t.catalogo||"Catálogo", "empresacatalogo"],
-          [svgIcon(<><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></>), t.faq_title||"FAQ", "faq"],
-          [svgIcon(<><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>), t.stats_title||"Estadísticas", "stats"],
-          [svgIcon(<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>), t.mapa_lbl||"Mapa", "empresamapa"],
-        ];
-        const items = isEmpresa(perfil)
-          ? empresaMoreItems
-          : isAdmin(userRol)
-            ? allItems
-            : allItems.filter(([, , id]) => !CLIENTE_HIDDEN.includes(id));
-        return (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 200,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "flex-end",
-            }}
-          >
-            <div
-              onClick={onClose}
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "rgba(10,22,40,.7)",
-                backdropFilter: "blur(4px)",
-              }}
-            />
-            <div
-              style={{
-                background: C.card,
-                borderRadius: "20px 20px 0 0",
-                padding: "16px 16px 28px",
-                position: "relative",
-                zIndex: 1,
-                overflowY: "auto",
-                maxHeight: "70vh",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: C.t2,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                  marginBottom: 12,
-                }}
-              >
-                {t.mas_menu}
-              </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3,1fr)",
-                  gap: 8,
-                }}
-              >
-                {items.map(([ic, lbl, id]) => (
-                  <button
-                    key={id}
-                    onClick={() => {
-                      onNav(id);
-                      onClose();
-                    }}
-                    style={{
-                      background: C.off,
-                      border: `.5px solid ${C.border2}`,
-                      borderRadius: 10,
-                      padding: "12px 8px",
-                      cursor: "pointer",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 5,
-                    }}
-                  >
-                    <span style={{ fontSize: 22, display:'flex', alignItems:'center', justifyContent:'center', color: C.t1 }}>{ic}</span>
-                    <span
-                      style={{ fontSize: 11, fontWeight: 500, color: C.t1 }}
-                    >
-                      {lbl}
-                    </span>
-                  </button>
-                ))}
-                <button
-                  onClick={() => {
-                    onLang();
-                    onClose();
-                  }}
-                  style={{
-                    background: C.off,
-                    border: `.5px solid ${C.border2}`,
-                    borderRadius: 10,
-                    padding: "12px 8px",
-                    cursor: "pointer",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 5,
-                  }}
-                >
-                  <span style={{ fontSize: 22, display:'flex', alignItems:'center', justifyContent:'center', color: C.t1 }}>
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                  </span>
-                  <span style={{ fontSize: 11, fontWeight: 500, color: C.t1 }}>
-                    {t.traducir}
-                  </span>
-                </button>
-              </div>
-              <div style={{borderTop:"1px solid rgba(255,255,255,.08)",marginTop:12,paddingTop:12}}>
-                <button onClick={()=>{onNav("terms");onClose();}}
-                  style={{width:"100%",background:"none",border:"none",textAlign:"left",
-                    padding:"10px 12px",borderRadius:8,cursor:"pointer",fontSize:13,
-                    color:C.t2,fontFamily:"inherit"}}>
-                  {t.terminos_btn||"📄 Términos y Privacidad"}
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      }
+  const clienteItems = [
+    { id:'miobrascreen', icon:'▦', label:'Mi Obra' },
+    { id:'modelos', icon:'▤', label: t.modelos||'Modelos' },
+    { id:'mapa', icon:'◎', label: t.mapa_lbl||'Mapa' },
+    { id:'faq', icon:'?', label: t.faq_title||'Ayuda' },
+    { id:'terms', icon:'≡', label: t.terminos_link||'T&C' },
+  ];
+  const constructorItems = [
+    { id:'agenda', icon:'▦', label: t.agenda_title||'Agenda' },
+    { id:'constructoravance', icon:'▤', label: t.avance_obra_title||'Avance' },
+    { id:'presup', icon:'≡', label: t.presup_title||'Presup.' },
+    { id:'mapa', icon:'◎', label: t.mapa_lbl||'Mapa' },
+    { id:'faq', icon:'?', label: t.faq_title||'FAQ' },
+    { id:'terms', icon:'≡', label: t.terminos_link||'T&C' },
+  ];
+  const empresaMoreItems = [
+    { id:'empresacatalogo', icon:'▦', label: t.catalogo||'Catálogo' },
+    { id:'stats', icon:'▤', label: t.stats_title||'Stats' },
+    { id:'empresamapa', icon:'◎', label: t.mapa_lbl||'Mapa' },
+    { id:'faq', icon:'?', label: t.faq_title||'FAQ' },
+    { id:'terms', icon:'≡', label: t.terminos_link||'T&C' },
+  ];
+  const adminItems = [
+    { id:'rubros', icon:'▦', label: t.rubros_title||'Rubros' },
+    { id:'mapa', icon:'◎', label: t.mapa_lbl||'Mapa' },
+    { id:'agenda', icon:'▦', label: t.agenda_title||'Agenda' },
+    { id:'presup', icon:'≡', label: t.presup_title||'Presup.' },
+    { id:'stats', icon:'▤', label: t.stats_title||'Stats' },
+    { id:'faq', icon:'?', label: t.faq_title||'FAQ' },
+    { id:'clientes', icon:'▦', label: t.clientes_title||'Clientes' },
+    { id:'modelos', icon:'▤', label: t.modelos||'Modelos' },
+    { id:'avance_admin', icon:'▤', label: t.avance_obra_title||'Avance' },
+  ];
 
-      // ── WEBAUTHN HELPERS
-      function bufferToBase64url(buf) {
-        return btoa(String.fromCharCode(...new Uint8Array(buf)))
-          .replace(/\+/g, "-")
-          .replace(/\//g, "_")
-          .replace(/=/g, "");
-      }
-      function base64urlToBuffer(b64) {
-        const s = b64.replace(/-/g, "+").replace(/_/g, "/");
-        const p = s.padEnd(s.length + ((4 - (s.length % 4)) % 4), "=");
-        const bin = atob(p);
-        const buf = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-        return buf.buffer;
-      }
-      function WebAuthnModal({ onActivate, onDismiss, status }) {
-        return (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(7,17,31,.85)",
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "center",
-              zIndex: 2000,
-              backdropFilter: "blur(4px)",
-            }}
-          >
-            <div
-              style={{
-                background: "#1a2332",
-                borderRadius: "20px 20px 0 0",
-                padding: "28px 24px 36px",
-                width: "100%",
-                maxWidth: 480,
-                border: "1px solid rgba(255,255,255,.08)",
-              }}
-            >
-              {status === "success" ? (
-                <div style={{ textAlign: "center", padding: "12px 0" }}>
-                  <div style={{ fontSize: 44, marginBottom: 12 }}>✅</div>
-                  <div
-                    style={{
-                      color: "#64FFDA",
-                      fontSize: 16,
-                      fontWeight: 700,
-                      marginBottom: 6,
-                    }}
-                  >
-                    Face ID activado
-                  </div>
-                  <div style={{ color: "rgba(255,255,255,.4)", fontSize: 12 }}>
-                    La próxima vez podés entrar sin elegir cuenta
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div style={{ textAlign: "center", marginBottom: 20 }}>
-                    <div style={{ fontSize: 44, marginBottom: 10 }}>🔐</div>
-                    <div
-                      style={{
-                        color: "#fff",
-                        fontSize: 15,
-                        fontWeight: 700,
-                        marginBottom: 8,
-                      }}
-                    >
-                      ¿Querés activar Face ID para entrar más rápido?
-                    </div>
-                    <div
-                      style={{
-                        color: "rgba(255,255,255,.45)",
-                        fontSize: 12,
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      Con Face ID o huella dactilar entrás sin escribir tu
-                      contraseña cada vez.
-                    </div>
-                  </div>
-                  {status === "error" && (
-                    <div
-                      style={{
-                        color: "rgba(255,100,100,.8)",
-                        fontSize: 11,
-                        textAlign: "center",
-                        marginBottom: 12,
-                      }}
-                    >
-                      No se pudo activar. Intentá de nuevo.
-                    </div>
-                  )}
-                  <button
-                    onClick={onActivate}
-                    disabled={status === "activating"}
-                    style={{
-                      width: "100%",
-                      padding: 13,
-                      borderRadius: 12,
-                      border: "none",
-                      background: "#64FFDA",
-                      color: "#07111F",
-                      fontSize: 14,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      marginBottom: 10,
-                      opacity: status === "activating" ? 0.6 : 1,
-                      fontFamily: "inherit",
-                    }}
-                  >
-                    {status === "activating"
-                      ? "Activando..."
-                      : "Activar Face ID"}
-                  </button>
-                  <button
-                    onClick={onDismiss}
-                    style={{
-                      width: "100%",
-                      padding: 11,
-                      borderRadius: 12,
-                      border: "none",
-                      background: "rgba(255,255,255,.07)",
-                      color: "rgba(255,255,255,.55)",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                    }}
-                  >
-                    Ahora no
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        );
+  const items = isAdmin(userRol) ? adminItems : isEmpresa(perfil) ? empresaMoreItems : isConstructor(perfil) ? constructorItems : clienteItems;
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:200, display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(10,22,40,.7)', backdropFilter:'blur(4px)' }} />
+      <div style={{ background:C.card, borderRadius:'20px 20px 0 0', padding:'16px 16px 28px', position:'relative', zIndex:1, overflowY:'auto', maxHeight:'70vh' }}>
+        <div style={{ width:32, height:3, background:'rgba(255,255,255,0.12)', borderRadius:2, margin:'0 auto 12px' }} />
+        <div style={{ fontSize:11, fontWeight:700, color:C.t2, textTransform:'uppercase', letterSpacing:0.5, marginBottom:12 }}>{t.mas_menu||'Menú'}</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+          {items.map(item => (
+            <button key={item.id} onClick={() => { onNav(item.id); onClose(); }}
+              style={{ background:C.off, border:`0.5px solid ${C.border2}`, borderRadius:10, padding:'12px 8px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:5 }}>
+              <span style={{ fontSize:18, color:C.t2, fontWeight:300 }}>{item.icon}</span>
+              <span style={{ fontSize:11, fontWeight:500, color:C.t1 }}>{item.label}</span>
+            </button>
+          ))}
+          <button onClick={() => { onLang(); onClose(); }}
+            style={{ background:C.off, border:`0.5px solid ${C.border2}`, borderRadius:10, padding:'12px 8px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:5 }}>
+            <span style={{ fontSize:18, color:C.t2 }}>⊕</span>
+            <span style={{ fontSize:11, fontWeight:500, color:C.t1 }}>{t.traducir||'Idioma'}</span>
+          </button>
+        </div>
+        <div style={{ borderTop:'1px solid rgba(255,255,255,.08)', marginTop:12, paddingTop:12 }}>
+          <button onClick={() => { onNav('terms'); onClose(); }}
+            style={{ width:'100%', background:'none', border:'none', textAlign:'left', padding:'10px 12px', borderRadius:8, cursor:'pointer', fontSize:13, color:C.t2, fontFamily:'inherit' }}>
+            {t.terminos_btn||'Términos y Privacidad'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
       }
 
       // ── SPLASH SCREEN
