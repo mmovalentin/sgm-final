@@ -2304,7 +2304,14 @@
         ];
 
         const isConstructor = perfil === 'constructor';
-        const items = isAdmin(userRol) ? adminItems : isEmpresa(perfil) ? empresaItems : isConstructor ? constructorItems : clienteItems;
+        const efectivoPerfil = perfil;
+        const items = isAdmin(userRol) && (efectivoPerfil === 'admin' || !efectivoPerfil)
+          ? adminItems
+          : isEmpresa(efectivoPerfil)
+          ? empresaItems
+          : isConstructor(efectivoPerfil)
+          ? constructorItems
+          : clienteItems;
         const accentColor = isAdmin(userRol) ? '#378ADD' : isEmpresa(perfil) ? '#7C3AED' : isConstructor ? '#1D9E75' : '#4A9FFF';
         const navBg = isConstructor ? '#0D1B2A' : C.navy;
         const isCliente_ = !isAdmin(userRol) && !isEmpresa(perfil) && !isConstructor;
@@ -22174,7 +22181,7 @@
                 ))}
                 <div style={{ fontSize:9, color:'rgba(255,255,255,0.3)', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>Herramientas</div>
                 {[
-                  { id:'modelos', icon:'🏘', label: t.modelos||'Modelos' },
+                  { id:'modelos', icon:'⊞', label: t.modelos||'Modelos' },
                   { id:'cot', icon:'⭐', label: t.cotizar||'Cotizador IA' },
                   { id:'chat', icon:'🤖', label: t.ia||'Asistente IA' },
                   { id:'estadisticas', icon:'📈', label: t.estadisticas||'Estadísticas' },
@@ -22195,17 +22202,17 @@
                 </div>
                 <div style={{ marginBottom:4 }}>
                   <div onClick={() => setShowPerfiles(v=>!v)} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'rgba(255,255,255,0.45)', cursor:'pointer', padding:'6px 0' }}>
-                    <span style={{ fontSize:14 }}>🔄</span>
+                    <span>↻</span>
                     <span style={{ flex:1 }}>Ver como perfil</span>
                     <span style={{ fontSize:10 }}>{showPerfiles ? '▴' : '▾'}</span>
                   </div>
                   {showPerfiles && (
                     <div style={{ background:'rgba(0,0,0,0.2)', borderRadius:8, padding:4, marginTop:4 }}>
                       {[
-                        { id:null, icon:'⚙️', label:'Admin', sub:'Panel completo', color:'rgba(239,68,68,0.15)' },
-                        { id:'cliente', icon:'🏠', label:'Cliente', sub:'Ver como cliente', color:'rgba(55,138,221,0.15)' },
-                        { id:'constructor', icon:'🔨', label:'Constructor', sub:'Ver como constructor', color:'rgba(29,158,117,0.15)' },
-                        { id:'proveedor', icon:'🏢', label:'Empresa', sub:'Ver como empresa', color:'rgba(124,58,237,0.15)' },
+                        { id:null, icon:'❐', label:'Admin', sub:'Panel completo', color:'rgba(239,68,68,0.15)' },
+                        { id:'cliente', icon:'⌂', label:'Cliente', sub:'Ver como cliente', color:'rgba(55,138,221,0.15)' },
+                        { id:'constructor', icon:'◆', label:'Constructor', sub:'Ver como constructor', color:'rgba(29,158,117,0.15)' },
+                        { id:'proveedor', icon:'▣', label:'Empresa', sub:'Ver como empresa', color:'rgba(124,58,237,0.15)' },
                       ].map(p => (
                         <div key={String(p.id)} onClick={() => { onAdminView && onAdminView(p.id); onClose(); }}
                           style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 8px', borderRadius:6, cursor:'pointer', marginBottom:2, background: p.id===null ? 'rgba(55,138,221,0.08)' : 'transparent' }}>
@@ -22221,7 +22228,7 @@
                   )}
                 </div>
                 <div onClick={() => { onSignOut && onSignOut(); onClose(); }} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'rgba(239,68,68,0.5)', cursor:'pointer', padding:'6px 0' }}>
-                  <span style={{ fontSize:14 }}>🚪</span>
+                  <span>→</span>
                   <span>Cerrar sesión</span>
                 </div>
               </div>
@@ -24206,7 +24213,7 @@
                 localStorage.setItem("sgi_lang", l);
               }}
               onSearch={() => setShowBusqueda(true)}
-              onSidebar={() => setShowSidebar(true)}
+              onSidebar={isAdmin(userRol) ? () => setShowSidebar(true) : undefined}
             />
             <div
               style={{
