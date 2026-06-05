@@ -2307,7 +2307,13 @@
         const esEmpresa = isEmpresa(perfil);
         const esConstructor = perfil === 'constructor';
         const esCliente = !esAdmin && !esEmpresa && !esConstructor;
-        const items = esAdmin ? adminItems : esEmpresa ? empresaItems : esConstructor ? constructorItems : clienteItems;
+        const items = esAdmin && (perfil === 'admin' || perfil === null || perfil === undefined)
+          ? adminItems
+          : esEmpresa
+          ? empresaItems
+          : esConstructor
+          ? constructorItems
+          : clienteItems;
         const accentColor = esAdmin ? '#378ADD' : esEmpresa ? '#7C3AED' : esConstructor ? '#1D9E75' : '#4A9FFF';
         const navBg = esConstructor ? '#0D1B2A' : C.navy;
 
