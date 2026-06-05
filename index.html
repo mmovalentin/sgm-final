@@ -2303,11 +2303,13 @@
           { id: "chat", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="22" height="22"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label: t.ia||"IA" },
         ];
 
-        const isConstructor = perfil === 'constructor';
-        const items = isAdmin(userRol) ? adminItems : isEmpresa(perfil) ? empresaItems : isConstructor ? constructorItems : clienteItems;
-        const accentColor = isAdmin(userRol) ? '#378ADD' : isEmpresa(perfil) ? '#7C3AED' : isConstructor ? '#1D9E75' : '#4A9FFF';
-        const navBg = isConstructor ? '#0D1B2A' : C.navy;
-        const isCliente_ = !isAdmin(userRol) && !isEmpresa(perfil) && !isConstructor;
+        const esAdmin = isAdmin(userRol);
+        const esEmpresa = isEmpresa(perfil);
+        const esConstructor = perfil === 'constructor';
+        const esCliente = !esAdmin && !esEmpresa && !esConstructor;
+        const items = esAdmin ? adminItems : esEmpresa ? empresaItems : esConstructor ? constructorItems : clienteItems;
+        const accentColor = esAdmin ? '#378ADD' : esEmpresa ? '#7C3AED' : esConstructor ? '#1D9E75' : '#4A9FFF';
+        const navBg = esConstructor ? '#0D1B2A' : C.navy;
 
         return (
           <div style={{ display:'flex', background:navBg, padding:'6px 0 2px', flexShrink:0, borderTop:`1px solid ${C.navBorder}` }}>
@@ -2316,10 +2318,10 @@
               return (
                 <button
                   key={it.id}
-                  onClick={() => it.id === 'more' && isAdmin(userRol) && onSidebar ? onSidebar() : onNav(it.id)}
-                  style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:0, padding:'4px 2px 8px', background: isCliente_ && active ? 'rgba(74,159,255,0.15)' : 'none', border:'none', cursor:'pointer', borderRadius: isCliente_ ? 10 : 0, margin: isCliente_ ? '2px' : 0, transition:'all 0.2s' }}
+                  onClick={() => it.id === 'more' && esAdmin && onSidebar ? onSidebar() : onNav(it.id)}
+                  style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:0, padding:'4px 2px 8px', background: esCliente && active ? 'rgba(74,159,255,0.15)' : 'none', border:'none', cursor:'pointer', borderRadius: esCliente ? 10 : 0, margin: esCliente ? '2px' : 0, transition:'all 0.2s' }}
                 >
-                  {isConstructor && (
+                  {esConstructor && (
                     <div style={{ height:2, borderRadius:1, background: active ? accentColor : 'transparent', marginBottom:4, transition:'all 0.2s', width: active ? 24 : 20 }} />
                   )}
                   <div style={{ color: active ? accentColor : 'rgba(255,255,255,0.3)', transition:'color 0.2s', display:'flex' }}>
