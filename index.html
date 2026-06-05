@@ -22127,7 +22127,8 @@
         );
       }
 
-      function AdminSidebar({ onClose, onNav, t, user, onSignOut }) {
+      function AdminSidebar({ onClose, onNav, t, user, onSignOut, onAdminView }) {
+        const [showPerfiles, setShowPerfiles] = React.useState(false);
         const nombre = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Admin';
         const inicial = (user?.user_metadata?.full_name || user?.email || 'A')[0].toUpperCase();
         return (
@@ -22192,9 +22193,32 @@
                   <span style={{ display:'flex' }}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
                   <span>Panel completo</span>
                 </div>
-                <div onClick={() => { onClose(); }} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'rgba(255,255,255,0.35)', cursor:'pointer', padding:'6px 0' }}>
-                  <span style={{ fontSize:14 }}>🔄</span>
-                  <span>Cambiar perfil</span>
+                <div style={{ marginBottom:4 }}>
+                  <div onClick={() => setShowPerfiles(v=>!v)} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'rgba(255,255,255,0.45)', cursor:'pointer', padding:'6px 0' }}>
+                    <span style={{ fontSize:14 }}>🔄</span>
+                    <span style={{ flex:1 }}>Ver como perfil</span>
+                    <span style={{ fontSize:10 }}>{showPerfiles ? '▴' : '▾'}</span>
+                  </div>
+                  {showPerfiles && (
+                    <div style={{ background:'rgba(0,0,0,0.2)', borderRadius:8, padding:4, marginTop:4 }}>
+                      {[
+                        { id:null, icon:'⚙️', label:'Admin', sub:'Panel completo', color:'rgba(239,68,68,0.15)' },
+                        { id:'cliente', icon:'🏠', label:'Cliente', sub:'Ver como cliente', color:'rgba(55,138,221,0.15)' },
+                        { id:'constructor', icon:'🔨', label:'Constructor', sub:'Ver como constructor', color:'rgba(29,158,117,0.15)' },
+                        { id:'proveedor', icon:'🏢', label:'Empresa', sub:'Ver como empresa', color:'rgba(124,58,237,0.15)' },
+                      ].map(p => (
+                        <div key={String(p.id)} onClick={() => { onAdminView && onAdminView(p.id); onClose(); }}
+                          style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 8px', borderRadius:6, cursor:'pointer', marginBottom:2, background: p.id===null ? 'rgba(55,138,221,0.08)' : 'transparent' }}>
+                          <div style={{ width:24, height:24, borderRadius:'50%', background:p.color, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>{p.icon}</div>
+                          <div>
+                            <div style={{ fontSize:10, fontWeight:500, color:'rgba(255,255,255,0.7)' }}>{p.label}</div>
+                            <div style={{ fontSize:8, color:'rgba(255,255,255,0.3)' }}>{p.sub}</div>
+                          </div>
+                          {p.id === null && <span style={{ marginLeft:'auto', color:'#378ADD', fontSize:10 }}>✓</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div onClick={() => { onSignOut && onSignOut(); onClose(); }} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'rgba(239,68,68,0.5)', cursor:'pointer', padding:'6px 0' }}>
                   <span style={{ fontSize:14 }}>🚪</span>
@@ -24267,6 +24291,7 @@
                 t={T[lang]}
                 user={user}
                 onSignOut={signOut}
+                onAdminView={(p) => { setAdminView(p); handleNav('home'); }}
               />
             )}
             {showBusqueda && (
