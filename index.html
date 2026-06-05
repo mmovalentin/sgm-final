@@ -2301,7 +2301,6 @@
           { id: "modelos", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="22" height="22"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>, label: t.modelos||"Modelos" },
           { id: "cot", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="22" height="22"><path d="M9 7H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-3"/><path d="M18 2h4v4"/><path d="M22 2L12 12"/></svg>, label: t.cotizar||"Cotizar" },
           { id: "chat", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="22" height="22"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label: t.ia||"IA" },
-          { id: "more", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="22" height="22"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>, label: t.mas||"Menú" },
         ];
 
         const isConstructor = perfil === 'constructor';
@@ -22174,6 +22173,7 @@
                 ))}
                 <div style={{ fontSize:9, color:'rgba(255,255,255,0.3)', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>Herramientas</div>
                 {[
+                  { id:'modelos', icon:'🏘', label: t.modelos||'Modelos' },
                   { id:'cot', icon:'⭐', label: t.cotizar||'Cotizador IA' },
                   { id:'chat', icon:'🤖', label: t.ia||'Asistente IA' },
                   { id:'estadisticas', icon:'📈', label: t.estadisticas||'Estadísticas' },
@@ -22188,6 +22188,10 @@
                 ))}
               </div>
               <div style={{ padding:'12px 14px', borderTop:'0.5px solid rgba(255,255,255,0.08)' }}>
+                <div onClick={() => { onNav('home'); onClose(); }} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'rgba(74,159,255,0.6)', cursor:'pointer', padding:'6px 0', marginBottom:2 }}>
+                  <span style={{ display:'flex' }}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+                  <span>Panel completo</span>
+                </div>
                 <div onClick={() => { onClose(); }} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'rgba(255,255,255,0.35)', cursor:'pointer', padding:'6px 0' }}>
                   <span style={{ fontSize:14 }}>🔄</span>
                   <span>Cambiar perfil</span>
@@ -24272,132 +24276,6 @@
                 user={user}
                 lang={lang}
               />
-            )}
-            {user && isAdmin(userRol) && (
-              <div
-                style={{
-                  position: "fixed",
-                  bottom: 74,
-                  right: 12,
-                  zIndex: 800,
-                }}
-              >
-                {adminView ? (
-                  <button
-                    onClick={() => {
-                      setAdminView(null);
-                      setShowAdminSwitch(false);
-                      handleNav("home");
-                    }}
-                    style={{
-                      background: "rgba(26,115,232,0.12)",
-                      border: "0.5px solid rgba(74,159,255,0.25)",
-                      borderRadius: 10,
-                      padding: "6px 12px",
-                      color: "rgba(74,159,255,0.7)",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      boxShadow: "0 4px 16px rgba(0,0,0,.5)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    ⬅ Panel Admin
-                  </button>
-                ) : (
-                  <div style={{ position: "relative" }}>
-                    <button
-                      onClick={() => setShowAdminSwitch((v) => !v)}
-                      style={{
-                        background: "#1B2A3D",
-                        border: "1px solid rgba(255,255,255,.18)",
-                        borderRadius: 20,
-                        padding: "8px 14px",
-                        color: "rgba(255,255,255,.75)",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        boxShadow: "0 4px 16px rgba(0,0,0,.4)",
-                      }}
-                    >
-                      🔧 {t.vistas||"Vistas"}
-                    </button>
-                    {showAdminSwitch && (
-                      <div
-                        onClick={() => setShowAdminSwitch(false)}
-                        style={{ position: "fixed", inset: 0, zIndex: 799 }}
-                      />
-                    )}
-                    {showAdminSwitch && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          bottom: 40,
-                          right: 0,
-                          background: "#0D1B2A",
-                          border: "1px solid rgba(255,255,255,.12)",
-                          borderRadius: 14,
-                          padding: 10,
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 6,
-                          minWidth: 160,
-                          boxShadow: "0 8px 32px rgba(0,0,0,.6)",
-                          zIndex: 801,
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: 10,
-                            color: "rgba(255,255,255,.35)",
-                            fontWeight: 700,
-                            textTransform: "uppercase",
-                            letterSpacing: 1,
-                            paddingBottom: 4,
-                            borderBottom: "1px solid rgba(255,255,255,.08)",
-                            marginBottom: 2,
-                          }}
-                        >
-                          Simular vista
-                        </div>
-                        {[
-                          ["cliente", "🏠", "Cliente"],
-                          ["constructor", "🔨", "Constructor"],
-                          ["proveedor", "🏢", "Empresa"],
-                        ].map(([v, ic, lb]) => (
-                          <button
-                            key={v}
-                            onClick={() => {
-                              setAdminView(v);
-                              setShowAdminSwitch(false);
-                              handleNav("home");
-                            }}
-                            style={{
-                              background: "rgba(255,255,255,.05)",
-                              border: "1px solid rgba(255,255,255,.08)",
-                              borderRadius: 10,
-                              padding: "9px 12px",
-                              color: "#F0F6FF",
-                              fontSize: 13,
-                              fontWeight: 600,
-                              cursor: "pointer",
-                              textAlign: "left",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                            }}
-                          >
-                            <span>{ic}</span>
-                            {lb}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
             )}
             {showAyuda && (
               <AyudaPanel onClose={() => setShowAyuda(false)} t={t} />
