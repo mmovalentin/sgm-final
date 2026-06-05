@@ -335,6 +335,8 @@
           cambiar_cuenta: "Cambiar cuenta",
           agregar_cuenta: "Agregar cuenta",
           cerrar_sesion: "Cerrar sesión",
+          avanceDetuObra: "Avance de tu obra",
+          cliente: "Cliente",
           buscarPlaceholder: "Buscar clientes, presupuestos, obras...",
           buscando: "Buscando...",
           sinResultados: "Sin resultados para",
@@ -766,6 +768,8 @@
           cambiar_cuenta: "Change account",
           agregar_cuenta: "Add account",
           cerrar_sesion: "Sign out",
+          avanceDetuObra: "Your project progress",
+          cliente: "Client",
           buscarPlaceholder: "Search clients, quotes, projects...",
           buscando: "Searching...",
           sinResultados: "No results for",
@@ -5203,50 +5207,76 @@
           <div
             style={{ background: C.bg, minHeight: "100%", paddingBottom: 16 }}
           >
-            {/* ── 1. HEADER ── */}
-            <div
-              style={{
-                background: C.navy,
-                padding: "20px 16px 22px",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  top: -50,
-                  right: -30,
-                  width: 130,
-                  height: 130,
-                  background: "rgba(74,159,255,.06)",
-                  borderRadius: "50%",
-                  pointerEvents: "none",
-                }}
-              />
-              <div
-                style={{
-                  color: C.t3,
-                  fontSize: 11,
-                  marginBottom: 6,
-                  textTransform: "capitalize",
-                }}
-              >
-                {hoy}
-              </div>
-              <div
-                style={{
-                  color: C.onNavy,
-                  fontSize: 21,
-                  fontWeight: 800,
-                  lineHeight: 1.2,
-                  marginBottom: 3,
-                }}
-              >
-                {nombre ? `¡Hola ${nombre}! 🏗️` : "¡Bienvenido! 🏗️"}
-              </div>
-              <div style={{ color: C.t3, fontSize: 12 }}>{t.tuObraAvanza||"Tu obra avanza"}</div>
-            </div>
+            {/* ── 1. HEADER DINÁMICO ── */}
+            {(() => {
+              const pct = avance || 0;
+              const heroGrad = pct === 0
+                ? 'linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)'
+                : pct <= 50
+                ? 'linear-gradient(135deg,#0D1B2A 0%,#1a3a5c 100%)'
+                : pct < 100
+                ? 'linear-gradient(135deg,#0a2a1a 0%,#0f3d2a 100%)'
+                : 'linear-gradient(135deg,#1a0a2e 0%,#2d1457 100%)';
+              const accentColor = pct === 0 ? 'rgba(255,255,255,0.25)'
+                : pct <= 50 ? '#4A9FFF'
+                : pct < 100 ? '#1D9E75'
+                : '#a78bfa';
+              const tagColor = pct === 0 ? 'rgba(255,255,255,0.08)'
+                : pct <= 50 ? 'rgba(74,159,255,0.15)'
+                : pct < 100 ? 'rgba(29,158,117,0.15)'
+                : 'rgba(124,58,237,0.15)';
+              const tagBorder = pct === 0 ? 'rgba(255,255,255,0.12)'
+                : pct <= 50 ? 'rgba(74,159,255,0.3)'
+                : pct < 100 ? 'rgba(29,158,117,0.3)'
+                : 'rgba(124,58,237,0.3)';
+              const barGrad = pct === 0 ? '#555'
+                : pct <= 50 ? 'linear-gradient(90deg,#1a73e8,#4A9FFF)'
+                : pct < 100 ? 'linear-gradient(90deg,#1D9E75,#4ade80)'
+                : 'linear-gradient(90deg,#7C3AED,#a78bfa)';
+              const heroTitle = pct === 0
+                ? (nombre ? `¡Hola, ${nombre}!` : '¡Bienvenido!')
+                : pct <= 50
+                ? (nombre ? `¡Tu obra avanza, ${nombre}!` : '¡Tu obra avanza!')
+                : pct < 100
+                ? (nombre ? `¡Ya falta poco, ${nombre}!` : '¡Ya falta poco!')
+                : (nombre ? `¡Obra terminada, ${nombre}! 🎉` : '¡Obra terminada! 🎉');
+              const heroSub = pct === 0
+                ? 'Estamos preparando todo'
+                : pct <= 50
+                ? 'Vamos por buen camino 🚧'
+                : pct < 100
+                ? 'La recta final está cerca 🚧'
+                : 'Felicitaciones por tu nueva casa';
+              return (
+                <div style={{ background: heroGrad, padding: '20px 16px 18px', position: 'relative', overflow: 'hidden' }}>
+                  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+                  <div style={{ position:'absolute', top:-30, right:-30, width:120, height:120, borderRadius:'50%', background: pct<=50?'rgba(74,159,255,0.08)':pct<100?'rgba(29,158,117,0.08)':'rgba(124,58,237,0.08)', pointerEvents:'none' }} />
+                  <div style={{ position:'absolute', top:10, right:10, width:60, height:60, borderRadius:'50%', background: pct<=50?'rgba(74,159,255,0.05)':pct<100?'rgba(29,158,117,0.05)':'rgba(124,58,237,0.05)', pointerEvents:'none' }} />
+                  <div style={{ position:'relative', zIndex:1 }}>
+                    <div style={{ display:'inline-block', background:tagColor, border:`0.5px solid ${tagBorder}`, borderRadius:20, padding:'3px 10px', fontSize:10, color:accentColor, marginBottom:10, fontWeight:500 }}>
+                      {t.cliente||'Cliente'} · SGI
+                    </div>
+                    <div style={{ fontSize:19, fontWeight:700, color:'#F0F6FF', marginBottom:4, lineHeight:1.3 }}>
+                      {heroTitle}
+                    </div>
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginBottom:14 }}>
+                      {heroSub}
+                    </div>
+                    <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:10, padding:'10px 12px', display:'flex', alignItems:'center', gap:10 }}>
+                      <div style={{ fontSize:22, fontWeight:700, color:accentColor, minWidth:48 }}>{pct}%</div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:9, color:'rgba(255,255,255,0.35)', marginBottom:5, textTransform:'uppercase', letterSpacing:'0.4px' }}>
+                          {t.avanceDetuObra||'Avance de tu obra'}
+                        </div>
+                        <div style={{ height:6, background:'rgba(255,255,255,0.08)', borderRadius:3, overflow:'hidden' }}>
+                          <div style={{ height:'100%', borderRadius:3, background:barGrad, width:pct+'%', transition:'width 0.5s ease' }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {avanceRows.length > 0 && (
               <div style={{ padding: '12px 16px 0' }}>
