@@ -55,6 +55,7 @@
         --c-success: #4caf50;
         --c-warning: #ff9800;
         --c-danger: #f44336;
+        --c-text3: rgba(255,255,255,0.35);
       }
 
       body.theme-light {
@@ -69,6 +70,7 @@
         --c-success: #2e7d32;
         --c-warning: #e65100;
         --c-danger: #c62828;
+        --c-text3: rgba(0,0,0,0.4);
       }
 
       * {
@@ -2698,16 +2700,16 @@
             {!cargando && (
               <div style={{ padding: '12px 14px 4px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 4 }}>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.obrasActivas||'Obras activas'}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{metricas.obrasActivas}</div>
+                  <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.obrasActivas||'Obras activas'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>{metricas.obrasActivas}</div>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.presupuestos||'Presupuestos'}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{metricas.totalPresup}</div>
+                  <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.presupuestos||'Presupuestos'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>{metricas.totalPresup}</div>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.pagosVencidos||'Vencidos'}</div>
+                  <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.pagosVencidos||'Vencidos'}</div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: vencidos.length > 0 ? '#E24B4A' : '#F0F6FF' }}>{vencidos.length}</div>
                   </div>
                 </div>
@@ -5273,28 +5275,28 @@
             {avanceRows.length > 0 && (
               <div style={{ padding: '12px 16px 0' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.avanceObra||'Avance'}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{avance}%</div>
+                  <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.avanceObra||'Avance'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>{avance}%</div>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.etapas||'Etapas'}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{etapasOk}/{totalEtapas}</div>
+                  <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.etapas||'Etapas'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>{etapasOk}/{totalEtapas}</div>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.diasEst||'Días est.'}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{diasEstimados}</div>
+                  <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.diasEst||'Días est.'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>{diasEstimados}</div>
                   </div>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '12px', border: '1px solid rgba(74,159,255,0.1)', marginBottom: 10 }}>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>{t.avancePorEtapa||'Avance por etapa'}</div>
+                <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '12px', border: '1px solid var(--c-border)', marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, color: 'var(--c-text2)', marginBottom: 6 }}>{t.avancePorEtapa||'Avance por etapa'}</div>
                   {avanceRows.map((e, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                       <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', width: 100, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.etapa_nombre||e.nombre||'Etapa '+(i+1)}</div>
-                      <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ flex: 1, height: 6, background: 'var(--c-border)', borderRadius: 3, overflow: 'hidden' }}>
                         <div style={{ height: '100%', borderRadius: 3, background: (e.porcentaje||0)>=100 ? '#1D9E75' : (e.porcentaje||0)>0 ? '#378ADD' : 'rgba(74,159,255,0.2)', width: (e.porcentaje||0)+'%' }}></div>
                       </div>
-                      <div style={{ fontSize: 11, color: '#F0F6FF', width: 30, textAlign: 'right' }}>{e.porcentaje||0}%</div>
+                      <div style={{ fontSize: 11, color: 'var(--c-text)', width: 30, textAlign: 'right' }}>{e.porcentaje||0}%</div>
                     </div>
                   ))}
                 </div>
@@ -6299,28 +6301,28 @@
             {!loading && obras.length > 0 && (
               <div style={{ padding: '0 16px', marginBottom: 4 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.obrasActivas||'Activas'}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{activas.length}</div>
+                  <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.obrasActivas||'Activas'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>{activas.length}</div>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.m2Total||'m² total'}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{m2Total}</div>
+                  <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.m2Total||'m² total'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>{m2Total}</div>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(74,159,255,0.1)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.terminadas||'Terminadas'}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{terminadas.length}</div>
+                  <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.terminadas||'Terminadas'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>{terminadas.length}</div>
                   </div>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '12px', border: '1px solid rgba(74,159,255,0.1)', marginBottom: 10 }}>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>{t.avancePorObra||'Avance por obra'}</div>
+                <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '12px', border: '1px solid var(--c-border)', marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, color: 'var(--c-text2)', marginBottom: 8 }}>{t.avancePorObra||'Avance por obra'}</div>
                   {obras.slice(0,5).map((o, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                       <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', width: 90, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o.cliente_nombre||o.nombre_cliente||o.cliente||('Obra '+(i+1))}</div>
-                      <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ flex: 1, height: 6, background: 'var(--c-border)', borderRadius: 3, overflow: 'hidden' }}>
                         <div style={{ height: '100%', borderRadius: 3, background: (o.avance||0)>=100 ? '#1D9E75' : (o.avance||0)>0 ? '#378ADD' : 'rgba(74,159,255,0.2)', width: Math.min(o.avance||0,100)+'%' }}></div>
                       </div>
-                      <div style={{ fontSize: 11, color: '#F0F6FF', width: 30, textAlign: 'right' }}>{o.avance||0}%</div>
+                      <div style={{ fontSize: 11, color: 'var(--c-text)', width: 30, textAlign: 'right' }}>{o.avance||0}%</div>
                     </div>
                   ))}
                 </div>
@@ -20136,16 +20138,16 @@
             {!loading && (
               <div style={{ padding: '12px 16px 4px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 4 }}>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(124,58,237,0.2)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.productosActivos||'Productos'}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>{productos.length}</div>
+                  <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.productosActivos||'Productos'}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>{productos.length}</div>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(124,58,237,0.2)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.pedidosPendientes||'Pendientes'}</div>
+                  <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.pedidosPendientes||'Pendientes'}</div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: pedidosNuevos > 0 ? '#E24B4A' : '#F0F6FF' }}>{pedidosNuevos}</div>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 8px', border: '1px solid rgba(124,58,237,0.2)' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3 }}>{t.ventasMes||'Ventas mes'}</div>
+                  <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.ventasMes||'Ventas mes'}</div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#F0F6FF' }}>${ventasMes.toLocaleString()}</div>
                   </div>
                 </div>
@@ -22140,52 +22142,52 @@
         return (
           <>
             <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:890 }} />
-            <div style={{ position:'fixed', top:0, left:0, width:240, height:'100%', background:'#0D1B2A', zIndex:900, display:'flex', flexDirection:'column', borderRight:'0.5px solid rgba(255,255,255,0.08)', animation:'slideInLeft 0.25s ease' }}>
+            <div style={{ position:'fixed', top:0, left:0, width:240, height:'100%', background:'var(--c-bg2)', zIndex:900, display:'flex', flexDirection:'column', borderRight:'0.5px solid rgba(255,255,255,0.08)', animation:'slideInLeft 0.25s ease' }}>
               <style>{`@keyframes slideInLeft{from{transform:translateX(-100%)}to{transform:translateX(0)}}`}</style>
               <div style={{ padding:'16px 14px 12px', borderBottom:'0.5px solid rgba(255,255,255,0.08)' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:2 }}>
                   <div style={{ width:36, height:36, borderRadius:'50%', background:'linear-gradient(135deg,#1a73e8,#4A9FFF)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:600, color:'#fff', flexShrink:0 }}>{inicial}</div>
                   <div>
-                    <div style={{ fontSize:13, fontWeight:500, color:'#F0F6FF' }}>{nombre}</div>
-                    <div style={{ fontSize:10, color:'rgba(255,255,255,0.35)' }}>Administrador</div>
+                    <div style={{ fontSize:13, fontWeight:500, color:'var(--c-text)' }}>{nombre}</div>
+                    <div style={{ fontSize:10, color:'var(--c-text3, rgba(128,128,128,0.6))' }}>Administrador</div>
                   </div>
                 </div>
               </div>
               <div style={{ overflowY:'auto', flex:1 }}>
                 {adminView && (
                   <div style={{ margin:'10px 14px 6px', padding:'8px 10px', background:'rgba(74,159,255,0.08)', borderRadius:8, border:'0.5px solid rgba(74,159,255,0.2)' }}>
-                    <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', marginBottom:2 }}>Vista simulada</div>
+                    <div style={{ fontSize:10, color:'var(--c-text2)', marginBottom:2 }}>Vista simulada</div>
                     <div style={{ fontSize:12, fontWeight:600, color:'#4A9FFF' }}>{adminView === 'cliente' ? '🏠 Cliente' : adminView === 'constructor' ? '🔨 Constructor' : '🏢 Empresa'}</div>
                   </div>
                 )}
                 {!adminView && (<div>
-                <div style={{ fontSize:9, color:'rgba(255,255,255,0.3)', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>General</div>
+                <div style={{ fontSize:9, color:'var(--c-text3, rgba(128,128,128,0.6))', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>General</div>
                 {[
                   { id:'home', icon:'◈', label:'Dashboard' },
                   { id:'clientes', icon:'◈', label: t.clientes_title||'Clientes' },
                   { id:'presup', icon:'◈', label: t.presupuestos||'Presupuestos' },
                 ].map(item => (
-                  <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'rgba(255,255,255,0.6)', cursor:'pointer' }}
+                  <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'var(--c-text2)', cursor:'pointer' }}
                     onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.04)'; e.currentTarget.style.color='#F0F6FF'; }}
                     onMouseLeave={e => { e.currentTarget.style.background=''; e.currentTarget.style.color='rgba(255,255,255,0.6)'; }}>
                     <span style={{ fontSize:16, width:20, textAlign:'center' }}>{item.icon}</span>
                     <span>{item.label}</span>
                   </div>
                 ))}
-                <div style={{ fontSize:9, color:'rgba(255,255,255,0.3)', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>Gestión</div>
+                <div style={{ fontSize:9, color:'var(--c-text3, rgba(128,128,128,0.6))', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>Gestión</div>
                 {[
                   { id:'avance_admin', icon:'🏗️', label:'Avance obra' },
                   { id:'agenda', icon:'💰', label:'Pagos' },
                   { id:'mapa', icon:'🗺️', label: t.mapa_lbl||'Mapa' },
                 ].map(item => (
-                  <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'rgba(255,255,255,0.6)', cursor:'pointer' }}
+                  <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'var(--c-text2)', cursor:'pointer' }}
                     onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.04)'; e.currentTarget.style.color='#F0F6FF'; }}
                     onMouseLeave={e => { e.currentTarget.style.background=''; e.currentTarget.style.color='rgba(255,255,255,0.6)'; }}>
                     <span style={{ fontSize:16, width:20, textAlign:'center' }}>{item.icon}</span>
                     <span>{item.label}</span>
                   </div>
                 ))}
-                <div style={{ fontSize:9, color:'rgba(255,255,255,0.3)', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>Herramientas</div>
+                <div style={{ fontSize:9, color:'var(--c-text3, rgba(128,128,128,0.6))', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>Herramientas</div>
                 {[
                   { id:'modelos', icon:'🏘', label: t.modelos||'Modelos' },
                   { id:'cot', icon:'⭐', label: t.cotizar||'Cotizador IA' },
@@ -22193,7 +22195,7 @@
                   { id:'estadisticas', icon:'📈', label: t.estadisticas||'Estadísticas' },
                   { id:'notificaciones', icon:'🔔', label: t.notificaciones||'Notificaciones' },
                 ].map(item => (
-                  <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'rgba(255,255,255,0.6)', cursor:'pointer' }}
+                  <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'var(--c-text2)', cursor:'pointer' }}
                     onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.04)'; e.currentTarget.style.color='#F0F6FF'; }}
                     onMouseLeave={e => { e.currentTarget.style.background=''; e.currentTarget.style.color='rgba(255,255,255,0.6)'; }}>
                     <span style={{ fontSize:16, width:20, textAlign:'center' }}>{item.icon}</span>
@@ -22207,13 +22209,13 @@
                   <span>Panel completo</span>
                 </div>
                 <div style={{ marginBottom:4 }}>
-                  <div onClick={() => setShowPerfiles(v=>!v)} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'rgba(255,255,255,0.45)', cursor:'pointer', padding:'6px 0' }}>
+                  <div onClick={() => setShowPerfiles(v=>!v)} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--c-text2)', cursor:'pointer', padding:'6px 0' }}>
                     <span style={{ fontSize:14 }}>🔄</span>
                     <span style={{ flex:1 }}>Ver como perfil</span>
                     <span style={{ fontSize:10 }}>{showPerfiles ? '▴' : '▾'}</span>
                   </div>
                   {showPerfiles && (
-                    <div style={{ background:'rgba(0,0,0,0.2)', borderRadius:8, padding:4, marginTop:4 }}>
+                    <div style={{ background:'var(--c-card)', borderRadius:8, padding:4, marginTop:4 }}>
                       {[
                         { id:null, icon:'⚙️', label:'Admin', sub:'Panel completo', color:'rgba(239,68,68,0.15)' },
                         { id:'cliente', icon:'🏠', label:'Cliente', sub:'Ver como cliente', color:'rgba(55,138,221,0.15)' },
@@ -22224,8 +22226,8 @@
                           style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 8px', borderRadius:6, cursor:'pointer', marginBottom:2, background: p.id===null ? 'rgba(55,138,221,0.08)' : 'transparent' }}>
                           <div style={{ width:24, height:24, borderRadius:'50%', background:p.color, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0 }}>{p.icon}</div>
                           <div>
-                            <div style={{ fontSize:10, fontWeight:500, color:'rgba(255,255,255,0.7)' }}>{p.label}</div>
-                            <div style={{ fontSize:8, color:'rgba(255,255,255,0.3)' }}>{p.sub}</div>
+                            <div style={{ fontSize:10, fontWeight:500, color:'var(--c-text)' }}>{p.label}</div>
+                            <div style={{ fontSize:8, color:'var(--c-text3, rgba(128,128,128,0.6))' }}>{p.sub}</div>
                           </div>
                           {(p.id === null ? !adminView : p.id === adminView) && <span style={{ marginLeft:'auto', color:'#378ADD', fontSize:10 }}>✓</span>}
                         </div>
