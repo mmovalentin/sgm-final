@@ -1968,7 +1968,7 @@
               justifyContent: "space-between",
               flexShrink: 0,
               position: "relative",
-              borderBottom: `1px solid ${C.navBorder}`,
+              borderBottom: '1px solid var(--c-nav-border)',
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -2347,10 +2347,10 @@
           ? constructorItems
           : clienteItems;
         const accentColor = esAdmin ? '#378ADD' : esEmpresa ? '#7C3AED' : esConstructor ? '#1D9E75' : '#4A9FFF';
-        const navBg = esConstructor ? '#0D1B2A' : C.navy;
+        const navBg = 'var(--c-bg2)';
 
         return (
-          <div style={{ display:'flex', background:navBg, padding:'6px 0 2px', flexShrink:0, borderTop:`1px solid ${C.navBorder}` }}>
+          <div style={{ display:'flex', background:navBg, padding:'6px 0 2px', flexShrink:0, borderTop:'1px solid var(--c-nav-border)' }}>
             {items.map((it) => {
               const active = screen === it.id;
               return (
@@ -2362,7 +2362,7 @@
                   {esConstructor && (
                     <div style={{ height:2, borderRadius:1, background: active ? accentColor : 'transparent', marginBottom:4, transition:'all 0.2s', width: active ? 24 : 20 }} />
                   )}
-                  <div style={{ color: active ? accentColor : 'rgba(255,255,255,0.3)', transition:'color 0.2s', display:'flex' }}>
+                  <div style={{ color: active ? accentColor : 'var(--c-nav-dim)', transition:'color 0.2s', display:'flex' }}>
                     {it.icon}
                   </div>
                   <div style={{ fontSize:8, color: active ? accentColor : 'transparent', fontWeight:500, marginTop:3, maxHeight: active ? 14 : 0, overflow:'hidden', transition:'all 0.2s ease', whiteSpace:'nowrap' }}>
