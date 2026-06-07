@@ -22135,7 +22135,7 @@
         );
       }
 
-      function AdminSidebar({ onClose, onNav, t, user, onSignOut, onAdminView }) {
+      function AdminSidebar({ onClose, onNav, t, user, onSignOut, onAdminView, adminView }) {
         const [showPerfiles, setShowPerfiles] = React.useState(false);
         const nombre = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Admin';
         const inicial = (user?.user_metadata?.full_name || user?.email || 'A')[0].toUpperCase();
@@ -22154,6 +22154,13 @@
                 </div>
               </div>
               <div style={{ overflowY:'auto', flex:1 }}>
+                {adminView && (
+                  <div style={{ margin:'10px 14px 6px', padding:'8px 10px', background:'rgba(74,159,255,0.08)', borderRadius:8, border:'0.5px solid rgba(74,159,255,0.2)' }}>
+                    <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', marginBottom:2 }}>Vista simulada</div>
+                    <div style={{ fontSize:12, fontWeight:600, color:'#4A9FFF' }}>{adminView === 'cliente' ? '🏠 Cliente' : adminView === 'constructor' ? '🔨 Constructor' : '🏢 Empresa'}</div>
+                  </div>
+                )}
+                {!adminView && (<div>
                 <div style={{ fontSize:9, color:'rgba(255,255,255,0.3)', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>General</div>
                 {[
                   { id:'home', icon:'◈', label:'Dashboard' },
@@ -22194,7 +22201,7 @@
                     <span style={{ fontSize:16, width:20, textAlign:'center' }}>{item.icon}</span>
                     <span>{item.label}</span>
                   </div>
-                ))}
+                ))}</div>)}
               </div>
               <div style={{ padding:'12px 14px', borderTop:'0.5px solid rgba(255,255,255,0.08)' }}>
                 <div onClick={() => { onNav('home'); onClose(); }} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'rgba(74,159,255,0.6)', cursor:'pointer', padding:'6px 0', marginBottom:2 }}>
@@ -22222,7 +22229,7 @@
                             <div style={{ fontSize:10, fontWeight:500, color:'rgba(255,255,255,0.7)' }}>{p.label}</div>
                             <div style={{ fontSize:8, color:'rgba(255,255,255,0.3)' }}>{p.sub}</div>
                           </div>
-                          {p.id === null && <span style={{ marginLeft:'auto', color:'#378ADD', fontSize:10 }}>✓</span>}
+                          {(p.id === null ? !adminView : p.id === adminView) && <span style={{ marginLeft:'auto', color:'#378ADD', fontSize:10 }}>✓</span>}
                         </div>
                       ))}
                     </div>
@@ -24300,6 +24307,7 @@
                 user={user}
                 onSignOut={signOut}
                 onAdminView={(p) => { setAdminView(p); handleNav('home'); }}
+                adminView={adminView}
               />
             )}
             {showBusqueda && (
