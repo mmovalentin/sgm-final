@@ -24324,7 +24324,7 @@
                 localStorage.setItem("sgi_lang", l);
               }}
               onSearch={() => setShowBusqueda(true)}
-              onSidebar={() => setShowSidebar(true)}
+              onSidebar={isAdmin(userRol) ? () => setShowSidebar(true) : undefined}
             />
             <div
               style={{
