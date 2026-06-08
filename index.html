@@ -2438,24 +2438,6 @@
           } catch (e) {}
         }, []);
 
-        React.useEffect(() => {
-          if (!window.Chart || cargando) return;
-          setTimeout(() => {
-            const ctx = document.getElementById('chart-admin');
-            if (!ctx) return;
-            if (ctx._chartInstance) { ctx._chartInstance.destroy(); }
-            const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-            const m = new Date().getMonth();
-            const labels = Array.from({length:6}, (_,i) => meses[(m-5+i+12)%12]);
-            const data = labels.map((_,i) => Math.min(Math.round((metricas.obrasActivas||4) * (8 + i * 2)), 100));
-            ctx._chartInstance = new window.Chart(ctx, {
-              type: 'line',
-              data: { labels, datasets: [{ data, borderColor:'#378ADD', backgroundColor:'rgba(55,138,221,0.08)', fill:true, tension:0.4, pointRadius:3 }] },
-              options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:10},color:'#888'},grid:{color:'rgba(128,128,128,0.1)'}}, x:{ticks:{font:{size:10},color:'#888'},grid:{display:false}} } }
-            });
-          }, 500);
-        }, [cargando, metricas]);
-
         useEffect(() => {
           if (!supa) return;
           supa
@@ -2800,12 +2782,6 @@
                   <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
                     <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.pagosVencidos||'Vencidos'}</div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: vencidos.length > 0 ? '#E24B4A' : '#F0F6FF' }}>{vencidos.length}</div>
-                  </div>
-                </div>
-                <div style={{ background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'12px', border:'1px solid rgba(74,159,255,0.1)', marginTop:10 }}>
-                  <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginBottom:8 }}>📈 Avance general</div>
-                  <div style={{ position:'relative', height:90 }}>
-                    <canvas id="chart-admin"></canvas>
                   </div>
                 </div>
               </div>
