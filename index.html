@@ -5042,9 +5042,9 @@
 
         const hasAvance = avanceRows.length > 0;
         const avance = hasAvance
-          ? Math.round(
-              avanceRows.reduce((s, e) => s + (e.porcentaje || 0), 0) / 8,
-            )
+          ? Math.min(Math.round(
+              avanceRows.reduce((s, e) => s + (e.porcentaje || 0), 0) / (avanceRows.length || 8),
+            ), 100)
           : 0;
         const etapasOk = hasAvance
           ? avanceRows.filter((e) => e.completada || e.porcentaje >= 100).length
@@ -8997,9 +8997,9 @@
         const hasAvance = avanceRows.length > 0;
         const etapas = hasAvance ? avanceRows : ETAPAS_OBRA_DEFAULT;
         const avance = hasAvance
-          ? Math.round(
-              avanceRows.reduce((s, e) => s + (e.porcentaje || 0), 0) / 8,
-            )
+          ? Math.min(Math.round(
+              avanceRows.reduce((s, e) => s + (e.porcentaje || 0), 0) / (avanceRows.length || 8),
+            ), 100)
           : 0;
         const etapasOk = etapas.filter(
           (e) => e.completada || e.porcentaje >= 100,
