@@ -2415,6 +2415,11 @@
         const [vencidos, setVencidos] = useState([]);
         const [pendientes, setPendientes] = useState([]);
         const [cargando, setCargando] = useState(true);
+        const [chartData, setChartData] = React.useState(null);
+        const [clienteSeleccionado, setClienteSeleccionado] = React.useState('');
+        const [clientesList, setClientesList] = React.useState([]);
+        const [clienteAvance, setClienteAvance] = React.useState(null);
+        const [chartPrincipalInst, setChartPrincipalInst] = React.useState(null);
 
         useEffect(() => {
           try {
@@ -2549,11 +2554,63 @@
                 });
                 setVencidos(venc || []);
                 setPendientes(pend || []);
+                // Cargar datos históricos de presupuestos por mes
+                if (supa) {
+                  supa.from('presupuestos').select('created_at,estado').then(({ data: presupData }) => {
+                    if (!presupData) return;
+                    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+                    const now = new Date();
+                    const labels = []; const totales = []; const aprobados = []; const pendientesChart = [];
+                    for (let i = 5; i >= 0; i--) {
+                      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                      labels.push(meses[d.getMonth()]);
+                      const mes = d.getMonth(); const anio = d.getFullYear();
+                      const del_mes = presupData.filter(p => { const pd = new Date(p.created_at); return pd.getMonth() === mes && pd.getFullYear() === anio; });
+                      totales.push(del_mes.length);
+                      aprobados.push(del_mes.filter(p => p.estado === 'aprobado').length);
+                      pendientesChart.push(del_mes.filter(p => p.estado === 'pendiente').length);
+                    }
+                    setChartData({ labels, totales, aprobados, pendientes: pendientesChart });
+                  });
+                  supa.from('perfiles').select('id,nombre,tipo_perfil').eq('tipo_perfil','cliente').then(({ data: cliData }) => {
+                    setClientesList(cliData || []);
+                  });
+                }
               },
             )
             .catch(() => {})
             .finally(() => setCargando(false));
         }, []);
+
+        async function cargarAvanceCliente(clienteId) {
+          if (!supa || !clienteId) { setClienteAvance(null); return; }
+          const { data: presup } = await supa.from('presupuestos').select('id').eq('user_id', clienteId).eq('estado','aprobado').maybeSingle();
+          if (!presup) { setClienteAvance(null); return; }
+          const { data: avRows } = await supa.from('avance_obra').select('*').eq('presupuesto_id', presup.id);
+          if (!avRows || avRows.length === 0) { setClienteAvance(null); return; }
+          const pct = Math.min(Math.round(avRows.reduce((s,ex) => s+(ex.porcentaje||0),0) / avRows.length), 100);
+          setClienteAvance({ etapas: avRows, avance: pct });
+        }
+
+        React.useEffect(() => {
+          if (!chartData || !window.Chart) return;
+          const ctx = document.getElementById('chart-admin-presup');
+          if (!ctx) return;
+          if (chartPrincipalInst) { chartPrincipalInst.destroy(); }
+          const inst = new window.Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: chartData.labels,
+              datasets: [
+                { data: chartData.totales, borderColor:'#378ADD', backgroundColor:'rgba(55,138,221,0.06)', fill:true, tension:0.4, pointRadius:2 },
+                { data: chartData.aprobados, borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.06)', fill:true, tension:0.4, pointRadius:2 },
+                { data: chartData.pendientes, borderColor:'#EF9F27', borderDash:[4,3], fill:false, tension:0.4, pointRadius:2 },
+              ]
+            },
+            options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ ticks:{ font:{ size:9 }, color:'#888' }, grid:{ color:'rgba(128,128,128,0.07)' } }, x:{ ticks:{ font:{ size:9 }, color:'#888' }, grid:{ display:false } } } }
+          });
+          setChartPrincipalInst(inst);
+        }, [chartData]);
 
         function fmtUSD(v) {
           if (!v) return "USD 0";
@@ -2817,6 +2874,44 @@
                     </div>
                   </div>
                 ))}
+              </div>
+              {/* ── DASHBOARD GRÁFICOS ── */}
+              <div style={{ background: C.card, borderRadius: 14, border: `0.5px solid ${C.border}`, padding: '12px 14px', marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.t3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>📊 Presupuestos por estado — últimos 6 meses</div>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+                  {[['#378ADD','Total'],['#1D9E75','Aprobados'],['#EF9F27','Pendientes']].map(([color,label]) => (
+                    <div key={label} style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color: C.t2 }}>
+                      <div style={{ width:8, height:8, borderRadius:2, background:color }} />{label}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ position:'relative', height:120 }}><canvas id="chart-admin-presup"></canvas></div>
+              </div>
+              {/* ── SELECTOR CLIENTE ── */}
+              <div style={{ background: C.card, borderRadius: 14, border: `0.5px solid ${C.border}`, padding: '12px 14px', marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.t3, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>👤 Ver avance por cliente</div>
+                <select value={clienteSeleccionado} onChange={ev => { setClienteSeleccionado(ev.target.value); cargarAvanceCliente(ev.target.value); }}
+                  style={{ width:'100%', padding:'8px 12px', borderRadius:10, border:`0.5px solid ${C.border}`, background: C.off, color: C.t1, fontSize:13, fontFamily:'inherit', marginBottom: clienteAvance ? 12 : 0 }}>
+                  <option value=''>— Seleccionar cliente —</option>
+                  {clientesList.map(cl => <option key={cl.id} value={cl.id}>{cl.nombre || cl.id}</option>)}
+                </select>
+                {clienteAvance && (
+                  <div>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                      <div style={{ fontSize:12, color: C.t2 }}>Avance general</div>
+                      <div style={{ fontSize:18, fontWeight:700, color: C.acc }}>{clienteAvance.avance}%</div>
+                    </div>
+                    {clienteAvance.etapas.map(ex => (
+                      <div key={ex.id} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:5 }}>
+                        <div style={{ fontSize:10, color: C.t3, width:100, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{ex.etapa_nombre||ex.etapa||'Etapa'}</div>
+                        <div style={{ flex:1, height:5, background: C.border, borderRadius:3, overflow:'hidden' }}>
+                          <div style={{ height:'100%', borderRadius:3, background: ex.porcentaje >= 100 ? '#1D9E75' : '#378ADD', width: Math.min(ex.porcentaje||0,100)+'%' }} />
+                        </div>
+                        <div style={{ fontSize:10, color: C.t1, width:28, textAlign:'right' }}>{ex.porcentaje||0}%</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {vencidos.length > 0 && (
                 <div
