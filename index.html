@@ -2554,7 +2554,7 @@
                     }
                     setChartData({ labels, totales, aprobados, pendientes: pendientesChart });
                   });
-                  supa.from('perfiles').select('id,nombre,tipo_perfil').eq('tipo_perfil','cliente').then(({ data: cliData }) => {
+                  supa.from('perfiles').select('id,nombre,tipo_perfil,email').eq('tipo_perfil','cliente').then(({ data: cliData }) => {
                     setClientesList(cliData || []);
                   });
                 }
@@ -2869,7 +2869,7 @@
                 <select value={clienteSeleccionado} onChange={ev => { setClienteSeleccionado(ev.target.value); cargarAvanceCliente(ev.target.value); }}
                   style={{ width:'100%', padding:'8px 12px', borderRadius:10, border:`0.5px solid ${C.border}`, background: C.off, color: C.t1, fontSize:13, fontFamily:'inherit', marginBottom: clienteAvance ? 12 : 0 }}>
                   <option value=''>— Seleccionar cliente —</option>
-                  {clientesList.map(cl => <option key={cl.id} value={cl.id}>{cl.nombre || cl.id}</option>)}
+                  {clientesList.map(cl => <option key={cl.id} value={cl.id}>{cl.nombre || cl.email || cl.id}</option>)}
                 </select>
                 {clienteAvance && (
                   <div>
