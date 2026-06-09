@@ -8201,6 +8201,13 @@
                 }}
               >
                 {!confirmDelete ? (
+                  <>
+                  <button
+                    onClick={() => onNav('avance_constructor')}
+                    style={{ width:'100%', padding:'14px', background:'rgba(74,159,255,0.1)', border:'.5px solid rgba(74,159,255,0.3)', borderRadius:12, color:'#4A9FFF', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', marginBottom:10 }}
+                  >
+                    📸 Ver avance y fotos
+                  </button>
                   <button
                     onClick={() => setConfirmDelete(true)}
                     style={{
@@ -8218,6 +8225,7 @@
                   >
                     🗑️ {t.eliminarObra||"Eliminar obra"}
                   </button>
+                  </>
                 ) : (
                   <div
                     style={{ display: "flex", flexDirection: "column", gap: 8 }}
