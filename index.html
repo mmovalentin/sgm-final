@@ -8452,6 +8452,10 @@
         const [guardando, setGuardando] = useState(false);
         const [guardadoOk, setGuardadoOk] = useState(false);
         const [creandoEtapas, setCreandoEtapas] = useState(false);
+        const [fotosEtapa, setFotosEtapa] = useState({});
+        const [subiendoFoto, setSubiendoFoto] = useState(null);
+        const fotoInputRef = useRef(null);
+        const [etapaFotoActiva, setEtapaFotoActiva] = useState(null);
 
         useEffect(() => {
           if (!supa || !user?.id) return;
@@ -8489,10 +8493,52 @@
             .catch(() => {});
         };
 
+        async function cargarFotosDeEtapas(etapaIds) {
+          if (!supa || !etapaIds || etapaIds.length === 0) return;
+          const { data } = await supa
+            .from('obra_archivos')
+            .select('*')
+            .in('etapa_id', etapaIds.map(String))
+            .eq('tipo', 'imagen')
+            .order('created_at', { ascending: false });
+          if (!data) return;
+          const porEtapa = {};
+          data.forEach(f => {
+            if (!porEtapa[f.etapa_id]) porEtapa[f.etapa_id] = [];
+            porEtapa[f.etapa_id].push(f);
+          });
+          setFotosEtapa(porEtapa);
+        }
+
+        async function subirFotoEtapa(etapa, file) {
+          if (!supa || !file || !etapa?.id) return;
+          setSubiendoFoto(etapa.id);
+          const path = user.id + '/etapa-' + etapa.id + '/' + Date.now() + '-' + file.name.replace(/\s+/g, '_');
+          const { error: upErr } = await supa.storage
+            .from('obra-archivos')
+            .upload(path, file, { upsert: false });
+          if (upErr) { setSubiendoFoto(null); return; }
+          const { data: { publicUrl } } = supa.storage.from('obra-archivos').getPublicUrl(path);
+          await supa.from('obra_archivos').insert({
+            presupuesto_id: obraSeleccionada?.id || null,
+            user_id: user.id,
+            nombre: file.name,
+            url: publicUrl,
+            tipo: 'imagen',
+            etapa_id: String(etapa.id),
+          });
+          setSubiendoFoto(null);
+          cargarFotosDeEtapas(etapas.map(e => e.id));
+        }
+
         useEffect(() => {
           if (!obraSeleccionada) return;
-          cargarEtapasDeObra(obraSeleccionada);
+          cargarEtapasDeObra(obraSeleccionada).then?.(() => {});
         }, [obraSeleccionada]);
+
+        useEffect(() => {
+          if (etapas.length > 0) cargarFotosDeEtapas(etapas.map(e => e.id));
+        }, [etapas]);
 
         async function crearEtapasEstandar() {
           if (!supa || !user?.id || !obraSeleccionada?.id) return;
@@ -8755,6 +8801,27 @@
                               Completada
                             </span>
                           </label>
+                          <div style={{ marginTop: 10, borderTop: `.5px solid ${C.border}`, paddingTop: 10 }}>
+                            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+                              {(fotosEtapa[String(etapa.id)] || []).map(foto => (
+                                <img key={foto.id} src={foto.url} alt={foto.nombre}
+                                  style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0, border: `.5px solid ${C.border}` }} />
+                              ))}
+                              <div
+                                onClick={() => { setEtapaFotoActiva(etapa); fotoInputRef.current?.click(); }}
+                                style={{ width: 56, height: 56, borderRadius: 8, background: C.off, border: `.5px dashed ${C.acc}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+                                {subiendoFoto === etapa.id
+                                  ? <div style={{ width: 16, height: 16, border: `2px solid ${C.acc}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                                  : <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke={C.acc} strokeWidth="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                }
+                              </div>
+                            </div>
+                            {(fotosEtapa[String(etapa.id)] || []).length > 0 && (
+                              <div style={{ fontSize: 9, color: C.t3, marginTop: 3 }}>
+                                {(fotosEtapa[String(etapa.id)] || []).length} foto{(fotosEtapa[String(etapa.id)] || []).length > 1 ? 's' : ''}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
@@ -8770,6 +8837,18 @@
                         ✅ Cambios guardados
                       </div>
                     )}
+                    <input
+                      ref={fotoInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      style={{ display: 'none' }}
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file && etapaFotoActiva) subirFotoEtapa(etapaFotoActiva, file);
+                        e.target.value = '';
+                      }}
+                    />
                     <button
                       onClick={guardarCambios}
                       disabled={guardando}
@@ -8923,6 +9002,7 @@
         const [loadingArchivos, setLoadingArchivos] = useState(false);
         const [pagos, setPagos] = useState([]);
         const [loadingPagos, setLoadingPagos] = useState(false);
+        const [fotosCliente, setFotosCliente] = useState({});
         useEffect(() => {
           let lc = null;
           try {
@@ -9018,6 +9098,27 @@
             })
             .catch(() => setLoadingArchivos(false));
         }, [presId]);
+
+        useEffect(() => {
+          if (!supa || avanceRows.length === 0) return;
+          const ids = avanceRows.map(e => e.id).filter(Boolean);
+          if (ids.length === 0) return;
+          supa
+            .from('obra_archivos')
+            .select('*')
+            .in('etapa_id', ids.map(String))
+            .eq('tipo', 'imagen')
+            .order('created_at', { ascending: false })
+            .then(({ data }) => {
+              if (!data) return;
+              const porEtapa = {};
+              data.forEach(f => {
+                if (!porEtapa[f.etapa_id]) porEtapa[f.etapa_id] = [];
+                porEtapa[f.etapa_id].push(f);
+              });
+              setFotosCliente(porEtapa);
+            });
+        }, [avanceRows, presId]);
 
         useEffect(() => {
           if (!supa || !user?.id) return;
@@ -9483,6 +9584,19 @@
                             }}
                           />
                         </div>
+                        {hasAvance && e.id && fotosCliente[String(e.id)] && fotosCliente[String(e.id)].length > 0 && (
+                          <div style={{ marginTop: 8, borderTop: `.5px solid ${C.border}`, paddingTop: 8 }}>
+                            <div style={{ fontSize: 9, color: C.t3, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                              {fotosCliente[String(e.id)].length} foto{fotosCliente[String(e.id)].length > 1 ? 's' : ''}
+                            </div>
+                            <div style={{ display: 'flex', gap: 5, overflowX: 'auto' }}>
+                              {fotosCliente[String(e.id)].map(foto => (
+                                <img key={foto.id} src={foto.url} alt={foto.nombre}
+                                  style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover', flexShrink: 0, border: `.5px solid ${C.border}` }} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
