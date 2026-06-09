@@ -22247,12 +22247,15 @@
             <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:890 }} />
             <div style={{ position:'fixed', top:0, left:0, width:240, height:'100%', background:'var(--c-bg2)', zIndex:900, display:'flex', flexDirection:'column', borderRight:'0.5px solid var(--c-nav-border)', animation:'slideInLeft 0.25s ease' }}>
               <style>{`@keyframes slideInLeft{from{transform:translateX(-100%)}to{transform:translateX(0)}}`}</style>
-              <div style={{ padding:'16px 14px 12px', borderBottom:'0.5px solid var(--c-nav-border)' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:2 }}>
-                  <div style={{ width:36, height:36, borderRadius:'50%', background:'linear-gradient(135deg,#1a73e8,#4A9FFF)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:600, color:'#fff', flexShrink:0 }}>{inicial}</div>
+              <div style={{ padding:'14px 12px', background:'linear-gradient(135deg,#1a73e8,#0D47A1)', borderBottom:'none' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <div style={{ width:36, height:36, borderRadius:'50%', background:'rgba(255,255,255,0.2)', border:'1.5px solid rgba(255,255,255,0.4)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:700, color:'#fff', flexShrink:0 }}>{inicial}</div>
                   <div>
-                    <div style={{ fontSize:13, fontWeight:500, color:'var(--c-text)' }}>{nombre}</div>
-                    <div style={{ fontSize:10, color:'var(--c-text3, rgba(128,128,128,0.6))' }}>Administrador</div>
+                    <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>{nombre}</div>
+                    <div style={{ display:'flex', alignItems:'center', gap:5, marginTop:3 }}>
+                      <span style={{ background:'rgba(255,255,255,0.2)', border:'0.5px solid rgba(255,255,255,0.3)', borderRadius:4, padding:'1px 6px', fontSize:8, color:'#fff', fontWeight:600 }}>SGI</span>
+                      <span style={{ fontSize:8, color:'rgba(255,255,255,0.65)' }}>Administrador</span>
+                    </div>
                   </div>
                 </div>
               </div>
