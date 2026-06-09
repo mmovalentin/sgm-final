@@ -8203,7 +8203,7 @@
                 {!confirmDelete ? (
                   <>
                   <button
-                    onClick={() => onNav('avance_constructor')}
+                    onClick={() => onNav('constructoravance')}
                     style={{ width:'100%', padding:'14px', background:'rgba(74,159,255,0.1)', border:'.5px solid rgba(74,159,255,0.3)', borderRadius:12, color:'#4A9FFF', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', marginBottom:10 }}
                   >
                     📸 Ver avance y fotos
@@ -8452,6 +8452,19 @@
       }
 
       // ── CONSTRUCTOR AVANCE SCREEN
+      const FOTOS_EJEMPLO = {
+        'Proyecto y RT': 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=400&h=140&fit=crop',
+        'Fundaciones': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=140&fit=crop',
+        'Estructura Steel Frame': 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&h=140&fit=crop',
+        'Estructura': 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&h=140&fit=crop',
+        'Instalaciones': 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&h=140&fit=crop',
+        'Terminaciones gruesas': 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=400&h=140&fit=crop',
+        'Terminaciones finas': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=140&fit=crop',
+        'Revisión y documentación': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=140&fit=crop',
+        'Cierre y garantía': 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=140&fit=crop',
+      };
+      const FOTO_DEFAULT = 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?w=400&h=140&fit=crop';
+
       function ConstructorAvanceScreen({ user, onNav, t={} }) {
         const [obras, setObras] = useState([]);
         const [obraSeleccionada, setObraSeleccionada] = useState(null);
@@ -8809,6 +8822,15 @@
                               Completada
                             </span>
                           </label>
+                          <img
+                            src={
+                              (fotosEtapa[String(etapa.id)] || []).length > 0
+                                ? fotosEtapa[String(etapa.id)][0].url
+                                : FOTOS_EJEMPLO[etapa.etapa_nombre] || FOTO_DEFAULT
+                            }
+                            alt={etapa.etapa_nombre}
+                            style={{ width:'100%', height:110, objectFit:'cover', borderRadius:'8px 8px 0 0', display:'block', marginTop:10, opacity: (fotosEtapa[String(etapa.id)] || []).length > 0 ? 1 : 0.5 }}
+                          />
                           <div style={{ marginTop: 10, borderTop: `.5px solid ${C.border}`, paddingTop: 10 }}>
                             <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
                               {(fotosEtapa[String(etapa.id)] || []).map(foto => (
@@ -9574,6 +9596,15 @@
                             {e.fecha_inicio || "?"} → {e.fecha_fin || "?"}
                           </div>
                         )}
+                        <img
+                          src={
+                            (fotosCliente[String(e.id)] || []).length > 0
+                              ? fotosCliente[String(e.id)][0].url
+                              : FOTOS_EJEMPLO[e.etapa_nombre || e.nombre] || FOTO_DEFAULT
+                          }
+                          alt={e.etapa_nombre || e.nombre}
+                          style={{ width:'100%', height:90, objectFit:'cover', borderRadius:8, display:'block', marginBottom:8, opacity: (fotosCliente[String(e.id)] || []).length > 0 ? 1 : 0.4 }}
+                        />
                         <div
                           style={{
                             background: C.border,
