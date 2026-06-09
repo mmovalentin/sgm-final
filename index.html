@@ -9596,6 +9596,11 @@
                             {e.fecha_inicio || "?"} → {e.fecha_fin || "?"}
                           </div>
                         )}
+                        {(fotosCliente[String(e.id)] || []).length === 0 && (
+                          <div style={{ fontSize:9, color:C.t3, marginBottom:4, fontStyle:'italic' }}>
+                            Sin fotos aún
+                          </div>
+                        )}
                         <img
                           src={
                             (fotosCliente[String(e.id)] || []).length > 0
@@ -9603,7 +9608,7 @@
                               : FOTOS_EJEMPLO[e.etapa_nombre || e.nombre] || FOTO_DEFAULT
                           }
                           alt={e.etapa_nombre || e.nombre}
-                          style={{ width:'100%', height:90, objectFit:'cover', borderRadius:8, display:'block', marginBottom:8, opacity: (fotosCliente[String(e.id)] || []).length > 0 ? 1 : 0.4 }}
+                          style={{ width:'100%', height:70, objectFit:'cover', borderRadius:'8px 8px 0 0', display:'block', marginBottom:8, opacity: (fotosCliente[String(e.id)] || []).length > 0 ? 1 : 0.25, filter: (fotosCliente[String(e.id)] || []).length > 0 ? 'none' : 'grayscale(1)' }}
                         />
                         <div
                           style={{
