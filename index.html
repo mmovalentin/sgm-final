@@ -2339,7 +2339,7 @@
         const esEmpresa = isEmpresa(perfil);
         const esConstructor = perfil === 'constructor';
         const esCliente = !esAdmin && !esEmpresa && !esConstructor;
-        const items = esAdmin && (perfil === 'admin' || perfil === null || perfil === undefined)
+        const items = esAdmin
           ? adminItems
           : esEmpresa
           ? empresaItems
