@@ -6702,6 +6702,24 @@
                 {t.verPipeline||"Ver pipeline completo →"}
               </button>
               <button
+                onClick={() => onNav("registrodiario")}
+                style={{
+                  width: "100%",
+                  marginTop: 8,
+                  padding: "12px",
+                  background: "rgba(29,158,117,0.1)",
+                  border: ".5px solid rgba(29,158,117,0.3)",
+                  borderRadius: 12,
+                  color: "#1D9E75",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                📋 Diario de obra
+              </button>
+              <button
                 onClick={() => setShowReportar(true)}
                 style={{
                   width: "100%",
@@ -8217,6 +8235,12 @@
                     📸 Ver avance y fotos
                   </button>
                   <button
+                    onClick={() => onNav('registrodiario')}
+                    style={{ width:'100%', padding:'14px', background:'rgba(29,158,117,0.1)', border:'.5px solid rgba(29,158,117,0.3)', borderRadius:12, color:'#1D9E75', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', marginBottom:10 }}
+                  >
+                    📋 Diario de obra
+                  </button>
+                  <button
                     onClick={() => setConfirmDelete(true)}
                     style={{
                       width: "100%",
@@ -8453,6 +8477,214 @@
                     {guardandoEdit ? "Guardando..." : "Guardar cambios"}
                   </button>
                 </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      function RegistroDiarioScreen({ user, onNav, t={} }) {
+        const [obras, setObras] = React.useState([]);
+        const [obraSeleccionada, setObraSeleccionada] = React.useState(null);
+        const [registros, setRegistros] = React.useState([]);
+        const [vista, setVista] = React.useState('historial'); // 'historial' | 'nuevo'
+        const [clima, setClima] = React.useState('');
+        const [equipo, setEquipo] = React.useState([]);
+        const [materiales, setMateriales] = React.useState([]);
+        const [notas, setNotas] = React.useState('');
+        const [guardando, setGuardando] = React.useState(false);
+        const [guardadoOk, setGuardadoOk] = React.useState(false);
+        const [nuevoMiembro, setNuevoMiembro] = React.useState({ nombre:'', rol:'', horas:8 });
+        const [nuevoMaterial, setNuevoMaterial] = React.useState({ nombre:'', cantidad:'' });
+        const [showAddMiembro, setShowAddMiembro] = React.useState(false);
+        const [showAddMaterial, setShowAddMaterial] = React.useState(false);
+
+        React.useEffect(() => {
+          if (!supa || !user?.id) return;
+          supa.from('obras_constructor').select('*').eq('constructor_id', user.id)
+            .order('created_at', { ascending: false })
+            .then(({ data }) => setObras(data || []));
+        }, [user]);
+
+        React.useEffect(() => {
+          if (!supa || !obraSeleccionada) return;
+          supa.from('registro_diario_obra').select('*')
+            .eq('obra_id', obraSeleccionada.id)
+            .order('fecha', { ascending: false })
+            .then(({ data }) => setRegistros(data || []));
+        }, [obraSeleccionada]);
+
+        async function guardarRegistro() {
+          if (!supa || !obraSeleccionada || !user?.id) return;
+          setGuardando(true);
+          const hoy = new Date().toISOString().split('T')[0];
+          const { error } = await supa.from('registro_diario_obra').insert({
+            fecha: hoy,
+            obra_id: obraSeleccionada.id,
+            constructor_id: user.id,
+            clima,
+            equipo,
+            materiales,
+            notas,
+          });
+          setGuardando(false);
+          if (!error) {
+            setGuardadoOk(true);
+            setClima(''); setEquipo([]); setMateriales([]); setNotas('');
+            setVista('historial');
+            setTimeout(() => setGuardadoOk(false), 2000);
+            supa.from('registro_diario_obra').select('*')
+              .eq('obra_id', obraSeleccionada.id)
+              .order('fecha', { ascending: false })
+              .then(({ data }) => setRegistros(data || []));
+          }
+        }
+
+        const CLIMAS = [
+          { id:'soleado', label:'☀️ Soleado' },
+          { id:'nublado', label:'⛅ Nublado' },
+          { id:'lluvia', label:'🌧 Lluvia' },
+          { id:'viento', label:'💨 Viento' },
+        ];
+
+        if (!obraSeleccionada) {
+          return (
+            <div style={{ background: C.bg, minHeight:'100%' }}>
+              <div style={{ background: C.navy, padding:'14px 16px' }}>
+                <div style={{ color: C.t1, fontSize:17, fontWeight:800 }}>Diario de obra</div>
+                <div style={{ color: C.t3, fontSize:12, marginTop:2 }}>Seleccioná una obra</div>
+              </div>
+              <div style={{ padding:16 }}>
+                {obras.length === 0 ? (
+                  <div style={{ color: C.t3, fontSize:13, textAlign:'center', padding:'40px 0' }}>Sin obras registradas</div>
+                ) : obras.map(o => (
+                  <div key={o.id} onClick={() => setObraSeleccionada(o)}
+                    style={{ background: C.card, borderRadius:12, border:`.5px solid ${C.border}`, padding:'14px', marginBottom:10, cursor:'pointer' }}>
+                    <div style={{ color: C.t1, fontSize:14, fontWeight:700 }}>{o.cliente_nombre || 'Obra'}</div>
+                    <div style={{ color: C.t3, fontSize:12, marginTop:2 }}>{o.sistema || ''}{o.m2 ? ' · '+o.m2+'m²' : ''}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div style={{ background: C.bg, minHeight:'100%', paddingBottom:24 }}>
+            <div style={{ background: C.navy, padding:'14px 16px' }}>
+              <button onClick={() => setObraSeleccionada(null)} style={{ background:'none', border:'none', color: C.acc, fontSize:13, fontWeight:700, cursor:'pointer', padding:0, fontFamily:'inherit' }}>← Volver</button>
+              <div style={{ color: C.t1, fontSize:15, fontWeight:800, marginTop:4 }}>{obraSeleccionada.cliente_nombre || 'Obra'}</div>
+              <div style={{ display:'flex', gap:8, marginTop:10 }}>
+                {['historial','nuevo'].map(v => (
+                  <button key={v} onClick={() => setVista(v)}
+                    style={{ flex:1, padding:'8px', borderRadius:8, border:'none', background: vista===v ? C.acc : C.off, color: vista===v ? '#fff' : C.t2, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                    {v === 'historial' ? '📋 Historial' : '+ Nuevo registro'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {vista === 'historial' ? (
+              <div style={{ padding:'12px 16px' }}>
+                {registros.length === 0 ? (
+                  <div style={{ color: C.t3, fontSize:13, textAlign:'center', padding:'40px 0' }}>Sin registros aún</div>
+                ) : registros.map(r => (
+                  <div key={r.id} style={{ background: C.card, borderRadius:12, border:`.5px solid ${C.border}`, padding:'12px 14px', marginBottom:10 }}>
+                    <div style={{ fontSize:10, color: C.t3, marginBottom:4 }}>{r.fecha}</div>
+                    {r.notas && <div style={{ fontSize:13, color: C.t1, marginBottom:8, lineHeight:1.5 }}>{r.notas}</div>}
+                    <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                      {r.clima && <span style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:'rgba(74,159,255,0.1)', color: C.acc }}>{CLIMAS.find(c=>c.id===r.clima)?.label || r.clima}</span>}
+                      {r.equipo?.length > 0 && <span style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:'rgba(34,197,94,0.1)', color:'#22C55E' }}>{r.equipo.length} persona{r.equipo.length>1?'s':''} · {r.equipo.reduce((s,e)=>s+(Number(e.horas)||0),0)} hs</span>}
+                      {r.materiales?.length > 0 && <span style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:'rgba(251,191,36,0.1)', color:'#FBBF24' }}>{r.materiales.length} material{r.materiales.length>1?'es':''}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding:'12px 16px' }}>
+                <div style={{ fontSize:9, color: C.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:8 }}>Clima</div>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:16 }}>
+                  {CLIMAS.map(c => (
+                    <div key={c.id} onClick={() => setClima(c.id)}
+                      style={{ padding:'6px 12px', borderRadius:20, fontSize:12, cursor:'pointer', border:`.5px solid ${clima===c.id ? C.acc : C.border}`, background: clima===c.id ? 'rgba(74,159,255,0.15)' : C.off, color: clima===c.id ? C.acc : C.t2 }}>
+                      {c.label}
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ fontSize:9, color: C.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:8 }}>Equipo presente</div>
+                {equipo.map((m,i) => (
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:8, background: C.card, borderRadius:10, border:`.5px solid ${C.border}`, padding:'10px 12px', marginBottom:6 }}>
+                    <div style={{ width:28, height:28, borderRadius:'50%', background: C.acc, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', flexShrink:0 }}>{(m.nombre||'?')[0].toUpperCase()}</div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:12, color: C.t1, fontWeight:600 }}>{m.nombre}</div>
+                      <div style={{ fontSize:10, color: C.t3 }}>{m.rol} · {m.horas} hs</div>
+                    </div>
+                    <button onClick={() => setEquipo(prev => prev.filter((_,j)=>j!==i))} style={{ background:'none', border:'none', color: C.t3, fontSize:16, cursor:'pointer', padding:0 }}>×</button>
+                  </div>
+                ))}
+                {showAddMiembro ? (
+                  <div style={{ background: C.card, borderRadius:10, border:`.5px solid ${C.border}`, padding:'10px 12px', marginBottom:8 }}>
+                    <input placeholder="Nombre" value={nuevoMiembro.nombre} onChange={e=>setNuevoMiembro(p=>({...p,nombre:e.target.value}))}
+                      style={{ width:'100%', background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'7px 10px', fontSize:12, color: C.t1, fontFamily:'inherit', marginBottom:6, boxSizing:'border-box' }}/>
+                    <div style={{ display:'flex', gap:6 }}>
+                      <input placeholder="Rol (ej: Capataz)" value={nuevoMiembro.rol} onChange={e=>setNuevoMiembro(p=>({...p,rol:e.target.value}))}
+                        style={{ flex:2, background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'7px 10px', fontSize:12, color: C.t1, fontFamily:'inherit' }}/>
+                      <input type="number" placeholder="Hs" value={nuevoMiembro.horas} onChange={e=>setNuevoMiembro(p=>({...p,horas:e.target.value}))}
+                        style={{ flex:1, background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'7px 10px', fontSize:12, color: C.t1, fontFamily:'inherit' }}/>
+                    </div>
+                    <div style={{ display:'flex', gap:6, marginTop:8 }}>
+                      <button onClick={() => { if(nuevoMiembro.nombre) { setEquipo(p=>[...p,{...nuevoMiembro}]); setNuevoMiembro({nombre:'',rol:'',horas:8}); setShowAddMiembro(false); }}}
+                        style={{ flex:1, padding:'8px', background: C.acc, border:'none', borderRadius:8, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Agregar</button>
+                      <button onClick={() => setShowAddMiembro(false)}
+                        style={{ flex:1, padding:'8px', background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, color: C.t2, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setShowAddMiembro(true)}
+                    style={{ width:'100%', padding:'9px', background:'rgba(74,159,255,0.08)', border:`.5px dashed ${C.acc}`, borderRadius:10, color: C.acc, fontSize:12, cursor:'pointer', fontFamily:'inherit', marginBottom:16 }}>
+                    + Agregar miembro
+                  </button>
+                )}
+
+                <div style={{ fontSize:9, color: C.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:8 }}>Materiales usados</div>
+                {materiales.map((m,i) => (
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:8, background: C.card, borderRadius:10, border:`.5px solid ${C.border}`, padding:'10px 12px', marginBottom:6 }}>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:12, color: C.t1 }}>{m.nombre}</div>
+                      <div style={{ fontSize:10, color: C.t3 }}>{m.cantidad}</div>
+                    </div>
+                    <button onClick={() => setMateriales(prev => prev.filter((_,j)=>j!==i))} style={{ background:'none', border:'none', color: C.t3, fontSize:16, cursor:'pointer', padding:0 }}>×</button>
+                  </div>
+                ))}
+                {showAddMaterial ? (
+                  <div style={{ background: C.card, borderRadius:10, border:`.5px solid ${C.border}`, padding:'10px 12px', marginBottom:8 }}>
+                    <input placeholder="Material (ej: Perfiles 100mm)" value={nuevoMaterial.nombre} onChange={e=>setNuevoMaterial(p=>({...p,nombre:e.target.value}))}
+                      style={{ width:'100%', background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'7px 10px', fontSize:12, color: C.t1, fontFamily:'inherit', marginBottom:6, boxSizing:'border-box' }}/>
+                    <input placeholder="Cantidad (ej: 24 unid.)" value={nuevoMaterial.cantidad} onChange={e=>setNuevoMaterial(p=>({...p,cantidad:e.target.value}))}
+                      style={{ width:'100%', background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'7px 10px', fontSize:12, color: C.t1, fontFamily:'inherit', marginBottom:8, boxSizing:'border-box' }}/>
+                    <div style={{ display:'flex', gap:6 }}>
+                      <button onClick={() => { if(nuevoMaterial.nombre) { setMateriales(p=>[...p,{...nuevoMaterial}]); setNuevoMaterial({nombre:'',cantidad:''}); setShowAddMaterial(false); }}}
+                        style={{ flex:1, padding:'8px', background: C.acc, border:'none', borderRadius:8, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Agregar</button>
+                      <button onClick={() => setShowAddMaterial(false)}
+                        style={{ flex:1, padding:'8px', background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, color: C.t2, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setShowAddMaterial(true)}
+                    style={{ width:'100%', padding:'9px', background:'rgba(74,159,255,0.08)', border:`.5px dashed ${C.acc}`, borderRadius:10, color: C.acc, fontSize:12, cursor:'pointer', fontFamily:'inherit', marginBottom:16 }}>
+                    + Agregar material
+                  </button>
+                )}
+
+                <div style={{ fontSize:9, color: C.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:8 }}>Notas del día</div>
+                <textarea value={notas} onChange={e=>setNotas(e.target.value)} placeholder="¿Qué se hizo hoy? Describí el trabajo realizado..."
+                  style={{ width:'100%', background: C.off, border:`.5px solid ${C.border}`, borderRadius:10, padding:'10px 12px', fontSize:12, color: C.t1, fontFamily:'inherit', resize:'vertical', minHeight:80, boxSizing:'border-box', marginBottom:16 }}/>
+
+                <button onClick={guardarRegistro} disabled={guardando}
+                  style={{ width:'100%', padding:13, background: guardadoOk ? '#22C55E' : C.acc, border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity: guardando ? 0.7 : 1 }}>
+                  {guardando ? 'Guardando...' : guardadoOk ? '✓ Guardado' : 'Guardar registro'}
+                </button>
               </div>
             )}
           </div>
@@ -24430,6 +24662,9 @@
           ),
           constructoravance: (
             <ConstructorAvanceScreen user={user} onNav={handleNav} t={t} />
+          ),
+          registrodiario: (
+            <RegistroDiarioScreen user={user} onNav={handleNav} t={t} />
           ),
           clientes: (
             <ClientesScreen
