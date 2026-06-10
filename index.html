@@ -8829,7 +8829,7 @@
                                 : FOTOS_EJEMPLO[etapa.etapa_nombre] || FOTO_DEFAULT
                             }
                             alt={etapa.etapa_nombre}
-                            style={{ width:'100%', height:110, objectFit:'cover', borderRadius:'8px 8px 0 0', display:'block', marginTop:10, opacity: (fotosEtapa[String(etapa.id)] || []).length > 0 ? 1 : 0.5 }}
+                            style={{ width:'100%', height:56, objectFit:'cover', borderRadius:8, display:'block', marginTop:10, opacity: (fotosEtapa[String(etapa.id)] || []).length > 0 ? 1 : 0.2, filter: (fotosEtapa[String(etapa.id)] || []).length > 0 ? 'none' : 'grayscale(1)' }}
                           />
                           <div style={{ marginTop: 10, borderTop: `.5px solid ${C.border}`, paddingTop: 10 }}>
                             <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
@@ -9608,7 +9608,7 @@
                               : FOTOS_EJEMPLO[e.etapa_nombre || e.nombre] || FOTO_DEFAULT
                           }
                           alt={e.etapa_nombre || e.nombre}
-                          style={{ width:'100%', height:70, objectFit:'cover', borderRadius:'8px 8px 0 0', display:'block', marginBottom:8, opacity: (fotosCliente[String(e.id)] || []).length > 0 ? 1 : 0.25, filter: (fotosCliente[String(e.id)] || []).length > 0 ? 'none' : 'grayscale(1)' }}
+                          style={{ width:'100%', height:56, objectFit:'cover', borderRadius:8, display:'block', marginBottom:6, opacity: (fotosCliente[String(e.id)] || []).length > 0 ? 1 : 0.2, filter: (fotosCliente[String(e.id)] || []).length > 0 ? 'none' : 'grayscale(1)' }}
                         />
                         <div
                           style={{
