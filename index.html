@@ -23128,6 +23128,9 @@
         const [notifPermission, setNotifPermission] = useState(
           () => localStorage.getItem("sgi_notif_perm") || "default",
         );
+        const [micPermission, setMicPermission] = React.useState(
+          localStorage.getItem('sgi_mic_perm') || 'default'
+        );
         const [userRol, setUserRol] = useState("cliente");
         const [showWebAuthnModal, setShowWebAuthnModal] = useState(false);
         const [webAuthnModalStatus, setWebAuthnModalStatus] = useState("idle");
@@ -23354,8 +23357,13 @@
             ?.getUserMedia({ audio: true })
             .then((s) => {
               s.getTracks().forEach((t) => t.stop());
+              localStorage.setItem('sgi_mic_perm', 'granted');
+              setMicPermission('granted');
             })
-            .catch(() => {});
+            .catch(() => {
+              localStorage.setItem('sgi_mic_perm', 'denied');
+              setMicPermission('denied');
+            });
         }
 
         async function solicitarNotificaciones(userObj) {
@@ -24713,18 +24721,18 @@
                       <button
                         onClick={solicitarMicrofono}
                         style={{
-                          background: "#2563EB",
-                          border: "none",
+                          background: micPermission === 'granted' ? C.green : '#2563EB',
+                          border: 'none',
                           borderRadius: 8,
-                          padding: "7px 12px",
+                          padding: '7px 12px',
                           fontSize: 11,
                           fontWeight: 700,
-                          color: "#fff",
-                          cursor: "pointer",
+                          color: '#fff',
+                          cursor: 'pointer',
                           flexShrink: 0,
                         }}
                       >
-                        Activar
+                        {micPermission === 'granted' ? '✓ Activo' : 'Activar'}
                       </button>
                     </div>
                     <div
