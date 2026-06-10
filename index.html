@@ -8822,15 +8822,13 @@
                               Completada
                             </span>
                           </label>
-                          <img
-                            src={
-                              (fotosEtapa[String(etapa.id)] || []).length > 0
-                                ? fotosEtapa[String(etapa.id)][0].url
-                                : FOTOS_EJEMPLO[etapa.etapa_nombre] || FOTO_DEFAULT
-                            }
-                            alt={etapa.etapa_nombre}
-                            style={{ width:'100%', height:56, objectFit:'cover', borderRadius:8, display:'block', marginTop:10, opacity: (fotosEtapa[String(etapa.id)] || []).length > 0 ? 1 : 0.2, filter: (fotosEtapa[String(etapa.id)] || []).length > 0 ? 'none' : 'grayscale(1)' }}
-                          />
+                          {(fotosEtapa[String(etapa.id)] || []).length > 0 ? (
+                            <img
+                              src={fotosEtapa[String(etapa.id)][0].url}
+                              alt={etapa.etapa_nombre}
+                              style={{ width:'100%', height:80, objectFit:'cover', borderRadius:'8px 8px 0 0', display:'block', marginTop:10 }}
+                            />
+                          ) : null}
                           <div style={{ marginTop: 10, borderTop: `.5px solid ${C.border}`, paddingTop: 10 }}>
                             <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
                               {(fotosEtapa[String(etapa.id)] || []).map(foto => (
@@ -9596,20 +9594,13 @@
                             {e.fecha_inicio || "?"} → {e.fecha_fin || "?"}
                           </div>
                         )}
-                        {(fotosCliente[String(e.id)] || []).length === 0 && (
-                          <div style={{ fontSize:9, color:C.t3, marginBottom:4, fontStyle:'italic' }}>
-                            Sin fotos aún
-                          </div>
-                        )}
-                        <img
-                          src={
-                            (fotosCliente[String(e.id)] || []).length > 0
-                              ? fotosCliente[String(e.id)][0].url
-                              : FOTOS_EJEMPLO[e.etapa_nombre || e.nombre] || FOTO_DEFAULT
-                          }
-                          alt={e.etapa_nombre || e.nombre}
-                          style={{ width:'100%', height:56, objectFit:'cover', borderRadius:8, display:'block', marginBottom:6, opacity: (fotosCliente[String(e.id)] || []).length > 0 ? 1 : 0.2, filter: (fotosCliente[String(e.id)] || []).length > 0 ? 'none' : 'grayscale(1)' }}
-                        />
+                        {(fotosCliente[String(e.id)] || []).length > 0 ? (
+                          <img
+                            src={fotosCliente[String(e.id)][0].url}
+                            alt={e.etapa_nombre || e.nombre}
+                            style={{ width:'100%', height:80, objectFit:'cover', borderRadius:8, display:'block', marginBottom:6 }}
+                          />
+                        ) : null}
                         <div
                           style={{
                             background: C.border,
