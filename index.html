@@ -6215,6 +6215,10 @@
                 onClose={() => setShowReportar(false)}
               />
             )}
+            <div onClick={() => onNav('terms')} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 16px', fontSize:12, color:'var(--c-text3)', cursor:'pointer', borderTop:'.5px solid var(--c-border)', marginTop:8 }}>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span>Términos y Privacidad</span>
+            </div>
           </div>
         );
       }
@@ -6896,6 +6900,10 @@
                 </div>
               </div>
             )}
+            <div onClick={() => onNav('terms')} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 16px', fontSize:12, color:'var(--c-text3)', cursor:'pointer', borderTop:'.5px solid var(--c-border)', marginTop:8 }}>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span>Términos y Privacidad</span>
+            </div>
           </div>
         );
       }
@@ -20594,6 +20602,10 @@
                 ))}
               </div>
             </div>
+            <div onClick={() => onNav('terms')} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 16px', fontSize:12, color:'var(--c-text3)', cursor:'pointer', borderTop:'.5px solid var(--c-border)', marginTop:8 }}>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span>Términos y Privacidad</span>
+            </div>
           </div>
         );
       }
@@ -22476,6 +22488,10 @@
                       ))}
                     </div>
                   )}
+                </div>
+                <div onClick={() => { onNav('terms'); onClose(); }} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--c-text3)', cursor:'pointer', padding:'6px 0' }}>
+                  <span style={{ display:'flex' }}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+                  <span>Términos y Privacidad</span>
                 </div>
                 <div onClick={() => { onSignOut && onSignOut(); onClose(); }} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'rgba(239,68,68,0.5)', cursor:'pointer', padding:'6px 0' }}>
                   <span style={{ display:'flex' }}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
