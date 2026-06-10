@@ -8494,7 +8494,7 @@
         const [notas, setNotas] = React.useState('');
         const [guardando, setGuardando] = React.useState(false);
         const [guardadoOk, setGuardadoOk] = React.useState(false);
-        const [nuevoMiembro, setNuevoMiembro] = React.useState({ nombre:'', rol:'', horas:8 });
+        const [nuevoMiembro, setNuevoMiembro] = React.useState({ nombre:'', rol:'', horas:8, honorario:'', moneda:'USD', permisoObra:false, seguroActivo:false, seguroVencimiento:'' });
         const [nuevoMaterial, setNuevoMaterial] = React.useState({ nombre:'', cantidad:'' });
         const [showAddMiembro, setShowAddMiembro] = React.useState(false);
         const [showAddMaterial, setShowAddMaterial] = React.useState(false);
@@ -8681,31 +8681,101 @@
                 </div>
 
                 <div style={{ fontSize:9, color: C.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:8 }}>Equipo presente</div>
-                {equipo.map((m,i) => (
-                  <div key={i} style={{ display:'flex', alignItems:'center', gap:8, background: C.card, borderRadius:10, border:`.5px solid ${C.border}`, padding:'10px 12px', marginBottom:6 }}>
-                    <div style={{ width:28, height:28, borderRadius:'50%', background: C.acc, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', flexShrink:0 }}>{(m.nombre||'?')[0].toUpperCase()}</div>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:12, color: C.t1, fontWeight:600 }}>{m.nombre}</div>
-                      <div style={{ fontSize:10, color: C.t3 }}>{m.rol} · {m.horas} hs</div>
+                {equipo.map((m,i) => {
+                  const total = (Number(m.horas)||0) * (Number(m.honorario)||0);
+                  const diasSeguro = m.seguroVencimiento ? Math.ceil((new Date(m.seguroVencimiento) - new Date()) / 86400000) : null;
+                  const seguroVencido = diasSeguro !== null && diasSeguro <= 0;
+                  const seguroProximo = diasSeguro !== null && diasSeguro > 0 && diasSeguro <= 10;
+                  return (
+                    <div key={i} style={{ background: C.card, borderRadius:12, border:`.5px solid ${seguroVencido || !m.permisoObra ? 'rgba(239,68,68,0.3)' : seguroProximo ? 'rgba(251,191,36,0.3)' : C.border}`, padding:'12px', marginBottom:8 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                        <div style={{ width:28, height:28, borderRadius:'50%', background: C.acc, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', flexShrink:0 }}>{(m.nombre||'?')[0].toUpperCase()}</div>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:12, color: C.t1, fontWeight:600 }}>{m.nombre}</div>
+                          <div style={{ fontSize:10, color: C.t3 }}>{m.rol}</div>
+                        </div>
+                        <button onClick={() => setEquipo(prev => prev.filter((_,j)=>j!==i))} style={{ background:'none', border:'none', color: C.t3, fontSize:16, cursor:'pointer', padding:0 }}>×</button>
+                      </div>
+                      <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:8 }}>
+                        <span style={{ fontSize:9, padding:'2px 7px', borderRadius:10, background: m.permisoObra ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: m.permisoObra ? '#22C55E' : '#EF4444' }}>{m.permisoObra ? '✓ Permiso obra' : '✗ Sin permiso'}</span>
+                        <span style={{ fontSize:9, padding:'2px 7px', borderRadius:10, background: seguroVencido ? 'rgba(239,68,68,0.1)' : seguroProximo ? 'rgba(251,191,36,0.1)' : m.seguroActivo ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: seguroVencido ? '#EF4444' : seguroProximo ? '#FBBF24' : m.seguroActivo ? '#22C55E' : '#EF4444' }}>{seguroVencido ? '✗ Seguro vencido' : seguroProximo ? `⚠ Vence en ${diasSeguro}d` : m.seguroActivo ? '✓ Seguro activo' : '✗ Sin seguro'}</span>
+                      </div>
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6 }}>
+                        <div style={{ background: C.off, borderRadius:8, padding:'7px 8px', textAlign:'center' }}>
+                          <div style={{ fontSize:13, fontWeight:700, color: C.t1 }}>{m.horas}</div>
+                          <div style={{ fontSize:9, color: C.t3, marginTop:2 }}>Horas</div>
+                        </div>
+                        <div style={{ background: C.off, borderRadius:8, padding:'7px 8px', textAlign:'center' }}>
+                          <div style={{ fontSize:13, fontWeight:700, color: C.t1 }}>{m.honorario ? `${m.honorario}` : '-'}</div>
+                          <div style={{ fontSize:9, color: C.t3, marginTop:2 }}>{m.moneda}/hora</div>
+                        </div>
+                        <div style={{ background:'rgba(74,159,255,0.1)', border:'.5px solid rgba(74,159,255,0.2)', borderRadius:8, padding:'7px 8px', textAlign:'center' }}>
+                          <div style={{ fontSize:13, fontWeight:700, color: C.acc }}>{total > 0 ? total : '-'}</div>
+                          <div style={{ fontSize:9, color:'rgba(74,159,255,0.6)', marginTop:2 }}>Total</div>
+                        </div>
+                      </div>
                     </div>
-                    <button onClick={() => setEquipo(prev => prev.filter((_,j)=>j!==i))} style={{ background:'none', border:'none', color: C.t3, fontSize:16, cursor:'pointer', padding:0 }}>×</button>
-                  </div>
-                ))}
+                  );
+                })}
                 {showAddMiembro ? (
-                  <div style={{ background: C.card, borderRadius:10, border:`.5px solid ${C.border}`, padding:'10px 12px', marginBottom:8 }}>
-                    <input placeholder="Nombre" value={nuevoMiembro.nombre} onChange={e=>setNuevoMiembro(p=>({...p,nombre:e.target.value}))}
-                      style={{ width:'100%', background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'7px 10px', fontSize:12, color: C.t1, fontFamily:'inherit', marginBottom:6, boxSizing:'border-box' }}/>
-                    <div style={{ display:'flex', gap:6 }}>
+                  <div style={{ background: C.card, borderRadius:12, border:`.5px solid ${C.border}`, padding:'14px', marginBottom:8 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color: C.t1, marginBottom:12 }}>Agregar miembro</div>
+                    <input placeholder="Nombre completo" value={nuevoMiembro.nombre} onChange={e=>setNuevoMiembro(p=>({...p,nombre:e.target.value}))}
+                      style={{ width:'100%', background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'8px 10px', fontSize:12, color: C.t1, fontFamily:'inherit', marginBottom:8, boxSizing:'border-box' }}/>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
                       <input placeholder="Rol (ej: Capataz)" value={nuevoMiembro.rol} onChange={e=>setNuevoMiembro(p=>({...p,rol:e.target.value}))}
-                        style={{ flex:2, background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'7px 10px', fontSize:12, color: C.t1, fontFamily:'inherit' }}/>
-                      <input type="number" placeholder="Hs" value={nuevoMiembro.horas} onChange={e=>setNuevoMiembro(p=>({...p,horas:e.target.value}))}
-                        style={{ flex:1, background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'7px 10px', fontSize:12, color: C.t1, fontFamily:'inherit' }}/>
+                        style={{ background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'8px 10px', fontSize:12, color: C.t1, fontFamily:'inherit' }}/>
+                      <input type="number" placeholder="Horas" value={nuevoMiembro.horas} onChange={e=>setNuevoMiembro(p=>({...p,horas:e.target.value}))}
+                        style={{ background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'8px 10px', fontSize:12, color: C.t1, fontFamily:'inherit' }}/>
                     </div>
-                    <div style={{ display:'flex', gap:6, marginTop:8 }}>
-                      <button onClick={() => { if(nuevoMiembro.nombre) { setEquipo(p=>[...p,{...nuevoMiembro}]); setNuevoMiembro({nombre:'',rol:'',horas:8}); setShowAddMiembro(false); }}}
-                        style={{ flex:1, padding:'8px', background: C.acc, border:'none', borderRadius:8, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Agregar</button>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
+                      <input type="number" placeholder="Honorario/hora" value={nuevoMiembro.honorario} onChange={e=>setNuevoMiembro(p=>({...p,honorario:e.target.value}))}
+                        style={{ background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'8px 10px', fontSize:12, color: C.t1, fontFamily:'inherit' }}/>
+                      <select value={nuevoMiembro.moneda} onChange={e=>setNuevoMiembro(p=>({...p,moneda:e.target.value}))}
+                        style={{ background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'8px 10px', fontSize:12, color: C.t1, fontFamily:'inherit' }}>
+                        <option value="USD">USD</option>
+                        <option value="ARS">ARS</option>
+                      </select>
+                    </div>
+                    <div style={{ fontSize:10, color: C.t3, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:8 }}>Documentación</div>
+                    <div onClick={() => setNuevoMiembro(p=>({...p,permisoObra:!p.permisoObra}))}
+                      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 12px', borderRadius:10, marginBottom:6, cursor:'pointer', background: nuevoMiembro.permisoObra ? 'rgba(34,197,94,0.08)' : C.off, border:`.5px solid ${nuevoMiembro.permisoObra ? 'rgba(34,197,94,0.2)' : C.border}` }}>
+                      <div>
+                        <div style={{ fontSize:12, color: C.t1, fontWeight:500 }}>Permiso de obra</div>
+                        <div style={{ fontSize:10, color: C.t3, marginTop:1 }}>Habilitación municipal vigente</div>
+                      </div>
+                      <div style={{ width:36, height:20, borderRadius:10, background: nuevoMiembro.permisoObra ? '#22C55E' : C.border, position:'relative', flexShrink:0, transition:'background 0.2s' }}>
+                        <div style={{ width:16, height:16, borderRadius:'50%', background:'#fff', position:'absolute', top:2, left: nuevoMiembro.permisoObra ? 18 : 2, transition:'left 0.2s' }}/>
+                      </div>
+                    </div>
+                    <div onClick={() => setNuevoMiembro(p=>({...p,seguroActivo:!p.seguroActivo}))}
+                      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 12px', borderRadius:10, marginBottom:6, cursor:'pointer', background: nuevoMiembro.seguroActivo ? 'rgba(34,197,94,0.08)' : C.off, border:`.5px solid ${nuevoMiembro.seguroActivo ? 'rgba(34,197,94,0.2)' : C.border}` }}>
+                      <div>
+                        <div style={{ fontSize:12, color: C.t1, fontWeight:500 }}>Seguro activo</div>
+                        <div style={{ fontSize:10, color: C.t3, marginTop:1 }}>ART / seguro de vida vigente</div>
+                      </div>
+                      <div style={{ width:36, height:20, borderRadius:10, background: nuevoMiembro.seguroActivo ? '#22C55E' : C.border, position:'relative', flexShrink:0, transition:'background 0.2s' }}>
+                        <div style={{ width:16, height:16, borderRadius:'50%', background:'#fff', position:'absolute', top:2, left: nuevoMiembro.seguroActivo ? 18 : 2, transition:'left 0.2s' }}/>
+                      </div>
+                    </div>
+                    {nuevoMiembro.seguroActivo && (
+                      <div style={{ marginBottom:8 }}>
+                        <div style={{ fontSize:10, color: C.t3, marginBottom:4 }}>Vencimiento del seguro (opcional)</div>
+                        <input type="date" value={nuevoMiembro.seguroVencimiento} onChange={e=>setNuevoMiembro(p=>({...p,seguroVencimiento:e.target.value}))}
+                          style={{ width:'100%', background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, padding:'8px 10px', fontSize:12, color: C.t1, fontFamily:'inherit', boxSizing:'border-box' }}/>
+                        {nuevoMiembro.seguroVencimiento && (() => {
+                          const dias = Math.ceil((new Date(nuevoMiembro.seguroVencimiento) - new Date()) / 86400000);
+                          if (dias <= 10 && dias > 0) return <div style={{ fontSize:10, color:'#FBBF24', marginTop:4, padding:'5px 8px', background:'rgba(251,191,36,0.08)', borderRadius:6, border:'.5px solid rgba(251,191,36,0.2)' }}>⚠ Vence en {dias} día{dias>1?'s':''} — recordá renovarlo</div>;
+                          if (dias <= 0) return <div style={{ fontSize:10, color:'#EF4444', marginTop:4, padding:'5px 8px', background:'rgba(239,68,68,0.08)', borderRadius:6, border:'.5px solid rgba(239,68,68,0.2)' }}>✗ Seguro vencido</div>;
+                          return null;
+                        })()}
+                      </div>
+                    )}
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginTop:8 }}>
+                      <button onClick={() => { if(nuevoMiembro.nombre){ setEquipo(p=>[...p,{...nuevoMiembro, horas:Number(nuevoMiembro.horas)||0, honorario:Number(nuevoMiembro.honorario)||0}]); setNuevoMiembro({nombre:'',rol:'',horas:8,honorario:'',moneda:'USD',permisoObra:false,seguroActivo:false,seguroVencimiento:''}); setShowAddMiembro(false); }}}
+                        style={{ padding:'10px', background: C.acc, border:'none', borderRadius:8, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Agregar</button>
                       <button onClick={() => setShowAddMiembro(false)}
-                        style={{ flex:1, padding:'8px', background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, color: C.t2, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>Cancelar</button>
+                        style={{ padding:'10px', background: C.off, border:`.5px solid ${C.border}`, borderRadius:8, color: C.t2, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>Cancelar</button>
                     </div>
                   </div>
                 ) : (
@@ -8748,6 +8818,30 @@
                 <div style={{ fontSize:9, color: C.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:8 }}>Notas del día</div>
                 <textarea value={notas} onChange={e=>setNotas(e.target.value)} placeholder="¿Qué se hizo hoy? Describí el trabajo realizado..."
                   style={{ width:'100%', background: C.off, border:`.5px solid ${C.border}`, borderRadius:10, padding:'10px 12px', fontSize:12, color: C.t1, fontFamily:'inherit', resize:'vertical', minHeight:80, boxSizing:'border-box', marginBottom:16 }}/>
+
+                {equipo.length > 0 && (() => {
+                  const totalHoras = equipo.reduce((s,m)=>s+(Number(m.horas)||0),0);
+                  const totalCosto = equipo.reduce((s,m)=>s+(Number(m.horas)||0)*(Number(m.honorario)||0),0);
+                  const sinDoc = equipo.filter(m=>!m.permisoObra||!m.seguroActivo).length;
+                  return (
+                    <div style={{ background:'rgba(29,158,117,0.08)', border:'.5px solid rgba(29,158,117,0.2)', borderRadius:12, padding:'12px 14px', marginBottom:16 }}>
+                      <div style={{ fontSize:10, color:'rgba(29,158,117,0.8)', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:8 }}>Resumen del día</div>
+                      <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color: C.t3, marginBottom:5 }}>
+                        <span>Total personas</span><span style={{ color: C.t1, fontWeight:600 }}>{equipo.length}</span>
+                      </div>
+                      <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color: C.t3, marginBottom:5 }}>
+                        <span>Total horas</span><span style={{ color: C.t1, fontWeight:600 }}>{totalHoras} hs</span>
+                      </div>
+                      {totalCosto > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, color: C.t3, borderTop:`.5px solid rgba(29,158,117,0.2)`, paddingTop:8, marginTop:3 }}>
+                        <span style={{ fontWeight:700, color:'#1D9E75' }}>Costo mano de obra</span>
+                        <span style={{ fontWeight:800, color:'#1D9E75' }}>{equipo[0]?.moneda || 'USD'} {totalCosto}</span>
+                      </div>}
+                      {sinDoc > 0 && <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'rgba(239,68,68,0.8)', marginTop:6 }}>
+                        <span>Sin documentación completa</span><span style={{ fontWeight:700 }}>{sinDoc} persona{sinDoc>1?'s':''}</span>
+                      </div>}
+                    </div>
+                  );
+                })()}
 
                 <button onClick={guardarRegistro} disabled={guardando}
                   style={{ width:'100%', padding:13, background: guardadoOk ? '#22C55E' : C.acc, border:'none', borderRadius:12, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity: guardando ? 0.7 : 1 }}>
