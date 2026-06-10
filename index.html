@@ -8498,6 +8498,9 @@
         const [nuevoMaterial, setNuevoMaterial] = React.useState({ nombre:'', cantidad:'' });
         const [showAddMiembro, setShowAddMiembro] = React.useState(false);
         const [showAddMaterial, setShowAddMaterial] = React.useState(false);
+        const [climaData, setClimaData] = React.useState(null);
+        const [loadingClima, setLoadingClima] = React.useState(false);
+        const [localidad, setLocalidad] = React.useState('');
 
         React.useEffect(() => {
           if (!supa || !user?.id) return;
@@ -8513,6 +8516,43 @@
             .order('fecha', { ascending: false })
             .then(({ data }) => setRegistros(data || []));
         }, [obraSeleccionada]);
+
+        React.useEffect(() => {
+          if (vista !== 'nuevo') return;
+          setLoadingClima(true);
+          navigator.geolocation?.getCurrentPosition(async (pos) => {
+            const { latitude: lat, longitude: lon } = pos.coords;
+            try {
+              const [wxRes, geoRes] = await Promise.all([
+                fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto`),
+                fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+              ]);
+              const wx = await wxRes.json();
+              const geo = await geoRes.json();
+              const c = wx.current;
+              const wc = c.weather_code;
+              let climaAuto = 'soleado';
+              if (wc >= 61) climaAuto = 'lluvia';
+              else if (wc >= 51) climaAuto = 'lluvia';
+              else if (wc >= 45) climaAuto = 'nublado';
+              else if (wc >= 3) climaAuto = 'nublado';
+              else if (wc >= 1) climaAuto = 'nublado';
+              const windSpd = c.wind_speed_10m;
+              if (windSpd > 30) climaAuto = 'viento';
+              setClima(climaAuto);
+              setClimaData({
+                temp: Math.round(c.temperature_2m),
+                sensacion: Math.round(c.apparent_temperature),
+                humedad: Math.round(c.relative_humidity_2m),
+                viento: Math.round(windSpd),
+              });
+              const city = geo.address?.city || geo.address?.town || geo.address?.village || geo.address?.county || '';
+              const state = geo.address?.state || '';
+              setLocalidad(city ? `${city}, ${state}` : state);
+            } catch(e) {}
+            setLoadingClima(false);
+          }, () => setLoadingClima(false));
+        }, [vista]);
 
         async function guardarRegistro() {
           if (!supa || !obraSeleccionada || !user?.id) return;
@@ -8531,6 +8571,7 @@
           if (!error) {
             setGuardadoOk(true);
             setClima(''); setEquipo([]); setMateriales([]); setNotas('');
+            setClimaData(null); setLocalidad('');
             setVista('historial');
             setTimeout(() => setGuardadoOk(false), 2000);
             supa.from('registro_diario_obra').select('*')
@@ -8546,6 +8587,8 @@
           { id:'lluvia', label:'🌧 Lluvia' },
           { id:'viento', label:'💨 Viento' },
         ];
+
+        const CLIMA_ICONS = { soleado:'☀️', nublado:'⛅', lluvia:'🌧', viento:'💨' };
 
         if (!obraSeleccionada) {
           return (
@@ -8602,7 +8645,32 @@
               </div>
             ) : (
               <div style={{ padding:'12px 16px' }}>
-                <div style={{ fontSize:9, color: C.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:8 }}>Clima</div>
+
+                <div style={{ fontSize:9, color: C.t3, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:8 }}>Clima del día</div>
+                {loadingClima ? (
+                  <div style={{ background:'rgba(74,159,255,0.06)', borderRadius:12, border:`.5px solid ${C.border}`, padding:'14px', marginBottom:12, fontSize:12, color: C.t3, textAlign:'center' }}>
+                    Detectando clima...
+                  </div>
+                ) : climaData ? (
+                  <div style={{ background:'rgba(74,159,255,0.08)', borderRadius:12, border:'0.5px solid rgba(74,159,255,0.2)', padding:'12px 14px', marginBottom:8, display:'flex', alignItems:'center', gap:12 }}>
+                    <div style={{ fontSize:32, flexShrink:0 }}>{CLIMA_ICONS[clima] || '🌤'}</div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:26, fontWeight:800, color: C.t1, lineHeight:1 }}>{climaData.temp}°C</div>
+                      {localidad && <div style={{ fontSize:10, color: C.acc, marginTop:3, display:'flex', alignItems:'center', gap:3 }}>
+                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        {localidad}
+                      </div>}
+                      <div style={{ fontSize:9, color: C.t3, marginTop:2 }}>✓ Detectado automáticamente</div>
+                    </div>
+                    <div style={{ fontSize:10, color: C.t3, textAlign:'right' }}>
+                      <div>Sens. {climaData.sensacion}°C</div>
+                      <div style={{ marginTop:3 }}>Hum. {climaData.humedad}%</div>
+                      <div style={{ marginTop:3 }}>Viento {climaData.viento} km/h</div>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div style={{ fontSize:9, color: C.t3, marginBottom:8 }}>Ajustá si es necesario</div>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:16 }}>
                   {CLIMAS.map(c => (
                     <div key={c.id} onClick={() => setClima(c.id)}
@@ -9247,6 +9315,61 @@
         );
       }
 
+      function DiarioObraClienteSection({ presId, C }) {
+        const [registros, setRegistros] = React.useState([]);
+        const [loading, setLoading] = React.useState(true);
+        const [expandido, setExpandido] = React.useState(false);
+
+        React.useEffect(() => {
+          if (!supa || !presId) return;
+          supa.from('registro_diario_obra')
+            .select('*')
+            .eq('obra_id', presId)
+            .order('fecha', { ascending: false })
+            .limit(10)
+            .then(({ data }) => {
+              setRegistros(data || []);
+              setLoading(false);
+            });
+        }, [presId]);
+
+        const CLIMAS = {
+          soleado: '☀️ Soleado', nublado: '⛅ Nublado',
+          lluvia: '🌧 Lluvia', viento: '💨 Viento'
+        };
+
+        if (loading || registros.length === 0) return null;
+
+        const visibles = expandido ? registros : registros.slice(0, 3);
+
+        return (
+          <div style={{ background: C.card, borderRadius:14, border:`.5px solid ${C.border}`, padding:'14px', marginBottom:14 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+              <div style={{ fontSize:10, fontWeight:700, color: C.t3, textTransform:'uppercase', letterSpacing:0.5 }}>
+                📋 Diario de obra
+              </div>
+              <div style={{ fontSize:10, color: C.acc }}>{registros.length} registro{registros.length>1?'s':''}</div>
+            </div>
+            {visibles.map((r,i) => (
+              <div key={r.id} style={{ borderBottom: i<visibles.length-1 ? `.5px solid ${C.border}` : 'none', paddingBottom:10, marginBottom:10 }}>
+                <div style={{ fontSize:10, color: C.t3, marginBottom:4 }}>{r.fecha}</div>
+                {r.notas && <div style={{ fontSize:12, color: C.t1, lineHeight:1.5, marginBottom:6 }}>{r.notas}</div>}
+                <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                  {r.clima && <span style={{ fontSize:9, padding:'2px 7px', borderRadius:10, background:'rgba(74,159,255,0.1)', color: C.acc }}>{CLIMAS[r.clima]||r.clima}</span>}
+                  {r.equipo?.length > 0 && <span style={{ fontSize:9, padding:'2px 7px', borderRadius:10, background:'rgba(34,197,94,0.1)', color:'#22C55E' }}>{r.equipo.length} persona{r.equipo.length>1?'s':''} · {r.equipo.reduce((s,e)=>s+(Number(e.horas)||0),0)} hs</span>}
+                  {r.materiales?.length > 0 && <span style={{ fontSize:9, padding:'2px 7px', borderRadius:10, background:'rgba(251,191,36,0.1)', color:'#FBBF24' }}>{r.materiales.length} material{r.materiales.length>1?'es':''}</span>}
+                </div>
+              </div>
+            ))}
+            {registros.length > 3 && (
+              <div onClick={() => setExpandido(v=>!v)} style={{ fontSize:11, color: C.acc, cursor:'pointer', textAlign:'center', paddingTop:4 }}>
+                {expandido ? 'Ver menos ▴' : `Ver todos (${registros.length}) ▾`}
+              </div>
+            )}
+          </div>
+        );
+      }
+
       // ── MI OBRA (cronograma + stats + proveedores)
       function MiObraScreen({ t, user }) {
         const [lastCot, setLastCot] = useState(null);
@@ -9864,6 +9987,8 @@
                   })}
                 </div>
               </div>
+
+              {hasAvance && presId && <DiarioObraClienteSection presId={presId} C={C} />}
 
               {/* ESTADÍSTICAS */}
               <div
