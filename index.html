@@ -9190,6 +9190,33 @@
             }
           }
           setGuardando(false);
+
+          // Enviar notificación push al cliente
+          try {
+            const etapasActualizadas = etapas.map(e => ({
+              ...e,
+              porcentaje: cambios[e.id]?.porcentaje ?? e.porcentaje,
+              completada: cambios[e.id]?.completada ?? e.completada,
+            }));
+            const porcTotal = Math.round(
+              etapasActualizadas.reduce((s, e) => s + (e.porcentaje || 0), 0) / etapasActualizadas.length
+            );
+            const etapaActiva = etapasActualizadas.find(e => e.porcentaje > 0 && !e.completada) || etapasActualizadas[etapasActualizadas.length - 1];
+            const clienteUserId = etapas[0]?.user_id || null;
+            if (clienteUserId && supa) {
+              await supa.functions.invoke('send-push', {
+                body: {
+                  user_id: clienteUserId,
+                  title: '📊 Avance actualizado — ' + porcTotal + '%',
+                  body: etapaActiva ? `Etapa "${etapaActiva.etapa_nombre}" al ${etapaActiva.porcentaje}%` : 'Tu obra tiene novedades',
+                  url: '/'
+                }
+              });
+            }
+          } catch(pushErr) {
+            console.log('Push notification error (no crítico):', pushErr);
+          }
+
           setGuardadoOk(true);
           setTimeout(() => setGuardadoOk(false), 2200);
         }
@@ -19920,6 +19947,27 @@
           } catch(snapErr) {
             console.log('Snapshot error (no crítico):', snapErr);
           }
+          // Enviar notificación push al cliente
+          try {
+            const porcTotal = Math.round(
+              etapas.reduce((s, e) => s + (e.porcentaje || 0), 0) / etapas.length
+            );
+            const etapaActiva = etapas.find(e => e.porcentaje > 0 && !e.completada) || etapas[etapas.length - 1];
+            const clienteUserId = selEntry?.userId || null;
+            if (clienteUserId && supa) {
+              await supa.functions.invoke('send-push', {
+                body: {
+                  user_id: clienteUserId,
+                  title: '📊 Avance actualizado — ' + porcTotal + '%',
+                  body: etapaActiva ? `Etapa "${etapaActiva.etapa_nombre}" al ${etapaActiva.porcentaje}%` : 'Tu obra tiene novedades',
+                  url: '/'
+                }
+              });
+            }
+          } catch(pushErr) {
+            console.log('Push notification error (no crítico):', pushErr);
+          }
+
           setSaved(true);
           setTimeout(() => setSaved(false), 3000);
         }
@@ -25474,7 +25522,7 @@
       );
     </script>
   <script>
-    const VAPID_PUBLIC_KEY = 'BP2WgDjjytJQKPq6Z4CpiQlAZoRY3mXq7RMAukznaeREPyA7RdPEpQvRlyN1NOJI0Zkj56nBfNiMSNaxJzAR2IM';
+    const VAPID_PUBLIC_KEY = 'BHtWMXUxVNMW6ZW5FhFUxp_1hDySyU_AJ0GVgC-9aDUrdc0uusLSxoPfrQAT_3AQ2d5bbBq-YOMSBhqo88y9mkU';
 
     function urlBase64ToUint8Array(base64String) {
       const padding = '='.repeat((4 - base64String.length % 4) % 4);
