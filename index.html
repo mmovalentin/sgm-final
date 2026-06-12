@@ -19954,6 +19954,7 @@
             );
             const etapaActiva = etapas.find(e => e.porcentaje > 0 && !e.completada) || etapas[etapas.length - 1];
             const clienteUserId = selEntry?.userId || null;
+            console.log('[Push] clienteUserId:', clienteUserId, 'selEntry:', selEntry);
             if (clienteUserId && supa) {
               await supa.functions.invoke('send-push', {
                 body: {
