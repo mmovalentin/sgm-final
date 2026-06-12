@@ -25641,17 +25641,16 @@
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
         });
         const { endpoint, keys } = sub.toJSON();
-        const supaClient = window._supabase || window.supa;
-        if (!supaClient) {
+        const supaClient = window._supabase;
+        if (!supaClient || typeof supaClient.from !== 'function') {
+          console.log('Push: supabase no disponible, reintentando...');
           setTimeout(() => window.subscribeToPush(userId), 3000);
           return;
         }
-        await supaClient.from('push_subscriptions').upsert({
-          user_id: userId,
-          endpoint,
-          p256dh: keys.p256dh,
-          auth: keys.auth
-        }, { onConflict: 'endpoint' });
+        await supaClient.from('push_subscriptions').upsert(
+          { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth },
+          { onConflict: 'endpoint' }
+        );
         console.log('Push suscripto OK');
       } catch(e) {
         console.log('Push suscripción error:', e);
