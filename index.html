@@ -423,6 +423,9 @@
           revisar: "Revisar",
           notificaciones: "Notificaciones",
           sinNotificaciones: "Sin notificaciones nuevas",
+          marcarTodasLeidas: "Marcar todas",
+          notifNueva: "Nueva",
+          confirmEliminarNotif: "¿Eliminar notificación?",
           vistas: "Vistas",
           verBtn: "Ver",
           enRevision: "EN REVISIÓN",
@@ -856,6 +859,9 @@
           revisar: "Review",
           notificaciones: "Notifications",
           sinNotificaciones: "No new notifications",
+          marcarTodasLeidas: "Mark all read",
+          notifNueva: "New",
+          confirmEliminarNotif: "Delete notification?",
           vistas: "Views",
           verBtn: "View",
           enRevision: "IN REVIEW",
@@ -1953,6 +1959,8 @@
         onLang,
         onSearch,
         onSidebar,
+        onNotificaciones,
+        notifCount,
       }) {
         const [showMenu, setShowMenu] = useState(false);
         const displayName =
@@ -1995,6 +2003,45 @@
                 }}
               >
                 🔍
+              </button>
+              <button
+                onClick={() => onNotificaciones && onNotificaciones()}
+                style={{
+                  background: "none",
+                  border: "1px solid var(--c-border)",
+                  borderRadius: 6,
+                  padding: "4px 8px",
+                  fontSize: 14,
+                  color: "var(--c-text2)",
+                  cursor: "pointer",
+                  lineHeight: 1,
+                  position: "relative",
+                }}
+              >
+                🔔
+                {notifCount > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: -4,
+                      right: -4,
+                      background: "#EF4444",
+                      color: "#fff",
+                      borderRadius: 10,
+                      minWidth: 14,
+                      height: 14,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "0 3px",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {notifCount > 9 ? "9+" : notifCount}
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => onLang && onLang(lang === "es" ? "en" : "es")}
@@ -19988,6 +20035,13 @@
                   url: '/'
                 }
               });
+              await supa.from('notificaciones').insert({
+                user_id: clienteUserId,
+                tipo: 'avance',
+                titulo: '📊 Avance actualizado — ' + porcTotal + '%',
+                mensaje: etapaActiva ? `Etapa "${etapaActiva.etapa_nombre}" al ${etapaActiva.porcentaje}%` : 'Tu obra tiene novedades',
+                leida: false,
+              });
             }
           } catch(pushErr) {
             console.log('Push notification error (no crítico):', pushErr);
@@ -23277,6 +23331,110 @@
         );
       }
 
+      function NotificacionesScreen({ user, t, onNav }) {
+        const [notifs, setNotifs] = useState([]);
+        const [cargando, setCargando] = useState(true);
+
+        useEffect(() => {
+          if (!supa || !user?.id) { setCargando(false); return; }
+          supa
+            .from("notificaciones")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(50)
+            .then(({ data }) => { setNotifs(data || []); setCargando(false); })
+            .catch(() => setCargando(false));
+          const ch = supa
+            .channel("notificaciones-user-" + user.id)
+            .on(
+              "postgres_changes",
+              { event: "INSERT", schema: "public", table: "notificaciones", filter: `user_id=eq.${user.id}` },
+              (payload) => setNotifs((prev) => [payload.new, ...prev]),
+            )
+            .subscribe();
+          return () => { supa.removeChannel(ch); };
+        }, [user?.id]);
+
+        async function marcarLeida(id) {
+          setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, leida: true } : n)));
+          if (supa) await supa.from("notificaciones").update({ leida: true }).eq("id", id);
+        }
+
+        async function marcarTodasLeidas() {
+          setNotifs((prev) => prev.map((n) => ({ ...n, leida: true })));
+          if (supa && user?.id) {
+            await supa.from("notificaciones").update({ leida: true }).eq("user_id", user.id).eq("leida", false);
+          }
+        }
+
+        async function eliminarNotif(id) {
+          if (!window.confirm(t.confirmEliminarNotif || "¿Eliminar notificación?")) return;
+          setNotifs((prev) => prev.filter((n) => n.id !== id));
+          if (supa) await supa.from("notificaciones").delete().eq("id", id);
+        }
+
+        const sinLeer = notifs.filter((n) => !n.leida).length;
+
+        return (
+          <div>
+            <div style={{ background: C.navy, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+              {onNav && (
+                <button onClick={() => onNav("home")}
+                  style={{ background: "none", border: "none", color: C.t2, fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                  {t.volver ? `← ${t.volver}` : "← Volver"}
+                </button>
+              )}
+              <div style={{ flex: 1, color: C.onNavy, fontSize: 15, fontWeight: 700 }}>
+                🔔 {t.notificaciones || "Notificaciones"}
+              </div>
+              {sinLeer > 0 && (
+                <button onClick={marcarTodasLeidas}
+                  style={{ background: "none", border: `.5px solid ${C.border2}`, borderRadius: 6, padding: "4px 8px", fontSize: 10, fontWeight: 700, color: C.acc, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>
+                  {t.marcarTodasLeidas || "Marcar todas"}
+                </button>
+              )}
+            </div>
+            <div style={{ padding: "12px 14px" }}>
+              {cargando && (
+                <div style={{ padding: 16, color: C.t3, fontSize: 12, textAlign: "center" }}>
+                  {t.cargando || "Cargando..."}
+                </div>
+              )}
+              {!cargando && notifs.length === 0 && (
+                <div style={{ padding: "40px 16px", color: C.t3, fontSize: 12, textAlign: "center" }}>
+                  {t.sinNotificaciones || "Sin notificaciones nuevas"}
+                </div>
+              )}
+              {notifs.map((n) => (
+                <div key={n.id} onClick={() => { if (!n.leida) marcarLeida(n.id); }}
+                  style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 0", borderBottom: `.5px solid ${C.border}`, cursor: n.leida ? "default" : "pointer", background: n.leida ? "transparent" : "rgba(74,159,255,.04)" }}>
+                  <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.4 }}>{NOTIF_ICON[n.tipo] || "📩"}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2, gap: 6 }}>
+                      <div style={{ color: C.t1, fontSize: 13, fontWeight: 700, flex: 1 }}>{n.titulo}</div>
+                      {!n.leida && (
+                        <span style={{ background: "#2563EB", color: "#fff", borderRadius: 8, padding: "2px 6px", fontSize: 9, fontWeight: 700, flexShrink: 0 }}>
+                          {t.notifNueva || "Nueva"}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ color: C.t2, fontSize: 12, marginBottom: 4 }}>{n.mensaje}</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: C.t3, fontSize: 10 }}>{tiempoRelativo(n.created_at)}</span>
+                      <button onClick={(e) => { e.stopPropagation(); eliminarNotif(n.id); }}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: "0 2px", fontSize: 13, lineHeight: 1, color: "rgba(255,82,82,.7)" }}>
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
       function MoreMenu({ onNav, onClose, t, lang, onLang, perfil, userRol, onSolicitarNotificaciones }) {
         const avanceItem = isConstructor(perfil)
           ? ["🏗", t.avance_obra_title||"Avance obra", "constructoravance"]
@@ -23910,6 +24068,7 @@
           localStorage.getItem('sgi_mic_perm') || 'default'
         );
         const [userRol, setUserRol] = useState("cliente");
+        const [notifCount, setNotifCount] = useState(0);
         const [showWebAuthnModal, setShowWebAuthnModal] = useState(false);
         const [webAuthnModalStatus, setWebAuthnModalStatus] = useState("idle");
         const [webAuthnLoginWorking, setWebAuthnLoginWorking] = useState(false);
@@ -24087,6 +24246,28 @@
             .then((d) => setDolar(d.venta || 1390))
             .catch(() => {});
         }, []);
+        useEffect(() => {
+          if (!supa || !user?.id) { setNotifCount(0); return; }
+          const fetchNotifCount = () => {
+            supa
+              .from("notificaciones")
+              .select("*", { count: "exact", head: true })
+              .eq("user_id", user.id)
+              .eq("leida", false)
+              .then(({ count }) => setNotifCount(count || 0))
+              .catch(() => {});
+          };
+          fetchNotifCount();
+          const ch = supa
+            .channel("notif-count-" + user.id)
+            .on(
+              "postgres_changes",
+              { event: "*", schema: "public", table: "notificaciones", filter: `user_id=eq.${user.id}` },
+              fetchNotifCount,
+            )
+            .subscribe();
+          return () => { supa.removeChannel(ch); };
+        }, [user?.id]);
         useEffect(() => {
           localStorage.setItem("sgi_theme", theme);
           if (theme === "light") document.body.classList.add("theme-light");
@@ -25253,6 +25434,9 @@
             <EmpresaCatalogoScreen user={user} onNav={handleNav} t={t} />
           ),
           empresamapa: <EmpresaMapaScreen user={user} onNav={handleNav} t={t} />,
+          notificaciones: (
+            <NotificacionesScreen user={user} t={t} onNav={handleNav} />
+          ),
         };
 
         return (
@@ -25288,6 +25472,8 @@
               }}
               onSearch={() => setShowBusqueda(true)}
               onSidebar={isAdmin(userRol) ? () => setShowSidebar(true) : undefined}
+              onNotificaciones={() => handleNav("notificaciones")}
+              notifCount={notifCount}
             />
             <div
               style={{
