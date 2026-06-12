@@ -23218,7 +23218,11 @@
         const esEmpresa = isEmpresa(perfil);
         const storageKey = 'sgi_notif_prefs_' + (perfil || 'cliente');
         const [prefs, setPrefs] = React.useState(() => {
-          try { return JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch { return {}; }
+          try {
+            const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+            if (saved) return saved;
+          } catch {}
+          return { obra: true, pagos: true, mensajes: true, pedidos: true, ventas: true, stock: true };
         });
         const [notifActivo, setNotifActivo] = React.useState(
           localStorage.getItem('sgi_notif_perm') === 'granted'
