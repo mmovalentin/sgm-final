@@ -23220,7 +23220,7 @@
         );
       }
 
-      function MoreMenu({ onNav, onClose, t, lang, onLang, perfil, userRol }) {
+      function MoreMenu({ onNav, onClose, t, lang, onLang, perfil, userRol, onSolicitarNotificaciones }) {
         const avanceItem = isConstructor(perfil)
           ? ["🏗", t.avance_obra_title||"Avance obra", "constructoravance"]
           : ["🏗", t.avance_obra_title||"Avance obra", "avance_admin"];
@@ -23404,7 +23404,7 @@
                           </div>
                         </div>
                       ))}
-                      <button onClick={() => { solicitarNotificaciones && solicitarNotificaciones(); }}
+                      <button onClick={() => { onSolicitarNotificaciones && onSolicitarNotificaciones(); }}
                         style={{ width:'100%', marginTop:10, padding:'9px', background: notifActivo ? 'rgba(34,197,94,0.1)' : 'rgba(74,159,255,0.1)', border:`.5px solid ${notifActivo ? 'rgba(34,197,94,0.3)' : 'rgba(74,159,255,0.3)'}`, borderRadius:10, color: notifActivo ? '#22C55E' : C.acc, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
                         {notifActivo ? '🔔 Push activo' : '🔕 Activar notificaciones push'}
                       </button>
@@ -25347,6 +25347,7 @@
                 onLang={() => setLang((l) => (l === "es" ? "en" : "es"))}
                 perfil={efectivoPerfil}
                 userRol={efectivoRol}
+                onSolicitarNotificaciones={solicitarNotificaciones}
               />
             )}
             {showTerms && (
