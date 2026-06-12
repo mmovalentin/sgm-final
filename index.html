@@ -24270,7 +24270,7 @@
             .catch(() => {});
         }, []);
         useEffect(() => {
-          if (!supa || !user?.id) { setNotifCount(0); return; }
+          if (!supa || !user?.id || isAdmin(efectivoRol)) { setNotifCount(0); return; }
           const fetchNotifCount = () => {
             supa
               .from("notificaciones")
