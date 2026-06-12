@@ -23197,6 +23197,24 @@
                     </div>
                   )}
                 </div>
+                {(()=>{
+                  const [soundOn, setSoundOn] = React.useState(localStorage.getItem('sgi_sound') !== 'off');
+                  return (
+                    <div onClick={() => {
+                      const next = !soundOn;
+                      setSoundOn(next);
+                      localStorage.setItem('sgi_sound', next ? 'on' : 'off');
+                    }} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 0', cursor:'pointer' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--c-text2)' }}>
+                        <span style={{ display:'flex' }}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>{soundOn && <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>}</svg></span>
+                        <span>{soundOn ? 'Sonido activo' : 'Sonido desactivado'}</span>
+                      </div>
+                      <div style={{ width:30, height:16, borderRadius:8, background: soundOn ? '#22C55E' : 'var(--c-border)', position:'relative', flexShrink:0, transition:'background 0.2s' }}>
+                        <div style={{ width:12, height:12, borderRadius:'50%', background:'#fff', position:'absolute', top:2, left: soundOn ? 16 : 2, transition:'left 0.2s' }}/>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div onClick={() => { onNav('terms'); onClose(); }} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--c-text3)', cursor:'pointer', padding:'6px 0' }}>
                   <span style={{ display:'flex' }}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
                   <span>Términos y Privacidad</span>
@@ -23590,18 +23608,24 @@
               </div>
               <div style={{ borderTop:`1px solid ${C.border}`, marginTop:12, paddingTop:12 }}>
                 <div style={{ fontSize:11, fontWeight:700, color: C.t2, textTransform:'uppercase', letterSpacing:0.5, marginBottom:10 }}>Preferencias</div>
-                <div onClick={() => {
-                  const current = localStorage.getItem('sgi_sound') !== 'off';
-                  localStorage.setItem('sgi_sound', current ? 'off' : 'on');
-                }} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:`.5px solid ${C.border}`, cursor:'pointer' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <span style={{ fontSize:16 }}>🔊</span>
-                    <span style={{ fontSize:13, color: C.t1 }}>Sonido de teclas</span>
-                  </div>
-                  <div style={{ width:34, height:18, borderRadius:9, background: localStorage.getItem('sgi_sound') === 'off' ? C.border : '#22C55E', position:'relative', flexShrink:0 }}>
-                    <div style={{ width:14, height:14, borderRadius:'50%', background:'#fff', position:'absolute', top:2, left: localStorage.getItem('sgi_sound') === 'off' ? 2 : 18, transition:'left 0.2s' }}/>
-                  </div>
-                </div>
+                {(()=>{
+                  const [soundOn, setSoundOn] = React.useState(localStorage.getItem('sgi_sound') !== 'off');
+                  return (
+                    <div onClick={() => {
+                      const next = !soundOn;
+                      setSoundOn(next);
+                      localStorage.setItem('sgi_sound', next ? 'on' : 'off');
+                    }} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:`.5px solid ${C.border}`, cursor:'pointer' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        <span style={{ fontSize:16 }}>{soundOn ? '🔊' : '🔇'}</span>
+                        <span style={{ fontSize:13, color: C.t1 }}>Sonido de teclas</span>
+                      </div>
+                      <div style={{ width:34, height:18, borderRadius:9, background: soundOn ? '#22C55E' : C.border, position:'relative', flexShrink:0, transition:'background 0.2s' }}>
+                        <div style={{ width:14, height:14, borderRadius:'50%', background:'#fff', position:'absolute', top:2, left: soundOn ? 18 : 2, transition:'left 0.2s' }}/>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
               <div style={{borderTop:"1px solid rgba(255,255,255,.08)",marginTop:12,paddingTop:12}}>
                 <button onClick={()=>{onNav("terms");onClose();}}
