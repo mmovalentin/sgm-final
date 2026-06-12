@@ -1988,129 +1988,42 @@
                 SGI
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <button
-                onClick={() => onSearch && onSearch()}
-                style={{
-                  background: "none",
-                  border: "1px solid var(--c-border)",
-                  borderRadius: 6,
-                  padding: "4px 8px",
-                  fontSize: 14,
-                  color: "var(--c-text2)",
-                  cursor: "pointer",
-                  lineHeight: 1,
-                }}
-              >
-                🔍
+            <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+              <div style={{ fontSize:10, fontWeight:700, color: C.dolorText, background: C.dolorBg, border:`0.5px solid ${C.dolorText}33`, borderRadius:6, padding:'3px 7px', whiteSpace:'nowrap' }}>
+                ${dolar.toLocaleString('es-AR')} Blue
+              </div>
+              <div style={{ width:1, height:18, background:'var(--c-border)', margin:'0 2px' }}/>
+              <button onClick={() => onSearch && onSearch()}
+                style={{ width:32, height:32, borderRadius:8, border:'none', background:'var(--c-off)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}
+                aria-label="Buscar">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--c-text2)" strokeWidth="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               </button>
-              <button
-                onClick={() => onNotificaciones && onNotificaciones()}
-                style={{
-                  background: "none",
-                  border: "1px solid var(--c-border)",
-                  borderRadius: 6,
-                  padding: "4px 8px",
-                  fontSize: 14,
-                  color: "var(--c-text2)",
-                  cursor: "pointer",
-                  lineHeight: 1,
-                  position: "relative",
-                }}
-              >
-                🔔
+              <button onClick={() => onNotificaciones && onNotificaciones()}
+                style={{ width:32, height:32, borderRadius:8, border:'none', background:'var(--c-off)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, position:'relative' }}
+                aria-label="Notificaciones">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--c-text2)" strokeWidth="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 {notifCount > 0 && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: -4,
-                      right: -4,
-                      background: "#EF4444",
-                      color: "#fff",
-                      borderRadius: 10,
-                      minWidth: 14,
-                      height: 14,
-                      fontSize: 9,
-                      fontWeight: 700,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: "0 3px",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {notifCount > 9 ? "9+" : notifCount}
-                  </span>
+                  <span style={{ position:'absolute', top:4, right:4, width:7, height:7, borderRadius:'50%', background:'#E24B4A', border:`1.5px solid ${C.navy}` }}/>
                 )}
               </button>
-              <button
-                onClick={() => onLang && onLang(lang === "es" ? "en" : "es")}
-                style={{
-                  background: "none",
-                  border: `1px solid var(--c-border)`,
-                  borderRadius: 6,
-                  padding: "3px 8px",
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: C.t2,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  letterSpacing: 0.5,
-                }}
-              >
-                {lang === "es" ? "EN" : "ES"}
+              <button onClick={() => onLang && onLang(lang === 'es' ? 'en' : 'es')}
+                style={{ width:32, height:32, borderRadius:8, border:'none', background:'var(--c-off)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, fontSize:10, fontWeight:700, color:'var(--c-text2)', fontFamily:'inherit', letterSpacing:0.5 }}
+                aria-label="Cambiar idioma">
+                {lang === 'es' ? 'EN' : 'ES'}
               </button>
-              <div
-                style={{
-                  background: C.dolorBg,
-                  border: `1px solid ${C.dolorText}33`,
-                  borderRadius: 6,
-                  padding: "3px 7px",
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: C.dolorText,
-                }}
-              >
-                ${dolar.toLocaleString("es-AR")} Blue
-              </div>
-              <div style={{ position: "relative" }}>
-                <div
-                  onClick={() => setShowMenu((m) => !m)}
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: "50%",
-                    cursor: "pointer",
-                    overflow: "hidden",
-                    border: "2px solid rgba(74,159,255,.4)",
-                    flexShrink: 0,
-                  }}
-                >
+              <button onClick={() => onAyuda && onAyuda()}
+                style={{ width:32, height:32, borderRadius:8, border:'none', background:'var(--c-off)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}
+                aria-label="Ayuda">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--c-text2)" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </button>
+              <div style={{ position:'relative' }}>
+                <div onClick={() => setShowMenu(m => !m)}
+                  style={{ width:32, height:32, borderRadius:'50%', cursor:'pointer', overflow:'hidden', border:'1.5px solid rgba(74,159,255,.4)', flexShrink:0 }}>
                   {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      referrerPolicy="no-referrer"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
+                    <img src={avatarUrl} referrerPolicy="no-referrer" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                   ) : (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        background: C.acc,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: "#0A1628",
-                      }}
-                    >
-                      {displayName ? displayName[0].toUpperCase() : "U"}
+                    <div style={{ width:'100%', height:'100%', background: C.acc, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#0A1628' }}>
+                      {displayName ? displayName[0].toUpperCase() : 'U'}
                     </div>
                   )}
                 </div>
