@@ -23279,6 +23279,19 @@
         const [cargando, setCargando] = useState(true);
         const [tab, setTab] = React.useState('historial');
         const [notifPermission, setNotifPermission] = React.useState(localStorage.getItem('sgi_notif_perm') || 'default');
+        const storageKeyPrefs = 'sgi_notif_prefs_cliente';
+        const [prefsNotif, setPrefsNotif] = React.useState(() => {
+          try {
+            const saved = JSON.parse(localStorage.getItem(storageKeyPrefs) || 'null');
+            if (saved) return saved;
+          } catch {}
+          return { obra: true, pagos: true, mensajes: true };
+        });
+        const togglePref = (key) => {
+          const next = { ...prefsNotif, [key]: !prefsNotif[key] };
+          setPrefsNotif(next);
+          localStorage.setItem(storageKeyPrefs, JSON.stringify(next));
+        };
 
         useEffect(() => {
           if (!supa || !user?.id) { setCargando(false); return; }
@@ -23387,9 +23400,7 @@
                   { key:'pagos', icon:'💳', label:'Pagos y vencimientos', sub:'Recordatorios de cuotas' },
                   { key:'mensajes', icon:'💬', label:'Mensajes', sub:'Respuestas del administrador' },
                 ].map(item => {
-                  const storageKey = 'sgi_notif_prefs_cliente';
-                  const prefs = (() => { try { return JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch { return {}; } })();
-                  const active = prefs[item.key] !== false;
+                  const active = prefsNotif[item.key] !== false;
                   return (
                     <div key={item.key} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:`.5px solid ${C.border}` }}>
                       <span style={{ fontSize:20, flexShrink:0 }}>{item.icon}</span>
@@ -23397,11 +23408,7 @@
                         <div style={{ fontSize:13, fontWeight:500, color: C.t1 }}>{item.label}</div>
                         <div style={{ fontSize:11, color: C.t3, marginTop:1 }}>{item.sub}</div>
                       </div>
-                      <div onClick={() => {
-                        const next = { ...prefs, [item.key]: !active };
-                        localStorage.setItem(storageKey, JSON.stringify(next));
-                        setTab('preferencias');
-                      }} style={{ width:36, height:20, borderRadius:10, background: active ? '#22C55E' : C.border, position:'relative', flexShrink:0, cursor:'pointer', transition:'background 0.2s' }}>
+                      <div onClick={() => togglePref(item.key)} style={{ width:36, height:20, borderRadius:10, background: active ? '#22C55E' : C.border, position:'relative', flexShrink:0, cursor:'pointer', transition:'background 0.2s' }}>
                         <div style={{ width:16, height:16, borderRadius:'50%', background:'#fff', position:'absolute', top:2, left: active ? 18 : 2, transition:'left 0.2s' }}/>
                       </div>
                     </div>
