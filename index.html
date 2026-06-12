@@ -24073,6 +24073,11 @@
               )
               .catch(() => {});
           }
+
+          if (perm === 'granted' && window.subscribeToPush) {
+            const u = userObj || user;
+            if (u?.id) setTimeout(() => window.subscribeToPush(u.id), 1000);
+          }
         }
 
         function mostrarPermisosModal() {
