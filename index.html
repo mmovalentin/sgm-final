@@ -25535,6 +25535,15 @@
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
       try {
         const reg = await navigator.serviceWorker.ready;
+
+        // Desuscribir suscripción vieja si existe
+        const existingSub = await reg.pushManager.getSubscription();
+        if (existingSub) {
+          await existingSub.unsubscribe();
+          console.log('Push: suscripción vieja eliminada');
+        }
+
+        // Nueva suscripción con clave actualizada
         const sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
@@ -25542,7 +25551,6 @@
         const { endpoint, keys } = sub.toJSON();
         const supaClient = window._supabase || window.supa;
         if (!supaClient) {
-          console.log('Push: supabase no disponible aún, reintentando...');
           setTimeout(() => window.subscribeToPush(userId), 3000);
           return;
         }
