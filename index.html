@@ -23361,6 +23361,57 @@
                   </span>
                 </button>
               </div>
+              <div style={{ borderTop:`1px solid ${C.border}`, marginTop:12, paddingTop:12 }}>
+                <div style={{ fontSize:11, fontWeight:700, color: C.t2, textTransform:'uppercase', letterSpacing:0.5, marginBottom:10 }}>Notificaciones</div>
+                {(()=>{
+                  const esConstructor = perfil === 'constructor';
+                  const esEmpresa = isEmpresa(perfil);
+                  const notifItems = esConstructor ? [
+                    { key:'obra', icon:'🏗', label:'Nueva obra asignada', sub:'Cuando te asignan un proyecto' },
+                    { key:'pagos', icon:'💰', label:'Pagos registrados', sub:'Confirmaciones de cobro' },
+                    { key:'mensajes', icon:'💬', label:'Mensajes del admin', sub:'Consultas y actualizaciones' },
+                  ] : esEmpresa ? [
+                    { key:'pedidos', icon:'🛒', label:'Nuevos pedidos', sub:'Solicitudes de materiales' },
+                    { key:'ventas', icon:'📊', label:'Ventas del mes', sub:'Resumen mensual automático' },
+                    { key:'stock', icon:'📦', label:'Stock bajo', sub:'Productos por agotarse' },
+                  ] : [
+                    { key:'obra', icon:'🏗', label:'Avance de obra', sub:'Cuando cambia el progreso' },
+                    { key:'pagos', icon:'💳', label:'Pagos y vencimientos', sub:'Recordatorios de cuotas' },
+                    { key:'mensajes', icon:'💬', label:'Mensajes', sub:'Respuestas del admin' },
+                  ];
+                  const storageKey = 'sgi_notif_prefs_' + (perfil || 'cliente');
+                  const [prefs, setPrefs] = React.useState(() => {
+                    try { return JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch { return {}; }
+                  });
+                  const toggle = (key) => {
+                    const next = { ...prefs, [key]: !prefs[key] };
+                    setPrefs(next);
+                    localStorage.setItem(storageKey, JSON.stringify(next));
+                  };
+                  const notifActivo = localStorage.getItem('sgi_notif_perm') === 'granted';
+                  return (
+                    <div>
+                      {notifItems.map(item => (
+                        <div key={item.key} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderBottom:`.5px solid ${C.border}` }}>
+                          <span style={{ fontSize:18, flexShrink:0 }}>{item.icon}</span>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:12, fontWeight:600, color: C.t1 }}>{item.label}</div>
+                            <div style={{ fontSize:10, color: C.t3, marginTop:1 }}>{item.sub}</div>
+                          </div>
+                          <div onClick={() => toggle(item.key)}
+                            style={{ width:34, height:18, borderRadius:9, background: prefs[item.key] ? '#22C55E' : C.border, position:'relative', flexShrink:0, cursor:'pointer', transition:'background 0.2s' }}>
+                            <div style={{ width:14, height:14, borderRadius:'50%', background:'#fff', position:'absolute', top:2, left: prefs[item.key] ? 18 : 2, transition:'left 0.2s', boxShadow:'0 0 0 0.5px rgba(0,0,0,0.1)' }}/>
+                          </div>
+                        </div>
+                      ))}
+                      <button onClick={() => { solicitarNotificaciones && solicitarNotificaciones(); }}
+                        style={{ width:'100%', marginTop:10, padding:'9px', background: notifActivo ? 'rgba(34,197,94,0.1)' : 'rgba(74,159,255,0.1)', border:`.5px solid ${notifActivo ? 'rgba(34,197,94,0.3)' : 'rgba(74,159,255,0.3)'}`, borderRadius:10, color: notifActivo ? '#22C55E' : C.acc, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                        {notifActivo ? '🔔 Push activo' : '🔕 Activar notificaciones push'}
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
               <div style={{borderTop:"1px solid rgba(255,255,255,.08)",marginTop:12,paddingTop:12}}>
                 <button onClick={()=>{onNav("terms");onClose();}}
                   style={{width:"100%",background:"none",border:"none",textAlign:"left",
