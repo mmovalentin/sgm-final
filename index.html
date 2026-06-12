@@ -4935,7 +4935,8 @@
           const diff = e.changedTouches[0].clientY - touchStartY.current;
           if (diff > 80 && !refreshing) {
             setRefreshing(true);
-            window.location.reload();
+            cargarDatos();
+            setTimeout(() => setRefreshing(false), 1000);
           }
         };
         const nombre =
@@ -4972,7 +4973,7 @@
             .catch((e) => console.error("[pagosHoy error]", e));
         }, [user]);
 
-        useEffect(() => {
+        function cargarDatos() {
           if (sessionStorage.getItem("sgi_cot_eliminada")) {
             sessionStorage.removeItem("sgi_cot_eliminada");
             setLastCot(null);
@@ -5037,6 +5038,10 @@
               setProyectoId(null);
               setAvanceRows([]);
             });
+        }
+
+        useEffect(() => {
+          cargarDatos();
         }, [user]);
 
         useEffect(() => {
@@ -9665,7 +9670,8 @@
           const diff = e.changedTouches[0].clientY - touchStartY.current;
           if (diff > 80 && !refreshing) {
             setRefreshing(true);
-            window.location.reload();
+            cargarDatos();
+            setTimeout(() => setRefreshing(false), 1000);
           }
         };
         const [lastCot, setLastCot] = useState(null);
@@ -9677,7 +9683,7 @@
         const [pagos, setPagos] = useState([]);
         const [loadingPagos, setLoadingPagos] = useState(false);
         const [fotosCliente, setFotosCliente] = useState({});
-        useEffect(() => {
+        function cargarDatos() {
           let lc = null;
           try {
             const s = localStorage.getItem("sgi_last_cot");
@@ -9756,6 +9762,10 @@
               clearTimeout(safety);
               setLoading(false);
             });
+        }
+
+        useEffect(() => {
+          cargarDatos();
         }, [user]);
 
         useEffect(() => {
