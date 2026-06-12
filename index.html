@@ -2352,6 +2352,17 @@
         Pago: "💰",
       };
       function HomeScreen({ onNav, t, user, perfil, userRol }) {
+        const [refreshing, setRefreshing] = React.useState(false);
+        const touchStartY = React.useRef(0);
+        const onTouchStart = e => { touchStartY.current = e.touches[0].clientY; };
+        const onTouchEnd = e => {
+          const diff = e.changedTouches[0].clientY - touchStartY.current;
+          if (diff > 80 && !refreshing) {
+            setRefreshing(true);
+            cargarDatos && cargarDatos();
+            setTimeout(() => setRefreshing(false), 1000);
+          }
+        };
         const [lastCot, setLastCot] = useState(null);
         const [met, setMet] = useState({
           avance: 0,
@@ -2663,7 +2674,8 @@
           );
 
         return (
-          <div>
+          <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+            {refreshing && <div style={{ textAlign:'center', padding:'10px', fontSize:12, color: C.t3 }}>↻ Actualizando...</div>}
             <div
               style={{
                 background: C.navy,
@@ -25730,7 +25742,7 @@
                         </div>
                       </div>
                       <button
-                        onClick={() => solicitarNotificaciones()}
+                        onClick={async () => { await solicitarNotificaciones(user); }}
                         style={{
                           background:
                             notifPermission === "granted" ? C.green : "#2563EB",
