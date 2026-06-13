@@ -4799,6 +4799,30 @@
               mensaje: mensaje.trim(),
               leida: false,
             });
+
+          let adminData = null;
+          try {
+            const res = await supa
+              .from("perfiles")
+              .select("id")
+              .eq("rol", "admin")
+              .limit(1)
+              .maybeSingle();
+            adminData = res.data;
+          } catch {}
+
+          if (adminData?.id && adminData.id !== user.id) {
+            try {
+              await supa.from("notificaciones").insert({
+                user_id: adminData.id,
+                tipo,
+                titulo: tipo + " de " + (user.email || user.id),
+                mensaje: mensaje.trim(),
+                leida: false,
+              });
+            } catch {}
+          }
+
           setEnviando(false);
           if (!error) {
             setEnviado(true);
