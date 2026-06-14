@@ -4521,7 +4521,8 @@
         const pageH = doc.internal.pageSize.getHeight();
 
         // ── FIRMA DIGITAL
-        const checkFirma = await supa?.from('firmas_digitales').select('*').eq('tipo','presupuesto').eq('referencia_id', pres.id).maybeSingle().catch(()=>({data:null}));
+        let checkFirma = { data: null };
+        try { checkFirma = await supa?.from('firmas_digitales').select('*').eq('tipo','presupuesto').eq('referencia_id', pres.id).maybeSingle(); } catch {}
         const firma = checkFirma?.data;
         if (firma?.firma_imagen) {
           const firmaY = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 12 : pageH - 60;
