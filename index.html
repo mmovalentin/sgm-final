@@ -3415,6 +3415,92 @@
         return t.completado||"Completado ✓";
       }
 
+      function FirmaDigitalModal({ titulo, subtitulo, onConfirmar, onCancelar }) {
+        const canvasRef = React.useRef(null);
+        const [drawing, setDrawing] = React.useState(false);
+        const [hasFirma, setHasFirma] = React.useState(false);
+        const lastPos = React.useRef({ x:0, y:0 });
+
+        function getPos(e, canvas) {
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = canvas.width / rect.width;
+          const scaleY = canvas.height / rect.height;
+          if (e.touches) return { x:(e.touches[0].clientX - rect.left)*scaleX, y:(e.touches[0].clientY - rect.top)*scaleY };
+          return { x:(e.clientX - rect.left)*scaleX, y:(e.clientY - rect.top)*scaleY };
+        }
+
+        function startDraw(e) {
+          e.preventDefault();
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext('2d');
+          const pos = getPos(e, canvas);
+          ctx.beginPath();
+          ctx.moveTo(pos.x, pos.y);
+          lastPos.current = pos;
+          setDrawing(true);
+          setHasFirma(true);
+        }
+
+        function draw(e) {
+          e.preventDefault();
+          if (!drawing) return;
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext('2d');
+          const pos = getPos(e, canvas);
+          ctx.strokeStyle = '#2563EB';
+          ctx.lineWidth = 2.5;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo(lastPos.current.x, lastPos.current.y);
+          ctx.lineTo(pos.x, pos.y);
+          ctx.stroke();
+          lastPos.current = pos;
+        }
+
+        function stopDraw(e) { e.preventDefault(); setDrawing(false); }
+
+        function limpiar() {
+          const canvas = canvasRef.current;
+          canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+          setHasFirma(false);
+        }
+
+        function confirmar() {
+          if (!hasFirma) return;
+          const dataUrl = canvasRef.current.toDataURL('image/png');
+          onConfirmar(dataUrl);
+        }
+
+        return (
+          <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:1000, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+            <div style={{ background: C.card, borderRadius:'20px 20px 0 0', width:'100%', maxWidth:480, padding:'20px 16px 32px' }}>
+              <div style={{ width:36, height:4, borderRadius:2, background: C.border2, margin:'0 auto 16px' }}/>
+              <div style={{ fontSize:16, fontWeight:700, color: C.t1, marginBottom:4 }}>{titulo}</div>
+              <div style={{ fontSize:12, color: C.t3, marginBottom:16 }}>{subtitulo || 'Dibujá tu firma con el dedo o el mouse'}</div>
+              <canvas
+                ref={canvasRef}
+                width={440}
+                height={130}
+                onMouseDown={startDraw} onMouseMove={draw} onMouseUp={stopDraw} onMouseLeave={stopDraw}
+                onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={stopDraw}
+                style={{ width:'100%', height:130, border:`.5px solid ${C.border2}`, borderRadius:10, display:'block', cursor:'crosshair', touchAction:'none', background: C.off }}
+              />
+              {!hasFirma && (
+                <div style={{ position:'relative', marginTop:-70, marginBottom:50, textAlign:'center', pointerEvents:'none' }}>
+                  <div style={{ fontSize:11, color: C.t3 }}>Firmá aquí ↑</div>
+                </div>
+              )}
+              <div style={{ display:'flex', gap:8, marginTop:14 }}>
+                <button onClick={limpiar} style={{ flex:1, padding:'10px', background: C.off, border:`.5px solid ${C.border}`, borderRadius:10, color: C.t2, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>Borrar</button>
+                <button onClick={confirmar} disabled={!hasFirma} style={{ flex:2, padding:'10px', background: hasFirma ? '#2563EB' : C.border, border:'none', borderRadius:10, color: hasFirma ? '#fff' : C.t3, fontSize:12, fontWeight:700, cursor: hasFirma ? 'pointer' : 'default', fontFamily:'inherit' }}>✍️ Confirmar firma</button>
+                <button onClick={onCancelar} style={{ flex:1, padding:'10px', background: C.off, border:`.5px solid ${C.border}`, borderRadius:10, color: C.t2, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>Cancelar</button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       // ── DETALLE COTIZACIÓN CLIENTE
       function DetalleCotizacionScreen({
         cot,
@@ -3428,6 +3514,9 @@
           cot?.estado || estadoProyecto || "pendiente",
         );
         const [savedMsg, setSavedMsg] = useState(null);
+        const [showFirma, setShowFirma] = React.useState(false);
+        const [firmaGuardada, setFirmaGuardada] = React.useState(null);
+        const [guardandoFirma, setGuardandoFirma] = React.useState(false);
 
         const storedDatos = () => {
           try {
@@ -3523,6 +3612,36 @@
             }
           }
           setTimeout(() => setSavedMsg(null), 3000);
+        }
+
+        async function guardarFirma(dataUrl) {
+          setShowFirma(false);
+          setGuardandoFirma(true);
+          try {
+            if (supa && user?.id) {
+              await supa.from('firmas_digitales').insert({
+                tipo: 'presupuesto',
+                referencia_id: cot?.id || null,
+                user_id: user.id,
+                firma_imagen: dataUrl,
+                firmante_nombre: user?.user_metadata?.full_name || user?.email || nombre || 'Cliente',
+                fecha_firma: new Date().toISOString(),
+              });
+              if (cot?.id && supa) {
+                await supa.from('presupuestos').update({ estado: 'aprobado' }).eq('id', cot.id).catch(()=>{});
+              }
+              await supa.rpc('notify_admin', {
+                p_tipo: 'firma',
+                p_titulo: '✍️ Presupuesto firmado por ' + (user?.user_metadata?.full_name || user?.email || 'cliente'),
+                p_mensaje: 'El cliente firmó digitalmente el presupuesto',
+              }).catch(()=>{});
+            }
+            setFirmaGuardada(dataUrl);
+            cambiarEstado('aprobado');
+          } catch(e) {
+            console.error('Error guardando firma:', e);
+          }
+          setGuardandoFirma(false);
         }
 
         if (!cot)
@@ -4089,6 +4208,28 @@
                 </div>
               )}
 
+              {user && !firmaGuardada && estadoLocal !== 'aprobado' && (
+                <div style={{ background: C.card, borderRadius:14, border:`.5px solid ${C.border}`, padding:'14px' }}>
+                  <div style={{ fontSize:10, fontWeight:700, color: C.t3, textTransform:'uppercase', letterSpacing:0.5, marginBottom:10 }}>Firma digital</div>
+                  <div style={{ fontSize:12, color: C.t2, marginBottom:12 }}>Firmá digitalmente para aprobar este presupuesto y dar inicio a la obra.</div>
+                  <button onClick={() => setShowFirma(true)} disabled={guardandoFirma}
+                    style={{ width:'100%', padding:'12px', background:'#2563EB', border:'none', borderRadius:10, color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                    ✍️ {guardandoFirma ? 'Guardando...' : 'Firmar presupuesto'}
+                  </button>
+                </div>
+              )}
+
+              {firmaGuardada || estadoLocal === 'aprobado' ? (
+                <div style={{ background:'rgba(34,197,94,0.08)', border:'.5px solid rgba(34,197,94,0.2)', borderRadius:14, padding:'14px', display:'flex', alignItems:'center', gap:12 }}>
+                  <span style={{ fontSize:24 }}>✅</span>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#22C55E' }}>Presupuesto aprobado</div>
+                    <div style={{ fontSize:11, color: C.t3, marginTop:2 }}>Firmado digitalmente</div>
+                  </div>
+                  {firmaGuardada && <img src={firmaGuardada} style={{ marginLeft:'auto', height:40, filter:'invert(1)', opacity:0.6 }}/>}
+                </div>
+              ) : null}
+
               {/* ACCIONES */}
               <button
                 onClick={() =>
@@ -4187,6 +4328,14 @@
                 {t.nuevaCotizacion||"✨ Nueva cotización"}
               </button>
             </div>
+            {showFirma && (
+              <FirmaDigitalModal
+                titulo="Firmar presupuesto"
+                subtitulo={`Aprobás el presupuesto de USD ${(cot?.total_usd||0).toLocaleString()} para ${cot?.tipo||'tu obra'}`}
+                onConfirmar={guardarFirma}
+                onCancelar={() => setShowFirma(false)}
+              />
+            )}
           </div>
         );
       }
