@@ -9838,6 +9838,8 @@
         const [pagos, setPagos] = useState([]);
         const [loadingPagos, setLoadingPagos] = useState(false);
         const [fotosCliente, setFotosCliente] = useState({});
+        const [firmasPago, setFirmasPago] = React.useState({});
+        const [showFirmaPago, setShowFirmaPago] = React.useState(null);
         function cargarDatos() {
           let lc = null;
           try {
@@ -9958,6 +9960,17 @@
               setFotosCliente(porEtapa);
             });
         }, [avanceRows, presId]);
+
+        React.useEffect(() => {
+          if (!supa || !user?.id) return;
+          supa.from('firmas_digitales').select('*').eq('user_id', user.id).eq('tipo', 'pago')
+            .then(({ data }) => {
+              if (!data) return;
+              const map = {};
+              data.forEach(f => { map[f.referencia_id] = f; });
+              setFirmasPago(map);
+            });
+        }, [user]);
 
         useEffect(() => {
           if (!supa || !user?.id) return;
@@ -10148,6 +10161,20 @@
               ),
             );
           }
+        }
+
+        async function guardarFirmaPago(pagoId, dataUrl) {
+          setShowFirmaPago(null);
+          if (!supa || !user?.id) return;
+          await supa.from('firmas_digitales').insert({
+            tipo: 'pago',
+            referencia_id: pagoId,
+            user_id: user.id,
+            firma_imagen: dataUrl,
+            firmante_nombre: user?.user_metadata?.full_name || user?.email || 'Cliente',
+            fecha_firma: new Date().toISOString(),
+          }).catch(() => {});
+          setFirmasPago(prev => ({ ...prev, [pagoId]: { firma_imagen: dataUrl } }));
         }
 
         return (
@@ -10965,6 +10992,18 @@
                             📄 Descargar recibo
                           </button>
                         )}
+                        {p.recibo_generado && !firmasPago[p.id] && (
+                          <button onClick={() => setShowFirmaPago(p.id)}
+                            style={{ width:'100%', padding:'7px', background:'none', border:`1px solid ${C.border2}`, borderRadius:8, color:'#4A9FFF', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>
+                            ✍️ Firmar recibo
+                          </button>
+                        )}
+                        {firmasPago[p.id] && (
+                          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, padding:'5px 8px', background:'rgba(34,197,94,0.08)', borderRadius:8, border:'.5px solid rgba(34,197,94,0.2)' }}>
+                            <span style={{ fontSize:11, color:'#22C55E' }}>✓ Recibo firmado</span>
+                            {firmasPago[p.id].firma_imagen && <img src={firmasPago[p.id].firma_imagen} style={{ height:24, marginLeft:'auto', filter:'invert(1)', opacity:0.5 }}/>}
+                          </div>
+                        )}
                       </div>
                     ))}
                     <div
@@ -11008,6 +11047,14 @@
                 💬 Consultar sobre mi obra
               </button>
             </div>
+            {showFirmaPago && (
+              <FirmaDigitalModal
+                titulo="Firmar recibo de pago"
+                subtitulo="Confirmás haber realizado este pago"
+                onConfirmar={(dataUrl) => guardarFirmaPago(showFirmaPago, dataUrl)}
+                onCancelar={() => setShowFirmaPago(null)}
+              />
+            )}
           </div>
         );
       }
