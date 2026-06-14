@@ -4256,15 +4256,10 @@
               </button>
               {user ? (
                 <button
-                  onClick={() =>
-                    generarPDF(
-                      cot,
-                      user?.user_metadata?.full_name ||
-                        user?.email ||
-                        nombre ||
-                        "Cliente",
-                    )
-                  }
+                  onClick={() => {
+                    console.log('[DetalleCot] cot:', cot?.id, cot);
+                    generarPDF(cot, user?.user_metadata?.full_name || user?.email || nombre || "Cliente");
+                  }}
                   style={{
                     width: "100%",
                     padding: "11px",
