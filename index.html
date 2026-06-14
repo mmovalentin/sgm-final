@@ -13694,6 +13694,14 @@
         const [guardadoStatus, setGuardadoStatus] = useState({});
         const [isListening, setIsListening] = useState(false);
         const [waBanner, setWaBanner] = useState(null);
+        const [isRecording, setIsRecording] = React.useState(false);
+        const [audioBlob, setAudioBlob] = React.useState(null);
+        const [recSeconds, setRecSeconds] = React.useState(0);
+        const [recWaveBars, setRecWaveBars] = React.useState([]);
+        const mediaRecRef = React.useRef(null);
+        const recTimerRef = React.useRef(null);
+        const recStreamRef = React.useRef(null);
+        const cancelledRef = React.useRef(false);
         const msgsRef = useRef(null);
         const recogRef = useRef(null);
         useEffect(() => {
@@ -13826,6 +13834,102 @@
               .includes(busqueda.toLowerCase()),
         );
 
+        async function startRecording() {
+          try {
+            cancelledRef.current = false;
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            recStreamRef.current = stream;
+            const mr = new MediaRecorder(stream);
+            mediaRecRef.current = mr;
+            const chunks = [];
+            mr.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+            mr.onstop = () => {
+              if (!cancelledRef.current) {
+                const blob = new Blob(chunks, { type: 'audio/webm' });
+                setAudioBlob(blob);
+              }
+              recStreamRef.current?.getTracks().forEach(t => t.stop());
+            };
+            mr.start();
+            setIsRecording(true);
+            setRecSeconds(0);
+            setRecWaveBars([]);
+            recTimerRef.current = setInterval(() => {
+              setRecSeconds(s => s + 1);
+              setRecWaveBars(prev => {
+                const next = [...prev, Math.floor(Math.random() * 14) + 4];
+                return next.length > 28 ? next.slice(-28) : next;
+              });
+            }, 200);
+          } catch(e) {
+            alert('No se pudo acceder al micrófono');
+          }
+        }
+
+        function stopRecording() {
+          clearInterval(recTimerRef.current);
+          mediaRecRef.current?.stop();
+          setIsRecording(false);
+        }
+
+        function cancelRecording() {
+          clearInterval(recTimerRef.current);
+          cancelledRef.current = true;
+          mediaRecRef.current?.stop();
+          recStreamRef.current?.getTracks().forEach(t => t.stop());
+          setIsRecording(false);
+          setAudioBlob(null);
+          setRecSeconds(0);
+          setRecWaveBars([]);
+          mediaRecRef.current = null;
+        }
+
+        async function sendAudio() {
+          if (!audioBlob) return;
+          const reader = new FileReader();
+          reader.onloadend = async () => {
+            const base64 = reader.result.split(',')[1];
+            const durText = recSeconds >= 60
+              ? `${Math.floor(recSeconds/60)}:${String(recSeconds%60).padStart(2,'0')}`
+              : `0:${String(recSeconds).padStart(2,'0')}`;
+            setMsgs(m => [...m, { role: 'user', text: `🎙️ Audio (${durText})`, isAudio: true }]);
+            setAudioBlob(null);
+            setRecSeconds(0);
+            setLoading(true);
+            try {
+              const r = await fetch('/api/claude', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  model: 'claude-sonnet-4-6',
+                  max_tokens: 500,
+                  system: 'Sos el asistente IA de SGI, especializado en Steel Frame y construccion en Cordoba. Responde en espanol, conciso y practico.',
+                  messages: [{
+                    role: 'user',
+                    content: [{
+                      type: 'document',
+                      source: { type: 'base64', media_type: 'audio/webm', data: base64 }
+                    }, {
+                      type: 'text',
+                      text: 'Transcribí y respondé este audio en español.'
+                    }]
+                  }]
+                })
+              });
+              const d = await r.json();
+              setMsgs(m => [...m, { role: 'ai', text: d.content?.[0]?.text || 'Sin respuesta.' }]);
+            } catch(e) {
+              setMsgs(m => [...m, { role: 'ai', text: 'Error al procesar el audio.' }]);
+            }
+            setLoading(false);
+          };
+          reader.readAsDataURL(audioBlob);
+        }
+
+        React.useEffect(() => {
+          if (audioBlob && !cancelledRef.current) sendAudio();
+        }, [audioBlob]);
+
         return (
           <div
             style={{
@@ -13834,6 +13938,7 @@
               height: "calc(100vh - 110px)",
             }}
           >
+            <style>{`@keyframes sgiBlink { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
             <div
               style={{
                 background: C.navy,
@@ -13939,7 +14044,12 @@
                             lineHeight: 1.5,
                           }}
                         >
-                          {m.text}
+                          {m.isAudio ? (
+                            <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(37,99,235,0.15)', border:'.5px solid rgba(37,99,235,0.3)', borderRadius:'14px 14px 2px 14px', padding:'9px 13px' }}>
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#60A5FA" strokeWidth="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                              <span style={{ fontSize:12, color:'#93C5FD' }}>{m.text}</span>
+                            </div>
+                          ) : <span>{m.text}</span>}
                         </div>
                       ) : (
                         <div
@@ -14113,6 +14223,21 @@
                     </div>
                   </div>
                 )}
+                {isRecording && (
+                  <div style={{ background:'rgba(239,68,68,0.08)', borderTop:'.5px solid rgba(239,68,68,0.2)', padding:'8px 14px', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+                    <div style={{ width:8, height:8, borderRadius:'50%', background:'#EF4444', flexShrink:0, animation:'sgiBlink 1s infinite' }}/>
+                    <div style={{ flex:1, display:'flex', alignItems:'center', gap:2, height:24 }}>
+                      {recWaveBars.map((h,i) => (
+                        <div key={i} style={{ width:3, borderRadius:2, background:'#EF4444', height:h+'px', opacity:0.7 }}/>
+                      ))}
+                    </div>
+                    <div style={{ fontSize:11, color:'#EF4444', flexShrink:0 }}>
+                      0:{String(recSeconds).padStart(2,'0')}
+                    </div>
+                    <button onClick={stopRecording} style={{ background:'rgba(239,68,68,0.2)', border:'.5px solid rgba(239,68,68,0.3)', borderRadius:20, padding:'4px 10px', fontSize:11, color:'#EF4444', cursor:'pointer', fontFamily:'inherit' }}>Enviar</button>
+                    <button onClick={cancelRecording} style={{ background:'rgba(255,255,255,0.06)', border:'.5px solid rgba(255,255,255,0.1)', borderRadius:20, padding:'4px 10px', fontSize:11, color:C.t3, cursor:'pointer', fontFamily:'inherit' }}>Cancelar</button>
+                  </div>
+                )}
                 <div
                   style={{
                     display: "flex",
@@ -14124,23 +14249,22 @@
                   }}
                 >
                   <button
-                    onClick={toggleVoice}
+                    onClick={isRecording ? stopRecording : startRecording}
                     style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: "50%",
-                      border: `1px solid ${isListening ? "#EF4444" : C.border2}`,
-                      background: isListening ? "#FEE2E2" : C.off,
-                      color: isListening ? "#EF4444" : C.t3,
-                      fontSize: 15,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
+                      width:36, height:36, borderRadius:'50%',
+                      border:`1px solid ${isRecording ? '#EF4444' : C.border2}`,
+                      background: isRecording ? '#EF4444' : C.off,
+                      color: isRecording ? '#fff' : C.t3,
+                      fontSize:15, cursor:'pointer',
+                      display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0
                     }}
+                    aria-label={isRecording ? 'Detener grabación' : 'Grabar audio'}
                   >
-                    🎙️
+                    {isRecording ? (
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="white"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                    )}
                   </button>
                   <input
                     value={input}
