@@ -8826,6 +8826,8 @@
         const [climaData, setClimaData] = React.useState(null);
         const [loadingClima, setLoadingClima] = React.useState(false);
         const [localidad, setLocalidad] = React.useState('');
+        const [firmasJornada, setFirmasJornada] = React.useState({});
+        const [showFirmaJornada, setShowFirmaJornada] = React.useState(null);
 
         React.useEffect(() => {
           if (!supa || !user?.id) return;
@@ -8906,6 +8908,21 @@
           }
         }
 
+        async function guardarFirmaJornada(registroId, miembroNombre, dataUrl) {
+          setShowFirmaJornada(null);
+          if (!supa || !user?.id) return;
+          const key = registroId + '_' + miembroNombre;
+          await supa.from('firmas_digitales').insert({
+            tipo: 'jornada',
+            referencia_id: key,
+            user_id: user.id,
+            firma_imagen: dataUrl,
+            firmante_nombre: miembroNombre,
+            fecha_firma: new Date().toISOString(),
+          }).catch(() => {});
+          setFirmasJornada(prev => ({ ...prev, [key]: { firma_imagen: dataUrl } }));
+        }
+
         const CLIMAS = [
           { id:'soleado', label:'☀️ Soleado' },
           { id:'nublado', label:'⛅ Nublado' },
@@ -8965,6 +8982,32 @@
                       {r.equipo?.length > 0 && <span style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:'rgba(34,197,94,0.1)', color:'#22C55E' }}>{r.equipo.length} persona{r.equipo.length>1?'s':''} · {r.equipo.reduce((s,e)=>s+(Number(e.horas)||0),0)} hs</span>}
                       {r.materiales?.length > 0 && <span style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:'rgba(251,191,36,0.1)', color:'#FBBF24' }}>{r.materiales.length} material{r.materiales.length>1?'es':''}</span>}
                     </div>
+                    {r.equipo && r.equipo.length > 0 && (
+                      <div style={{ marginTop:8, borderTop:`.5px solid ${C.border}`, paddingTop:8 }}>
+                        <div style={{ fontSize:9, color: C.t3, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:6 }}>Firmas de jornada</div>
+                        {r.equipo.map((m, mi) => {
+                          const key = r.id + '_' + m.nombre;
+                          const firmado = firmasJornada[key];
+                          return (
+                            <div key={mi} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                              <div style={{ width:22, height:22, borderRadius:'50%', background: C.acc, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, color:'#fff', flexShrink:0 }}>{(m.nombre||'?')[0].toUpperCase()}</div>
+                              <div style={{ flex:1, fontSize:11, color: C.t2 }}>{m.nombre}</div>
+                              {firmado ? (
+                                <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                                  <span style={{ fontSize:10, color:'#22C55E' }}>✓ Firmado</span>
+                                  {firmado.firma_imagen && <img src={firmado.firma_imagen} style={{ height:18, filter:'invert(1)', opacity:0.5 }}/>}
+                                </div>
+                              ) : (
+                                <button onClick={() => setShowFirmaJornada({ registroId: r.id, nombre: m.nombre })}
+                                  style={{ fontSize:10, padding:'3px 8px', background:'rgba(74,159,255,0.1)', border:`.5px solid ${C.acc}`, borderRadius:6, color: C.acc, cursor:'pointer', fontFamily:'inherit' }}>
+                                  ✍️ Firmar
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -9173,6 +9216,14 @@
                   {guardando ? 'Guardando...' : guardadoOk ? '✓ Guardado' : 'Guardar registro'}
                 </button>
               </div>
+            )}
+            {showFirmaJornada && (
+              <FirmaDigitalModal
+                titulo={`Firma de jornada — ${showFirmaJornada.nombre}`}
+                subtitulo="Confirmás las horas trabajadas en esta jornada"
+                onConfirmar={(dataUrl) => guardarFirmaJornada(showFirmaJornada.registroId, showFirmaJornada.nombre, dataUrl)}
+                onCancelar={() => setShowFirmaJornada(null)}
+              />
             )}
           </div>
         );
