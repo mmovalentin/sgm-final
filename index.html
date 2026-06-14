@@ -8839,7 +8839,23 @@
           supa.from('registro_diario_obra').select('*')
             .eq('obra_id', obraSeleccionada.id)
             .order('fecha', { ascending: false })
-            .then(({ data }) => setRegistros(data || []));
+            .then(({ data }) => {
+              setRegistros(data || []);
+              const ids = (data || []).map(r => r.id);
+              if (ids.length > 0 && supa && user?.id) {
+                supa.from('firmas_digitales').select('*')
+                  .eq('tipo', 'jornada')
+                  .in('referencia_id', ids.flatMap(id =>
+                    (data.find(r => r.id === id)?.equipo || []).map(m => id + '_' + m.nombre)
+                  ))
+                  .then(({ data: firmas }) => {
+                    if (!firmas) return;
+                    const map = {};
+                    firmas.forEach(f => { map[f.referencia_id] = f; });
+                    setFirmasJornada(map);
+                  });
+              }
+            });
         }, [obraSeleccionada]);
 
         React.useEffect(() => {
