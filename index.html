@@ -20125,6 +20125,85 @@
         );
       }
 
+      // ── FIRMAS DIGITALES ADMIN
+      function FirmasAdminScreen({ user, t={} }) {
+        const [firmas, setFirmas] = React.useState([]);
+        const [loading, setLoading] = React.useState(true);
+        const [filtroTipo, setFiltroTipo] = React.useState('todas');
+
+        React.useEffect(() => {
+          if (!supa) return;
+          supa.from('firmas_digitales')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .then(({ data }) => { setFirmas(data || []); setLoading(false); });
+        }, []);
+
+        const TIPOS = [
+          { id:'todas', label:'Todas' },
+          { id:'presupuesto', label:'Presupuestos' },
+          { id:'pago', label:'Pagos' },
+          { id:'etapa', label:'Etapas' },
+          { id:'entrega', label:'Entrega' },
+          { id:'jornada', label:'Jornadas' },
+        ];
+
+        const TIPO_ICON = {
+          presupuesto:'📋', pago:'💰', etapa:'🏗️', entrega:'🏠', jornada:'👷'
+        };
+
+        const firmasFiltradas = filtroTipo === 'todas' ? firmas : firmas.filter(f => f.tipo === filtroTipo);
+
+        return (
+          <div style={{ background: C.bg, minHeight:'100%', paddingBottom:24 }}>
+            <div style={{ background: C.navy, padding:'14px 16px' }}>
+              <div style={{ color: C.t1, fontSize:17, fontWeight:800 }}>Firmas digitales</div>
+              <div style={{ color: C.t3, fontSize:12, marginTop:2 }}>{firmas.length} firma{firmas.length!==1?'s':''} registrada{firmas.length!==1?'s':''}</div>
+            </div>
+
+            <div style={{ padding:'10px 14px 0', display:'flex', gap:6, overflowX:'auto' }}>
+              {TIPOS.map(tipo => (
+                <button key={tipo.id} onClick={() => setFiltroTipo(tipo.id)}
+                  style={{ padding:'5px 12px', borderRadius:20, border:'none', background: filtroTipo===tipo.id ? C.acc : C.off, color: filtroTipo===tipo.id ? '#fff' : C.t2, fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap' }}>
+                  {tipo.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ padding:'12px 14px' }}>
+              {loading ? (
+                <div style={{ textAlign:'center', color: C.t3, fontSize:13, padding:'40px 0' }}>Cargando...</div>
+              ) : firmasFiltradas.length === 0 ? (
+                <div style={{ textAlign:'center', padding:'60px 0' }}>
+                  <div style={{ fontSize:36, marginBottom:10 }}>✍️</div>
+                  <div style={{ color: C.t1, fontSize:14, fontWeight:700, marginBottom:6 }}>Sin firmas{filtroTipo !== 'todas' ? ' de este tipo' : ''}</div>
+                  <div style={{ color: C.t3, fontSize:12 }}>Las firmas aparecerán aquí cuando los clientes firmen</div>
+                </div>
+              ) : firmasFiltradas.map(f => (
+                <div key={f.id} style={{ background: C.card, borderRadius:12, border:`.5px solid ${C.border}`, padding:'12px 14px', marginBottom:10 }}>
+                  <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:8 }}>
+                    <span style={{ fontSize:20, flexShrink:0 }}>{TIPO_ICON[f.tipo] || '✍️'}</span>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:13, fontWeight:700, color: C.t1, textTransform:'capitalize' }}>{f.tipo}</div>
+                      <div style={{ fontSize:11, color: C.t3, marginTop:2 }}>{f.firmante_nombre || 'Desconocido'}</div>
+                      <div style={{ fontSize:10, color: C.t3, marginTop:2 }}>{new Date(f.fecha_firma || f.created_at).toLocaleString('es-AR')}</div>
+                    </div>
+                    {f.firma_imagen && (
+                      <img src={f.firma_imagen} style={{ height:40, maxWidth:80, objectFit:'contain', filter:'var(--c-bg2) === "#f8fafc" ? "none" : "invert(1)"', opacity:0.7, flexShrink:0, border:`.5px solid ${C.border}`, borderRadius:6, padding:4, background: C.off }}/>
+                    )}
+                  </div>
+                  {f.referencia_id && (
+                    <div style={{ fontSize:10, color: C.t3, background: C.off, borderRadius:6, padding:'4px 8px', display:'inline-block' }}>
+                      Ref: {f.referencia_id.length > 20 ? f.referencia_id.substring(0,20)+'...' : f.referencia_id}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
       // ── AVANCE OBRA ADMIN
       function AvanceObraAdminScreen({ userRol, user, t = {} }) {
         const admin = isAdmin(userRol, user?.email);
@@ -23586,6 +23665,7 @@
                   { id:'cot', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>, label: t.cotizar||'Cotizador IA' },
                   { id:'chat', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, label: t.ia||'Asistente IA' },
                   { id:'estadisticas', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, label: t.estadisticas||'Estadísticas' },
+                  { id:'firmas', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>, label:'Firmas digitales' },
                   { id:'notificaciones', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>, label:'Notificaciones', badge: notifs.filter(n=>!n.leida).length },
                 ].map(item => (
                   <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'var(--c-text2)', cursor:'pointer' }}
@@ -25916,6 +25996,9 @@
           empresamapa: <EmpresaMapaScreen user={user} onNav={handleNav} t={t} />,
           notificaciones: (
             <NotificacionesScreen user={user} t={t} onNav={handleNav} onSolicitarNotificaciones={solicitarNotificaciones} />
+          ),
+          firmas: (
+            <FirmasAdminScreen user={user} t={t} />
           ),
         };
 
