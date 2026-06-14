@@ -9840,6 +9840,8 @@
         const [fotosCliente, setFotosCliente] = useState({});
         const [firmasPago, setFirmasPago] = React.useState({});
         const [showFirmaPago, setShowFirmaPago] = React.useState(null);
+        const [firmasEtapa, setFirmasEtapa] = React.useState({});
+        const [showFirmaEtapa, setShowFirmaEtapa] = React.useState(null);
         function cargarDatos() {
           let lc = null;
           try {
@@ -9969,6 +9971,17 @@
               const map = {};
               data.forEach(f => { map[f.referencia_id] = f; });
               setFirmasPago(map);
+            });
+        }, [user]);
+
+        React.useEffect(() => {
+          if (!supa || !user?.id) return;
+          supa.from('firmas_digitales').select('*').eq('user_id', user.id).eq('tipo', 'etapa')
+            .then(({ data }) => {
+              if (!data) return;
+              const map = {};
+              data.forEach(f => { map[f.referencia_id] = f; });
+              setFirmasEtapa(map);
             });
         }, [user]);
 
@@ -10175,6 +10188,25 @@
             fecha_firma: new Date().toISOString(),
           }).catch(() => {});
           setFirmasPago(prev => ({ ...prev, [pagoId]: { firma_imagen: dataUrl } }));
+        }
+
+        async function guardarFirmaEtapa(etapaId, etapaNombre, dataUrl) {
+          setShowFirmaEtapa(null);
+          if (!supa || !user?.id) return;
+          await supa.from('firmas_digitales').insert({
+            tipo: 'etapa',
+            referencia_id: String(etapaId),
+            user_id: user.id,
+            firma_imagen: dataUrl,
+            firmante_nombre: user?.user_metadata?.full_name || user?.email || 'Cliente',
+            fecha_firma: new Date().toISOString(),
+          }).catch(() => {});
+          setFirmasEtapa(prev => ({ ...prev, [String(etapaId)]: { firma_imagen: dataUrl, etapa_nombre: etapaNombre } }));
+          await supa.rpc('notify_admin', {
+            p_tipo: 'etapa_firmada',
+            p_titulo: '✍️ Etapa aprobada: ' + etapaNombre,
+            p_mensaje: 'El cliente firmó la recepción conforme de la etapa',
+          }).catch(() => {});
         }
 
         return (
@@ -10470,6 +10502,18 @@
                                   style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover', flexShrink: 0, border: `.5px solid ${C.border}` }} />
                               ))}
                             </div>
+                          </div>
+                        )}
+                        {done && e.id && !firmasEtapa[String(e.id)] && (
+                          <button onClick={() => setShowFirmaEtapa({ id: e.id, nombre: e.etapa_nombre || e.nombre })}
+                            style={{ width:'100%', padding:'6px', background:'none', border:`1px solid ${C.border2}`, borderRadius:8, color:'#4A9FFF', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginTop:6 }}>
+                            ✍️ Aprobar etapa
+                          </button>
+                        )}
+                        {done && e.id && firmasEtapa[String(e.id)] && (
+                          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, padding:'4px 8px', background:'rgba(34,197,94,0.08)', borderRadius:8, border:'.5px solid rgba(34,197,94,0.2)' }}>
+                            <span style={{ fontSize:11, color:'#22C55E' }}>✓ Etapa aprobada por cliente</span>
+                            {firmasEtapa[String(e.id)].firma_imagen && <img src={firmasEtapa[String(e.id)].firma_imagen} style={{ height:20, marginLeft:'auto', filter:'invert(1)', opacity:0.5 }}/>}
                           </div>
                         )}
                       </div>
@@ -11053,6 +11097,14 @@
                 subtitulo="Confirmás haber realizado este pago"
                 onConfirmar={(dataUrl) => guardarFirmaPago(showFirmaPago, dataUrl)}
                 onCancelar={() => setShowFirmaPago(null)}
+              />
+            )}
+            {showFirmaEtapa && (
+              <FirmaDigitalModal
+                titulo={`Aprobar: ${showFirmaEtapa.nombre}`}
+                subtitulo="Confirmás que esta etapa fue completada correctamente"
+                onConfirmar={(dataUrl) => guardarFirmaEtapa(showFirmaEtapa.id, showFirmaEtapa.nombre, dataUrl)}
+                onCancelar={() => setShowFirmaEtapa(null)}
               />
             )}
           </div>
