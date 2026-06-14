@@ -9842,6 +9842,8 @@
         const [showFirmaPago, setShowFirmaPago] = React.useState(null);
         const [firmasEtapa, setFirmasEtapa] = React.useState({});
         const [showFirmaEtapa, setShowFirmaEtapa] = React.useState(null);
+        const [firmaEntrega, setFirmaEntrega] = React.useState(null);
+        const [showFirmaEntrega, setShowFirmaEntrega] = React.useState(false);
         function cargarDatos() {
           let lc = null;
           try {
@@ -9984,6 +9986,14 @@
               setFirmasEtapa(map);
             });
         }, [user]);
+
+        React.useEffect(() => {
+          if (!supa || !user?.id || !presId) return;
+          supa.from('firmas_digitales').select('*')
+            .eq('user_id', user.id).eq('tipo', 'entrega').eq('referencia_id', presId)
+            .maybeSingle()
+            .then(({ data }) => { if (data) setFirmaEntrega(data); });
+        }, [user, presId]);
 
         useEffect(() => {
           if (!supa || !user?.id) return;
@@ -10209,6 +10219,25 @@
           }).catch(() => {});
         }
 
+        async function guardarFirmaEntrega(dataUrl) {
+          setShowFirmaEntrega(false);
+          if (!supa || !user?.id || !presId) return;
+          await supa.from('firmas_digitales').insert({
+            tipo: 'entrega',
+            referencia_id: presId,
+            user_id: user.id,
+            firma_imagen: dataUrl,
+            firmante_nombre: user?.user_metadata?.full_name || user?.email || 'Cliente',
+            fecha_firma: new Date().toISOString(),
+          }).catch(() => {});
+          setFirmaEntrega({ firma_imagen: dataUrl, fecha_firma: new Date().toISOString() });
+          await supa.rpc('notify_admin', {
+            p_tipo: 'entrega_firmada',
+            p_titulo: '🏠 Acta de entrega firmada',
+            p_mensaje: 'El cliente firmó el acta de recepción conforme de la obra',
+          }).catch(() => {});
+        }
+
         return (
           <div
             onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
@@ -10353,6 +10382,32 @@
                   <span>{t.entregaEstimada||"Entrega estimada"}</span>
                 </div>
               </div>
+
+              {avance >= 100 && hasAvance && (
+                <div style={{ marginTop:12 }}>
+                  {!firmaEntrega ? (
+                    <div style={{ background:'rgba(124,58,237,0.08)', border:'.5px solid rgba(124,58,237,0.2)', borderRadius:12, padding:'14px' }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:'#a78bfa', marginBottom:4 }}>🏠 ¡Obra finalizada!</div>
+                      <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:12 }}>Firmá el acta de entrega para confirmar la recepción conforme de tu obra.</div>
+                      <button onClick={() => setShowFirmaEntrega(true)}
+                        style={{ width:'100%', padding:'11px', background:'#7C3AED', border:'none', borderRadius:10, color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                        ✍️ Firmar acta de entrega
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ background:'rgba(124,58,237,0.08)', border:'.5px solid rgba(124,58,237,0.2)', borderRadius:12, padding:'14px', display:'flex', alignItems:'center', gap:12 }}>
+                      <span style={{ fontSize:24 }}>🏠</span>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:13, fontWeight:700, color:'#a78bfa' }}>Acta de entrega firmada</div>
+                        <div style={{ fontSize:10, color:'rgba(255,255,255,0.3)', marginTop:2 }}>
+                          {firmaEntrega.fecha_firma ? new Date(firmaEntrega.fecha_firma).toLocaleDateString('es-AR') : ''}
+                        </div>
+                      </div>
+                      {firmaEntrega.firma_imagen && <img src={firmaEntrega.firma_imagen} style={{ height:36, filter:'invert(1)', opacity:0.5 }}/>}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* ETAPAS */}
               <div>
@@ -11105,6 +11160,14 @@
                 subtitulo="Confirmás que esta etapa fue completada correctamente"
                 onConfirmar={(dataUrl) => guardarFirmaEtapa(showFirmaEtapa.id, showFirmaEtapa.nombre, dataUrl)}
                 onCancelar={() => setShowFirmaEtapa(null)}
+              />
+            )}
+            {showFirmaEntrega && (
+              <FirmaDigitalModal
+                titulo="Acta de entrega de obra"
+                subtitulo="Confirmás haber recibido la obra en conformidad"
+                onConfirmar={guardarFirmaEntrega}
+                onCancelar={() => setShowFirmaEntrega(false)}
               />
             )}
           </div>
