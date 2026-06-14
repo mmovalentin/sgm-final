@@ -4338,7 +4338,7 @@
         );
       }
 
-      function generarPDF(pres, clienteNombre) {
+      async function generarPDF(pres, clienteNombre) {
         if (!window.jspdf) {
           alert("jsPDF no disponible. Verificá tu conexión.");
           return;
@@ -4518,8 +4518,27 @@
           tableLineWidth: 0.2,
         });
 
-        // ── FOOTER
         const pageH = doc.internal.pageSize.getHeight();
+
+        // ── FIRMA DIGITAL
+        const checkFirma = await supa?.from('firmas_digitales').select('*').eq('tipo','presupuesto').eq('referencia_id', pres.id).maybeSingle().catch(()=>({data:null}));
+        const firma = checkFirma?.data;
+        if (firma?.firma_imagen) {
+          const firmaY = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 12 : pageH - 60;
+          doc.setFontSize(8);
+          doc.setTextColor(...gris);
+          doc.text('Firma digital del cliente:', M, firmaY);
+          doc.setDrawColor(200, 210, 220);
+          doc.rect(M, firmaY + 4, 70, 25);
+          try {
+            doc.addImage(firma.firma_imagen, 'PNG', M + 2, firmaY + 6, 66, 21);
+          } catch(e) {}
+          doc.text('Firmado por: ' + (firma.firmante_nombre || 'Cliente'), M, firmaY + 33);
+          doc.text('Fecha: ' + new Date(firma.fecha_firma || firma.created_at).toLocaleString('es-AR'), M, firmaY + 38);
+          doc.text('✓ Presupuesto aprobado digitalmente', M, firmaY + 43);
+        }
+
+        // ── FOOTER
         doc.setFontSize(7);
         doc.setTextColor(...gris);
         doc.text(
