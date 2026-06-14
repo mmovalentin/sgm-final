@@ -13886,44 +13886,59 @@
 
         async function sendAudio() {
           if (!audioBlob) return;
-          const reader = new FileReader();
-          reader.onloadend = async () => {
-            const base64 = reader.result.split(',')[1];
-            const durText = recSeconds >= 60
-              ? `${Math.floor(recSeconds/60)}:${String(recSeconds%60).padStart(2,'0')}`
-              : `0:${String(recSeconds).padStart(2,'0')}`;
-            setMsgs(m => [...m, { role: 'user', text: `🎙️ Audio (${durText})`, isAudio: true }]);
-            setAudioBlob(null);
-            setRecSeconds(0);
-            setLoading(true);
-            try {
-              const r = await fetch('/api/claude', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  model: 'claude-sonnet-4-6',
-                  max_tokens: 500,
-                  system: 'Sos el asistente IA de SGI, especializado en Steel Frame y construccion en Cordoba. Responde en espanol, conciso y practico.',
-                  messages: [{
-                    role: 'user',
-                    content: [{
-                      type: 'document',
-                      source: { type: 'base64', media_type: 'audio/webm', data: base64 }
-                    }, {
-                      type: 'text',
-                      text: 'Transcribí y respondé este audio en español.'
-                    }]
-                  }]
-                })
-              });
-              const d = await r.json();
-              setMsgs(m => [...m, { role: 'ai', text: d.content?.[0]?.text || 'Sin respuesta.' }]);
-            } catch(e) {
-              setMsgs(m => [...m, { role: 'ai', text: 'Error al procesar el audio.' }]);
+          setAudioBlob(null);
+          const durText = '0:' + String(recSeconds).padStart(2,'0');
+          setMsgs(m => [...m, { role: 'user', text: '🎙️ Audio (' + durText + ')', isAudio: true }]);
+          setRecSeconds(0);
+          setLoading(true);
+          try {
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) {
+              setMsgs(m => [...m, { role: 'ai', text: 'Tu navegador no soporta transcripción de audio. Escribí tu consulta.' }]);
+              setLoading(false);
+              return;
             }
+            const recognition = new SR();
+            recognition.lang = 'es-AR';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.onresult = async (e) => {
+              const transcript = e.results[0][0].transcript;
+              setMsgs(m => [...m.slice(0,-1), { role: 'user', text: transcript }]);
+              try {
+                const r = await fetch('/api/claude', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    model: 'claude-sonnet-4-6',
+                    max_tokens: 500,
+                    system: 'Sos el asistente IA de SGI, especializado en Steel Frame y construccion en Cordoba. Responde en espanol, conciso y practico.',
+                    messages: [{ role: 'user', content: transcript }]
+                  })
+                });
+                const d = await r.json();
+                setMsgs(m => [...m, { role: 'ai', text: d.content?.[0]?.text || 'Sin respuesta.' }]);
+              } catch(e) {
+                setMsgs(m => [...m, { role: 'ai', text: 'Error de conexión.' }]);
+              }
+              setLoading(false);
+            };
+            recognition.onerror = () => {
+              setMsgs(m => [...m, { role: 'ai', text: 'No pude entender el audio. Intentá de nuevo.' }]);
+              setLoading(false);
+            };
+            recognition.onend = () => { URL.revokeObjectURL(audioUrl); };
+            audio.oncanplaythrough = () => {
+              audio.play();
+              recognition.start();
+            };
+            audio.load();
+          } catch(e) {
+            setMsgs(m => [...m, { role: 'ai', text: 'Error al procesar el audio.' }]);
             setLoading(false);
-          };
-          reader.readAsDataURL(audioBlob);
+          }
         }
 
         React.useEffect(() => {
