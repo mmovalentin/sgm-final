@@ -3630,13 +3630,9 @@
                 fecha_firma: new Date().toISOString(),
               });
               if (cot?.id && supa) {
-                await supa.from('presupuestos').update({ estado: 'aprobado' }).eq('id', cot.id).catch(()=>{});
+                try { await supa.from('presupuestos').update({ estado: 'aprobado' }).eq('id', cot.id); } catch {}
               }
-              await supa.rpc('notify_admin', {
-                p_tipo: 'firma',
-                p_titulo: '✍️ Presupuesto firmado por ' + (user?.user_metadata?.full_name || user?.email || 'cliente'),
-                p_mensaje: 'El cliente firmó digitalmente el presupuesto',
-              }).catch(()=>{});
+              try { await supa.rpc('notify_admin', { p_tipo: 'firma', p_titulo: '✍️ Presupuesto firmado por ' + (user?.user_metadata?.full_name || user?.email || 'cliente'), p_mensaje: 'El cliente firmó digitalmente el presupuesto' }); } catch {}
             }
             setFirmaGuardada(dataUrl);
             cambiarEstado('aprobado');
