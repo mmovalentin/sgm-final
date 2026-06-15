@@ -8861,6 +8861,7 @@
               if (ids.length > 0 && supa && user?.id) {
                 supa.from('firmas_digitales').select('*')
                   .eq('tipo', 'jornada')
+                  .eq('user_id', user.id)
                   .in('referencia_id', ids.flatMap(id =>
                     (data.find(r => r.id === id)?.equipo || []).map(m => id + '_' + m.nombre)
                   ))
@@ -8942,15 +8943,19 @@
           setShowFirmaJornada(null);
           if (!supa || !user?.id) return;
           const key = registroId + '_' + miembroNombre;
-          await supa.from('firmas_digitales').insert({
+          const { error } = await supa.from('firmas_digitales').insert({
             tipo: 'jornada',
             referencia_id: key,
             user_id: user.id,
             firma_imagen: dataUrl,
             firmante_nombre: miembroNombre,
             fecha_firma: new Date().toISOString(),
-          }).catch(() => {});
-          setFirmasJornada(prev => ({ ...prev, [key]: { firma_imagen: dataUrl } }));
+          });
+          if (!error) {
+            setFirmasJornada(prev => ({ ...prev, [key]: { firma_imagen: dataUrl } }));
+          } else {
+            console.error('[FirmaJornada] error:', error);
+          }
         }
 
         const CLIMAS = [
@@ -20204,6 +20209,10 @@
                       <div style={{ fontSize:11, color: C.t3, marginTop:2 }}>{f.firmante_nombre || 'Desconocido'}</div>
                       <div style={{ fontSize:10, color: C.t3, marginTop:2 }}>{new Date(f.fecha_firma || f.created_at).toLocaleString('es-AR')}</div>
                     </div>
+                    <button onClick={async () => {
+                      await supa.from('firmas_digitales').delete().eq('id', f.id).catch(()=>{});
+                      setFirmas(prev => prev.filter(x => x.id !== f.id));
+                    }} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(239,68,68,0.5)', fontSize:16, padding:0, flexShrink:0 }}>🗑️</button>
                     {f.firma_imagen && (
                       <img src={f.firma_imagen} style={{ height:40, maxWidth:80, objectFit:'contain', filter:'var(--c-bg2) === "#f8fafc" ? "none" : "invert(1)"', opacity:0.7, flexShrink:0, border:`.5px solid ${C.border}`, borderRadius:6, padding:4, background: C.off }}/>
                     )}
