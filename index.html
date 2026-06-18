@@ -23610,11 +23610,13 @@
 
         React.useEffect(() => {
           if (!supa) return;
+          if (!user?.id) return;
           supa
             .from("notificaciones")
             .select("*")
+            .eq("user_id", user.id)
+            .eq("leida", false)
             .order("created_at", { ascending: false })
-            .limit(10)
             .then(({ data }) => setNotifs(data || []))
             .catch(() => {});
           const ch = supa
