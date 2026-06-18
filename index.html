@@ -3415,94 +3415,6 @@
         return t.completado||"Completado ✓";
       }
 
-      function FirmaDigitalModal({ titulo, subtitulo, onConfirmar, onCancelar }) {
-        const canvasRef = React.useRef(null);
-        const [drawing, setDrawing] = React.useState(false);
-        const [hasFirma, setHasFirma] = React.useState(false);
-        const lastPos = React.useRef({ x:0, y:0 });
-
-        function getPos(e, canvas) {
-          const rect = canvas.getBoundingClientRect();
-          const scaleX = canvas.width / rect.width;
-          const scaleY = canvas.height / rect.height;
-          if (e.touches) return { x:(e.touches[0].clientX - rect.left)*scaleX, y:(e.touches[0].clientY - rect.top)*scaleY };
-          return { x:(e.clientX - rect.left)*scaleX, y:(e.clientY - rect.top)*scaleY };
-        }
-
-        function startDraw(e) {
-          e.preventDefault();
-          const canvas = canvasRef.current;
-          if (!canvas) return;
-          const ctx = canvas.getContext('2d');
-          const pos = getPos(e, canvas);
-          ctx.beginPath();
-          ctx.moveTo(pos.x, pos.y);
-          lastPos.current = pos;
-          setDrawing(true);
-        }
-
-        function draw(e) {
-          e.preventDefault();
-          if (!drawing) return;
-          const canvas = canvasRef.current;
-          if (!canvas) return;
-          const ctx = canvas.getContext('2d');
-          ctx.strokeStyle = '#2563EB';
-          ctx.lineWidth = 2.5;
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
-          const pos = getPos(e, canvas);
-          ctx.lineTo(pos.x, pos.y);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(pos.x, pos.y);
-          lastPos.current = pos;
-          if (!hasFirma) setHasFirma(true);
-        }
-
-        function stopDraw(e) { e.preventDefault(); setDrawing(false); }
-
-        function limpiar() {
-          const canvas = canvasRef.current;
-          canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-          setHasFirma(false);
-        }
-
-        function confirmar() {
-          if (!hasFirma) return;
-          const dataUrl = canvasRef.current.toDataURL('image/png');
-          onConfirmar(dataUrl);
-        }
-
-        return (
-          <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:1000, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-            <div style={{ background: C.card, borderRadius:'20px 20px 0 0', width:'100%', maxWidth:480, padding:'20px 16px 32px' }}>
-              <div style={{ width:36, height:4, borderRadius:2, background: C.border2, margin:'0 auto 16px' }}/>
-              <div style={{ fontSize:16, fontWeight:700, color: C.t1, marginBottom:4 }}>{titulo}</div>
-              <div style={{ fontSize:12, color: C.t3, marginBottom:16 }}>{subtitulo || 'Dibujá tu firma con el dedo o el mouse'}</div>
-              <canvas
-                ref={canvasRef}
-                width={440}
-                height={130}
-                onMouseDown={startDraw} onMouseMove={draw} onMouseUp={stopDraw} onMouseLeave={stopDraw}
-                onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={stopDraw}
-                style={{ width:'100%', height:130, border:`.5px solid ${C.border2}`, borderRadius:10, display:'block', cursor:'crosshair', touchAction:'none', background: C.off }}
-              />
-              {!hasFirma && (
-                <div style={{ position:'relative', marginTop:-70, marginBottom:50, textAlign:'center', pointerEvents:'none' }}>
-                  <div style={{ fontSize:11, color: C.t3 }}>Firmá aquí ↑</div>
-                </div>
-              )}
-              <div style={{ display:'flex', gap:8, marginTop:14 }}>
-                <button onClick={limpiar} style={{ flex:1, padding:'10px', background: C.off, border:`.5px solid ${C.border}`, borderRadius:10, color: C.t2, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>Borrar</button>
-                <button onClick={confirmar} disabled={!hasFirma} style={{ flex:2, padding:'10px', background: hasFirma ? '#2563EB' : C.border, border:'none', borderRadius:10, color: hasFirma ? '#fff' : C.t3, fontSize:12, fontWeight:700, cursor: hasFirma ? 'pointer' : 'default', fontFamily:'inherit' }}>✍️ Confirmar firma</button>
-                <button onClick={onCancelar} style={{ flex:1, padding:'10px', background: C.off, border:`.5px solid ${C.border}`, borderRadius:10, color: C.t2, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>Cancelar</button>
-              </div>
-            </div>
-          </div>
-        );
-      }
-
       // ── DETALLE COTIZACIÓN CLIENTE
       function DetalleCotizacionScreen({
         cot,
@@ -3516,9 +3428,6 @@
           cot?.estado || estadoProyecto || "pendiente",
         );
         const [savedMsg, setSavedMsg] = useState(null);
-        const [showFirma, setShowFirma] = React.useState(false);
-        const [firmaGuardada, setFirmaGuardada] = React.useState(null);
-        const [guardandoFirma, setGuardandoFirma] = React.useState(false);
 
         const storedDatos = () => {
           try {
@@ -3614,32 +3523,6 @@
             }
           }
           setTimeout(() => setSavedMsg(null), 3000);
-        }
-
-        async function guardarFirma(dataUrl) {
-          setShowFirma(false);
-          setGuardandoFirma(true);
-          try {
-            if (supa && user?.id) {
-              await supa.from('firmas_digitales').insert({
-                tipo: 'presupuesto',
-                referencia_id: cot?.id || null,
-                user_id: user.id,
-                firma_imagen: dataUrl,
-                firmante_nombre: user?.user_metadata?.full_name || user?.email || nombre || 'Cliente',
-                fecha_firma: new Date().toISOString(),
-              });
-              if (cot?.id && supa) {
-                try { await supa.from('presupuestos').update({ estado: 'aprobado' }).eq('id', cot.id); } catch {}
-              }
-              try { await supa.rpc('notify_admin', { p_tipo: 'firma', p_titulo: '✍️ Presupuesto firmado por ' + (user?.user_metadata?.full_name || user?.email || 'cliente'), p_mensaje: 'El cliente firmó digitalmente el presupuesto' }); } catch {}
-            }
-            setFirmaGuardada(dataUrl);
-            cambiarEstado('aprobado');
-          } catch(e) {
-            console.error('Error guardando firma:', e);
-          }
-          setGuardandoFirma(false);
         }
 
         if (!cot)
@@ -4206,28 +4089,6 @@
                 </div>
               )}
 
-              {user && !firmaGuardada && estadoLocal !== 'aprobado' && (
-                <div style={{ background: C.card, borderRadius:14, border:`.5px solid ${C.border}`, padding:'14px' }}>
-                  <div style={{ fontSize:10, fontWeight:700, color: C.t3, textTransform:'uppercase', letterSpacing:0.5, marginBottom:10 }}>Firma digital</div>
-                  <div style={{ fontSize:12, color: C.t2, marginBottom:12 }}>Firmá digitalmente para aprobar este presupuesto y dar inicio a la obra.</div>
-                  <button onClick={() => setShowFirma(true)} disabled={guardandoFirma}
-                    style={{ width:'100%', padding:'12px', background:'#2563EB', border:'none', borderRadius:10, color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-                    ✍️ {guardandoFirma ? 'Guardando...' : 'Firmar presupuesto'}
-                  </button>
-                </div>
-              )}
-
-              {firmaGuardada || estadoLocal === 'aprobado' ? (
-                <div style={{ background:'rgba(34,197,94,0.08)', border:'.5px solid rgba(34,197,94,0.2)', borderRadius:14, padding:'14px', display:'flex', alignItems:'center', gap:12 }}>
-                  <span style={{ fontSize:24 }}>✅</span>
-                  <div>
-                    <div style={{ fontSize:13, fontWeight:700, color:'#22C55E' }}>Presupuesto aprobado</div>
-                    <div style={{ fontSize:11, color: C.t3, marginTop:2 }}>Firmado digitalmente</div>
-                  </div>
-                  {firmaGuardada && <img src={firmaGuardada} style={{ marginLeft:'auto', height:40, filter:'invert(1)', opacity:0.6 }}/>}
-                </div>
-              ) : null}
-
               {/* ACCIONES */}
               <button
                 onClick={() =>
@@ -4256,10 +4117,15 @@
               </button>
               {user ? (
                 <button
-                  onClick={() => {
-                    console.log('[DetalleCot] cot:', cot?.id, cot);
-                    generarPDF(cot, user?.user_metadata?.full_name || user?.email || nombre || "Cliente");
-                  }}
+                  onClick={() =>
+                    generarPDF(
+                      cot,
+                      user?.user_metadata?.full_name ||
+                        user?.email ||
+                        nombre ||
+                        "Cliente",
+                    )
+                  }
                   style={{
                     width: "100%",
                     padding: "11px",
@@ -4321,19 +4187,11 @@
                 {t.nuevaCotizacion||"✨ Nueva cotización"}
               </button>
             </div>
-            {showFirma && (
-              <FirmaDigitalModal
-                titulo="Firmar presupuesto"
-                subtitulo={`Aprobás el presupuesto de USD ${(cot?.total_usd||0).toLocaleString()} para ${cot?.tipo||'tu obra'}`}
-                onConfirmar={guardarFirma}
-                onCancelar={() => setShowFirma(false)}
-              />
-            )}
           </div>
         );
       }
 
-      async function generarPDF(pres, clienteNombre) {
+      function generarPDF(pres, clienteNombre) {
         if (!window.jspdf) {
           alert("jsPDF no disponible. Verificá tu conexión.");
           return;
@@ -4513,29 +4371,8 @@
           tableLineWidth: 0.2,
         });
 
-        const pageH = doc.internal.pageSize.getHeight();
-
-        // ── FIRMA DIGITAL
-        let checkFirma = { data: null };
-        try { checkFirma = await supa?.from('firmas_digitales').select('*').eq('tipo','presupuesto').eq('referencia_id', pres.id).maybeSingle(); } catch {}
-        console.log('[generarPDF] pres.id:', pres.id, 'firma:', checkFirma?.data);
-        const firma = checkFirma?.data;
-        if (firma?.firma_imagen) {
-          const firmaY = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 12 : pageH - 60;
-          doc.setFontSize(8);
-          doc.setTextColor(...gris);
-          doc.text('Firma digital del cliente:', M, firmaY);
-          doc.setDrawColor(200, 210, 220);
-          doc.rect(M, firmaY + 4, 70, 25);
-          try {
-            doc.addImage(firma.firma_imagen, 'PNG', M + 2, firmaY + 6, 66, 21);
-          } catch(e) {}
-          doc.text('Firmado por: ' + (firma.firmante_nombre || 'Cliente'), M, firmaY + 33);
-          doc.text('Fecha: ' + new Date(firma.fecha_firma || firma.created_at).toLocaleString('es-AR'), M, firmaY + 38);
-          doc.text('✓ Presupuesto aprobado digitalmente', M, firmaY + 43);
-        }
-
         // ── FOOTER
+        const pageH = doc.internal.pageSize.getHeight();
         doc.setFontSize(7);
         doc.setTextColor(...gris);
         doc.text(
@@ -8840,8 +8677,6 @@
         const [climaData, setClimaData] = React.useState(null);
         const [loadingClima, setLoadingClima] = React.useState(false);
         const [localidad, setLocalidad] = React.useState('');
-        const [firmasJornada, setFirmasJornada] = React.useState({});
-        const [showFirmaJornada, setShowFirmaJornada] = React.useState(null);
 
         React.useEffect(() => {
           if (!supa || !user?.id) return;
@@ -8855,23 +8690,7 @@
           supa.from('registro_diario_obra').select('*')
             .eq('obra_id', obraSeleccionada.id)
             .order('fecha', { ascending: false })
-            .then(({ data }) => {
-              setRegistros(data || []);
-              const ids = (data || []).map(r => r.id);
-              if (ids.length > 0 && supa && user?.id) {
-                supa.from('firmas_digitales').select('*')
-                  .eq('tipo', 'jornada')
-                  .in('referencia_id', ids.flatMap(id =>
-                    (data.find(r => r.id === id)?.equipo || []).map(m => id + '_' + m.nombre)
-                  ))
-                  .then(({ data: firmas }) => {
-                    if (!firmas) return;
-                    const map = {};
-                    firmas.forEach(f => { map[f.referencia_id] = f; });
-                    setFirmasJornada(map);
-                  });
-              }
-            });
+            .then(({ data }) => setRegistros(data || []));
         }, [obraSeleccionada]);
 
         React.useEffect(() => {
@@ -8938,21 +8757,6 @@
           }
         }
 
-        async function guardarFirmaJornada(registroId, miembroNombre, dataUrl) {
-          setShowFirmaJornada(null);
-          if (!supa || !user?.id) return;
-          const key = registroId + '_' + miembroNombre;
-          await supa.from('firmas_digitales').insert({
-            tipo: 'jornada',
-            referencia_id: key,
-            user_id: user.id,
-            firma_imagen: dataUrl,
-            firmante_nombre: miembroNombre,
-            fecha_firma: new Date().toISOString(),
-          }).catch(() => {});
-          setFirmasJornada(prev => ({ ...prev, [key]: { firma_imagen: dataUrl } }));
-        }
-
         const CLIMAS = [
           { id:'soleado', label:'☀️ Soleado' },
           { id:'nublado', label:'⛅ Nublado' },
@@ -9012,32 +8816,6 @@
                       {r.equipo?.length > 0 && <span style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:'rgba(34,197,94,0.1)', color:'#22C55E' }}>{r.equipo.length} persona{r.equipo.length>1?'s':''} · {r.equipo.reduce((s,e)=>s+(Number(e.horas)||0),0)} hs</span>}
                       {r.materiales?.length > 0 && <span style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:'rgba(251,191,36,0.1)', color:'#FBBF24' }}>{r.materiales.length} material{r.materiales.length>1?'es':''}</span>}
                     </div>
-                    {r.equipo && r.equipo.length > 0 && (
-                      <div style={{ marginTop:8, borderTop:`.5px solid ${C.border}`, paddingTop:8 }}>
-                        <div style={{ fontSize:9, color: C.t3, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:6 }}>Firmas de jornada</div>
-                        {r.equipo.map((m, mi) => {
-                          const key = r.id + '_' + m.nombre;
-                          const firmado = firmasJornada[key];
-                          return (
-                            <div key={mi} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-                              <div style={{ width:22, height:22, borderRadius:'50%', background: C.acc, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, color:'#fff', flexShrink:0 }}>{(m.nombre||'?')[0].toUpperCase()}</div>
-                              <div style={{ flex:1, fontSize:11, color: C.t2 }}>{m.nombre}</div>
-                              {firmado ? (
-                                <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                                  <span style={{ fontSize:10, color:'#22C55E' }}>✓ Firmado</span>
-                                  {firmado.firma_imagen && <img src={firmado.firma_imagen} style={{ height:18, filter:'invert(1)', opacity:0.5 }}/>}
-                                </div>
-                              ) : (
-                                <button onClick={() => setShowFirmaJornada({ registroId: r.id, nombre: m.nombre })}
-                                  style={{ fontSize:10, padding:'3px 8px', background:'rgba(74,159,255,0.1)', border:`.5px solid ${C.acc}`, borderRadius:6, color: C.acc, cursor:'pointer', fontFamily:'inherit' }}>
-                                  ✍️ Firmar
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
@@ -9246,14 +9024,6 @@
                   {guardando ? 'Guardando...' : guardadoOk ? '✓ Guardado' : 'Guardar registro'}
                 </button>
               </div>
-            )}
-            {showFirmaJornada && (
-              <FirmaDigitalModal
-                titulo={`Firma de jornada — ${showFirmaJornada.nombre}`}
-                subtitulo="Confirmás las horas trabajadas en esta jornada"
-                onConfirmar={(dataUrl) => guardarFirmaJornada(showFirmaJornada.registroId, showFirmaJornada.nombre, dataUrl)}
-                onCancelar={() => setShowFirmaJornada(null)}
-              />
             )}
           </div>
         );
@@ -9919,12 +9689,6 @@
         const [pagos, setPagos] = useState([]);
         const [loadingPagos, setLoadingPagos] = useState(false);
         const [fotosCliente, setFotosCliente] = useState({});
-        const [firmasPago, setFirmasPago] = React.useState({});
-        const [showFirmaPago, setShowFirmaPago] = React.useState(null);
-        const [firmasEtapa, setFirmasEtapa] = React.useState({});
-        const [showFirmaEtapa, setShowFirmaEtapa] = React.useState(null);
-        const [firmaEntrega, setFirmaEntrega] = React.useState(null);
-        const [showFirmaEntrega, setShowFirmaEntrega] = React.useState(false);
         function cargarDatos() {
           let lc = null;
           try {
@@ -10045,36 +9809,6 @@
               setFotosCliente(porEtapa);
             });
         }, [avanceRows, presId]);
-
-        React.useEffect(() => {
-          if (!supa || !user?.id) return;
-          supa.from('firmas_digitales').select('*').eq('user_id', user.id).eq('tipo', 'pago')
-            .then(({ data }) => {
-              if (!data) return;
-              const map = {};
-              data.forEach(f => { map[f.referencia_id] = f; });
-              setFirmasPago(map);
-            });
-        }, [user]);
-
-        React.useEffect(() => {
-          if (!supa || !user?.id) return;
-          supa.from('firmas_digitales').select('*').eq('user_id', user.id).eq('tipo', 'etapa')
-            .then(({ data }) => {
-              if (!data) return;
-              const map = {};
-              data.forEach(f => { map[f.referencia_id] = f; });
-              setFirmasEtapa(map);
-            });
-        }, [user]);
-
-        React.useEffect(() => {
-          if (!supa || !user?.id || !presId) return;
-          supa.from('firmas_digitales').select('*')
-            .eq('user_id', user.id).eq('tipo', 'entrega').eq('referencia_id', presId)
-            .maybeSingle()
-            .then(({ data }) => { if (data) setFirmaEntrega(data); });
-        }, [user, presId]);
 
         useEffect(() => {
           if (!supa || !user?.id) return;
@@ -10267,58 +10001,6 @@
           }
         }
 
-        async function guardarFirmaPago(pagoId, dataUrl) {
-          setShowFirmaPago(null);
-          if (!supa || !user?.id) return;
-          await supa.from('firmas_digitales').insert({
-            tipo: 'pago',
-            referencia_id: pagoId,
-            user_id: user.id,
-            firma_imagen: dataUrl,
-            firmante_nombre: user?.user_metadata?.full_name || user?.email || 'Cliente',
-            fecha_firma: new Date().toISOString(),
-          }).catch(() => {});
-          setFirmasPago(prev => ({ ...prev, [pagoId]: { firma_imagen: dataUrl } }));
-        }
-
-        async function guardarFirmaEtapa(etapaId, etapaNombre, dataUrl) {
-          setShowFirmaEtapa(null);
-          if (!supa || !user?.id) return;
-          await supa.from('firmas_digitales').insert({
-            tipo: 'etapa',
-            referencia_id: String(etapaId),
-            user_id: user.id,
-            firma_imagen: dataUrl,
-            firmante_nombre: user?.user_metadata?.full_name || user?.email || 'Cliente',
-            fecha_firma: new Date().toISOString(),
-          }).catch(() => {});
-          setFirmasEtapa(prev => ({ ...prev, [String(etapaId)]: { firma_imagen: dataUrl, etapa_nombre: etapaNombre } }));
-          await supa.rpc('notify_admin', {
-            p_tipo: 'etapa_firmada',
-            p_titulo: '✍️ Etapa aprobada: ' + etapaNombre,
-            p_mensaje: 'El cliente firmó la recepción conforme de la etapa',
-          }).catch(() => {});
-        }
-
-        async function guardarFirmaEntrega(dataUrl) {
-          setShowFirmaEntrega(false);
-          if (!supa || !user?.id || !presId) return;
-          await supa.from('firmas_digitales').insert({
-            tipo: 'entrega',
-            referencia_id: presId,
-            user_id: user.id,
-            firma_imagen: dataUrl,
-            firmante_nombre: user?.user_metadata?.full_name || user?.email || 'Cliente',
-            fecha_firma: new Date().toISOString(),
-          }).catch(() => {});
-          setFirmaEntrega({ firma_imagen: dataUrl, fecha_firma: new Date().toISOString() });
-          await supa.rpc('notify_admin', {
-            p_tipo: 'entrega_firmada',
-            p_titulo: '🏠 Acta de entrega firmada',
-            p_mensaje: 'El cliente firmó el acta de recepción conforme de la obra',
-          }).catch(() => {});
-        }
-
         return (
           <div
             onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
@@ -10463,32 +10145,6 @@
                   <span>{t.entregaEstimada||"Entrega estimada"}</span>
                 </div>
               </div>
-
-              {avance >= 100 && hasAvance && (
-                <div style={{ marginTop:12 }}>
-                  {!firmaEntrega ? (
-                    <div style={{ background:'rgba(124,58,237,0.08)', border:'.5px solid rgba(124,58,237,0.2)', borderRadius:12, padding:'14px' }}>
-                      <div style={{ fontSize:13, fontWeight:700, color:'#a78bfa', marginBottom:4 }}>🏠 ¡Obra finalizada!</div>
-                      <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:12 }}>Firmá el acta de entrega para confirmar la recepción conforme de tu obra.</div>
-                      <button onClick={() => setShowFirmaEntrega(true)}
-                        style={{ width:'100%', padding:'11px', background:'#7C3AED', border:'none', borderRadius:10, color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-                        ✍️ Firmar acta de entrega
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{ background:'rgba(124,58,237,0.08)', border:'.5px solid rgba(124,58,237,0.2)', borderRadius:12, padding:'14px', display:'flex', alignItems:'center', gap:12 }}>
-                      <span style={{ fontSize:24 }}>🏠</span>
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:'#a78bfa' }}>Acta de entrega firmada</div>
-                        <div style={{ fontSize:10, color:'rgba(255,255,255,0.3)', marginTop:2 }}>
-                          {firmaEntrega.fecha_firma ? new Date(firmaEntrega.fecha_firma).toLocaleDateString('es-AR') : ''}
-                        </div>
-                      </div>
-                      {firmaEntrega.firma_imagen && <img src={firmaEntrega.firma_imagen} style={{ height:36, filter:'invert(1)', opacity:0.5 }}/>}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* ETAPAS */}
               <div>
@@ -10638,18 +10294,6 @@
                                   style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover', flexShrink: 0, border: `.5px solid ${C.border}` }} />
                               ))}
                             </div>
-                          </div>
-                        )}
-                        {done && e.id && !firmasEtapa[String(e.id)] && (
-                          <button onClick={() => setShowFirmaEtapa({ id: e.id, nombre: e.etapa_nombre || e.nombre })}
-                            style={{ width:'100%', padding:'6px', background:'none', border:`1px solid ${C.border2}`, borderRadius:8, color:'#4A9FFF', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginTop:6 }}>
-                            ✍️ Aprobar etapa
-                          </button>
-                        )}
-                        {done && e.id && firmasEtapa[String(e.id)] && (
-                          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, padding:'4px 8px', background:'rgba(34,197,94,0.08)', borderRadius:8, border:'.5px solid rgba(34,197,94,0.2)' }}>
-                            <span style={{ fontSize:11, color:'#22C55E' }}>✓ Etapa aprobada por cliente</span>
-                            {firmasEtapa[String(e.id)].firma_imagen && <img src={firmasEtapa[String(e.id)].firma_imagen} style={{ height:20, marginLeft:'auto', filter:'invert(1)', opacity:0.5 }}/>}
                           </div>
                         )}
                       </div>
@@ -11172,18 +10816,6 @@
                             📄 Descargar recibo
                           </button>
                         )}
-                        {p.recibo_generado && !firmasPago[p.id] && (
-                          <button onClick={() => setShowFirmaPago(p.id)}
-                            style={{ width:'100%', padding:'7px', background:'none', border:`1px solid ${C.border2}`, borderRadius:8, color:'#4A9FFF', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginTop:4 }}>
-                            ✍️ Firmar recibo
-                          </button>
-                        )}
-                        {firmasPago[p.id] && (
-                          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, padding:'5px 8px', background:'rgba(34,197,94,0.08)', borderRadius:8, border:'.5px solid rgba(34,197,94,0.2)' }}>
-                            <span style={{ fontSize:11, color:'#22C55E' }}>✓ Recibo firmado</span>
-                            {firmasPago[p.id].firma_imagen && <img src={firmasPago[p.id].firma_imagen} style={{ height:24, marginLeft:'auto', filter:'invert(1)', opacity:0.5 }}/>}
-                          </div>
-                        )}
                       </div>
                     ))}
                     <div
@@ -11227,30 +10859,6 @@
                 💬 Consultar sobre mi obra
               </button>
             </div>
-            {showFirmaPago && (
-              <FirmaDigitalModal
-                titulo="Firmar recibo de pago"
-                subtitulo="Confirmás haber realizado este pago"
-                onConfirmar={(dataUrl) => guardarFirmaPago(showFirmaPago, dataUrl)}
-                onCancelar={() => setShowFirmaPago(null)}
-              />
-            )}
-            {showFirmaEtapa && (
-              <FirmaDigitalModal
-                titulo={`Aprobar: ${showFirmaEtapa.nombre}`}
-                subtitulo="Confirmás que esta etapa fue completada correctamente"
-                onConfirmar={(dataUrl) => guardarFirmaEtapa(showFirmaEtapa.id, showFirmaEtapa.nombre, dataUrl)}
-                onCancelar={() => setShowFirmaEtapa(null)}
-              />
-            )}
-            {showFirmaEntrega && (
-              <FirmaDigitalModal
-                titulo="Acta de entrega de obra"
-                subtitulo="Confirmás haber recibido la obra en conformidad"
-                onConfirmar={guardarFirmaEntrega}
-                onCancelar={() => setShowFirmaEntrega(false)}
-              />
-            )}
           </div>
         );
       }
@@ -20141,85 +19749,6 @@
         );
       }
 
-      // ── FIRMAS DIGITALES ADMIN
-      function FirmasAdminScreen({ user, t={} }) {
-        const [firmas, setFirmas] = React.useState([]);
-        const [loading, setLoading] = React.useState(true);
-        const [filtroTipo, setFiltroTipo] = React.useState('todas');
-
-        React.useEffect(() => {
-          if (!supa) return;
-          supa.from('firmas_digitales')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .then(({ data }) => { setFirmas(data || []); setLoading(false); });
-        }, []);
-
-        const TIPOS = [
-          { id:'todas', label:'Todas' },
-          { id:'presupuesto', label:'Presupuestos' },
-          { id:'pago', label:'Pagos' },
-          { id:'etapa', label:'Etapas' },
-          { id:'entrega', label:'Entrega' },
-          { id:'jornada', label:'Jornadas' },
-        ];
-
-        const TIPO_ICON = {
-          presupuesto:'📋', pago:'💰', etapa:'🏗️', entrega:'🏠', jornada:'👷'
-        };
-
-        const firmasFiltradas = filtroTipo === 'todas' ? firmas : firmas.filter(f => f.tipo === filtroTipo);
-
-        return (
-          <div style={{ background: C.bg, minHeight:'100%', paddingBottom:24 }}>
-            <div style={{ background: C.navy, padding:'14px 16px' }}>
-              <div style={{ color: C.t1, fontSize:17, fontWeight:800 }}>Firmas digitales</div>
-              <div style={{ color: C.t3, fontSize:12, marginTop:2 }}>{firmas.length} firma{firmas.length!==1?'s':''} registrada{firmas.length!==1?'s':''}</div>
-            </div>
-
-            <div style={{ padding:'10px 14px 0', display:'flex', gap:6, overflowX:'auto' }}>
-              {TIPOS.map(tipo => (
-                <button key={tipo.id} onClick={() => setFiltroTipo(tipo.id)}
-                  style={{ padding:'5px 12px', borderRadius:20, border:'none', background: filtroTipo===tipo.id ? C.acc : C.off, color: filtroTipo===tipo.id ? '#fff' : C.t2, fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap' }}>
-                  {tipo.label}
-                </button>
-              ))}
-            </div>
-
-            <div style={{ padding:'12px 14px' }}>
-              {loading ? (
-                <div style={{ textAlign:'center', color: C.t3, fontSize:13, padding:'40px 0' }}>Cargando...</div>
-              ) : firmasFiltradas.length === 0 ? (
-                <div style={{ textAlign:'center', padding:'60px 0' }}>
-                  <div style={{ fontSize:36, marginBottom:10 }}>✍️</div>
-                  <div style={{ color: C.t1, fontSize:14, fontWeight:700, marginBottom:6 }}>Sin firmas{filtroTipo !== 'todas' ? ' de este tipo' : ''}</div>
-                  <div style={{ color: C.t3, fontSize:12 }}>Las firmas aparecerán aquí cuando los clientes firmen</div>
-                </div>
-              ) : firmasFiltradas.map(f => (
-                <div key={f.id} style={{ background: C.card, borderRadius:12, border:`.5px solid ${C.border}`, padding:'12px 14px', marginBottom:10 }}>
-                  <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:8 }}>
-                    <span style={{ fontSize:20, flexShrink:0 }}>{TIPO_ICON[f.tipo] || '✍️'}</span>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:13, fontWeight:700, color: C.t1, textTransform:'capitalize' }}>{f.tipo}</div>
-                      <div style={{ fontSize:11, color: C.t3, marginTop:2 }}>{f.firmante_nombre || 'Desconocido'}</div>
-                      <div style={{ fontSize:10, color: C.t3, marginTop:2 }}>{new Date(f.fecha_firma || f.created_at).toLocaleString('es-AR')}</div>
-                    </div>
-                    {f.firma_imagen && (
-                      <img src={f.firma_imagen} style={{ height:40, maxWidth:80, objectFit:'contain', filter:'var(--c-bg2) === "#f8fafc" ? "none" : "invert(1)"', opacity:0.7, flexShrink:0, border:`.5px solid ${C.border}`, borderRadius:6, padding:4, background: C.off }}/>
-                    )}
-                  </div>
-                  {f.referencia_id && (
-                    <div style={{ fontSize:10, color: C.t3, background: C.off, borderRadius:6, padding:'4px 8px', display:'inline-block' }}>
-                      Ref: {f.referencia_id.length > 20 ? f.referencia_id.substring(0,20)+'...' : f.referencia_id}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      }
-
       // ── AVANCE OBRA ADMIN
       function AvanceObraAdminScreen({ userRol, user, t = {} }) {
         const admin = isAdmin(userRol, user?.email);
@@ -23681,7 +23210,6 @@
                   { id:'cot', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>, label: t.cotizar||'Cotizador IA' },
                   { id:'chat', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, label: t.ia||'Asistente IA' },
                   { id:'estadisticas', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, label: t.estadisticas||'Estadísticas' },
-                  { id:'firmas', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>, label:'Firmas digitales' },
                   { id:'notificaciones', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>, label:'Notificaciones', badge: notifs.filter(n=>!n.leida).length },
                 ].map(item => (
                   <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'var(--c-text2)', cursor:'pointer' }}
@@ -26012,9 +25540,6 @@
           empresamapa: <EmpresaMapaScreen user={user} onNav={handleNav} t={t} />,
           notificaciones: (
             <NotificacionesScreen user={user} t={t} onNav={handleNav} onSolicitarNotificaciones={solicitarNotificaciones} />
-          ),
-          firmas: (
-            <FirmasAdminScreen user={user} t={t} />
           ),
         };
 
