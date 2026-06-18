@@ -1961,7 +1961,6 @@
         onSidebar,
         onNotificaciones,
         notifCount,
-        userRol,
       }) {
         const [showMenu, setShowMenu] = useState(false);
         const displayName =
@@ -1989,39 +1988,129 @@
                 SGI
               </div>
             </div>
-            <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-              <div style={{ fontSize:10, fontWeight:700, color: C.dolorText, background: C.dolorBg, border:`0.5px solid ${C.dolorText}33`, borderRadius:6, padding:'3px 7px', whiteSpace:'nowrap' }}>
-                ${dolar.toLocaleString('es-AR')} Blue
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <button
+                onClick={() => onSearch && onSearch()}
+                style={{
+                  background: "none",
+                  border: "1px solid var(--c-border)",
+                  borderRadius: 6,
+                  padding: "4px 8px",
+                  fontSize: 14,
+                  color: "var(--c-text2)",
+                  cursor: "pointer",
+                  lineHeight: 1,
+                }}
+              >
+                🔍
+              </button>
+              <button
+                onClick={() => onNotificaciones && onNotificaciones()}
+                style={{
+                  background: "none",
+                  border: "1px solid var(--c-border)",
+                  borderRadius: 6,
+                  padding: "4px 8px",
+                  fontSize: 14,
+                  color: "var(--c-text2)",
+                  cursor: "pointer",
+                  lineHeight: 1,
+                  position: "relative",
+                }}
+              >
+                🔔
+                {notifCount > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: -4,
+                      right: -4,
+                      background: "#EF4444",
+                      color: "#fff",
+                      borderRadius: 10,
+                      minWidth: 14,
+                      height: 14,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "0 3px",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {notifCount > 9 ? "9+" : notifCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => onLang && onLang(lang === "es" ? "en" : "es")}
+                style={{
+                  background: "none",
+                  border: `1px solid var(--c-border)`,
+                  borderRadius: 6,
+                  padding: "3px 8px",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: C.t2,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  letterSpacing: 0.5,
+                }}
+              >
+                {lang === "es" ? "EN" : "ES"}
+              </button>
+              <div
+                style={{
+                  background: C.dolorBg,
+                  border: `1px solid ${C.dolorText}33`,
+                  borderRadius: 6,
+                  padding: "3px 7px",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: C.dolorText,
+                }}
+              >
+                ${dolar.toLocaleString("es-AR")} Blue
               </div>
-              <div style={{ width:1, height:18, background:'var(--c-border)', margin:'0 2px' }}/>
-              <button onClick={() => onSearch && onSearch()}
-                style={{ width:32, height:32, borderRadius:8, border:'none', background:'var(--c-off)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}
-                aria-label="Buscar">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--c-text2)" strokeWidth="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              </button>
-              {!isAdmin(userRol) && (
-                <button onClick={() => onNotificaciones && onNotificaciones()}
-                  style={{ width:32, height:32, borderRadius:8, border:'none', background:'var(--c-off)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, position:'relative' }}
-                  aria-label="Notificaciones">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--c-text2)" strokeWidth="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                  {notifCount > 0 && (
-                    <span style={{ position:'absolute', top:4, right:4, width:7, height:7, borderRadius:'50%', background:'#E24B4A', border:`1.5px solid ${C.navy}` }}/>
-                  )}
-                </button>
-              )}
-              <button onClick={() => onLang && onLang(lang === 'es' ? 'en' : 'es')}
-                style={{ width:32, height:32, borderRadius:8, border:'none', background:'var(--c-off)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, fontSize:10, fontWeight:700, color:'var(--c-text2)', fontFamily:'inherit', letterSpacing:0.5 }}
-                aria-label="Cambiar idioma">
-                {lang === 'es' ? 'EN' : 'ES'}
-              </button>
-              <div style={{ position:'relative' }}>
-                <div onClick={() => setShowMenu(m => !m)}
-                  style={{ width:32, height:32, borderRadius:'50%', cursor:'pointer', overflow:'hidden', border:'1.5px solid rgba(74,159,255,.4)', flexShrink:0 }}>
+              <div style={{ position: "relative" }}>
+                <div
+                  onClick={() => setShowMenu((m) => !m)}
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: "50%",
+                    cursor: "pointer",
+                    overflow: "hidden",
+                    border: "2px solid rgba(74,159,255,.4)",
+                    flexShrink: 0,
+                  }}
+                >
                   {avatarUrl ? (
-                    <img src={avatarUrl} referrerPolicy="no-referrer" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                    <img
+                      src={avatarUrl}
+                      referrerPolicy="no-referrer"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
                   ) : (
-                    <div style={{ width:'100%', height:'100%', background: C.acc, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#0A1628' }}>
-                      {displayName ? displayName[0].toUpperCase() : 'U'}
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        background: C.acc,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "#0A1628",
+                      }}
+                    >
+                      {displayName ? displayName[0].toUpperCase() : "U"}
                     </div>
                   )}
                 </div>
@@ -2350,17 +2439,6 @@
         Pago: "💰",
       };
       function HomeScreen({ onNav, t, user, perfil, userRol }) {
-        const [refreshing, setRefreshing] = React.useState(false);
-        const touchStartY = React.useRef(0);
-        const onTouchStart = e => { touchStartY.current = e.touches[0].clientY; };
-        const onTouchEnd = e => {
-          const diff = e.changedTouches[0].clientY - touchStartY.current;
-          if (diff > 80 && !refreshing) {
-            setRefreshing(true);
-            cargarDatos();
-            setTimeout(() => setRefreshing(false), 1000);
-          }
-        };
         const [lastCot, setLastCot] = useState(null);
         const [met, setMet] = useState({
           avance: 0,
@@ -2448,7 +2526,7 @@
           if (supa) await supa.from("notificaciones").delete().eq("id", id);
         }
 
-        function cargarDatos() {
+        useEffect(() => {
           if (!supa) {
             setCargando(false);
             return;
@@ -2531,10 +2609,6 @@
             )
             .catch(() => {})
             .finally(() => setCargando(false));
-        }
-
-        useEffect(() => {
-          cargarDatos();
         }, []);
 
         async function cargarAvanceCliente(clienteId) {
@@ -2676,8 +2750,7 @@
           );
 
         return (
-          <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-            {refreshing && <div style={{ textAlign:'center', padding:'10px', fontSize:12, color: C.t3 }}>↻ Actualizando...</div>}
+          <div>
             <div
               style={{
                 background: C.navy,
@@ -2697,6 +2770,23 @@
                   borderRadius: "50%",
                 }}
               />
+              {notifs.filter((n) => !n.leida).length > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    background: "#EF4444",
+                    borderRadius: 12,
+                    padding: "3px 9px",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: "#fff",
+                  }}
+                >
+                  {notifs.filter((n) => !n.leida).length}
+                </div>
+              )}
               <div
                 style={{
                   color: C.t3,
@@ -4782,15 +4872,6 @@
               mensaje: mensaje.trim(),
               leida: false,
             });
-
-          try {
-            await supa.rpc('notify_admin', {
-              p_tipo: tipo,
-              p_titulo: tipo + " de " + (user.email || user.id),
-              p_mensaje: mensaje.trim(),
-            });
-          } catch {}
-
           setEnviando(false);
           if (!error) {
             setEnviado(true);
@@ -4941,8 +5022,7 @@
           const diff = e.changedTouches[0].clientY - touchStartY.current;
           if (diff > 80 && !refreshing) {
             setRefreshing(true);
-            cargarDatos();
-            setTimeout(() => setRefreshing(false), 1000);
+            window.location.reload();
           }
         };
         const nombre =
@@ -4979,7 +5059,7 @@
             .catch((e) => console.error("[pagosHoy error]", e));
         }, [user]);
 
-        function cargarDatos() {
+        useEffect(() => {
           if (sessionStorage.getItem("sgi_cot_eliminada")) {
             sessionStorage.removeItem("sgi_cot_eliminada");
             setLastCot(null);
@@ -5044,10 +5124,6 @@
               setProyectoId(null);
               setAvanceRows([]);
             });
-        }
-
-        useEffect(() => {
-          cargarDatos();
         }, [user]);
 
         useEffect(() => {
@@ -5366,7 +5442,7 @@
                     <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>{avance}%</div>
                   </div>
                   <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
-                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{'Etapas'}</div>
+                    <div style={{ fontSize: 10, color: 'var(--c-text2)', marginBottom: 3 }}>{t.etapas||'Etapas'}</div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--c-text)' }}>{etapasOk}/{totalEtapas}</div>
                   </div>
                   <div style={{ background: 'var(--c-card)', borderRadius: 10, padding: '10px 8px', border: '1px solid var(--c-border)' }}>
@@ -5729,7 +5805,7 @@
                   ],
                   [
                     tieneCotizacion ? `${etapasOk}/${totalEtapas}` : "---",
-                    "Etapas",
+                    t.etapas||"Etapas",
                   ],
                   [
                     tieneCotizacion
@@ -9676,8 +9752,7 @@
           const diff = e.changedTouches[0].clientY - touchStartY.current;
           if (diff > 80 && !refreshing) {
             setRefreshing(true);
-            cargarDatos();
-            setTimeout(() => setRefreshing(false), 1000);
+            window.location.reload();
           }
         };
         const [lastCot, setLastCot] = useState(null);
@@ -9689,7 +9764,7 @@
         const [pagos, setPagos] = useState([]);
         const [loadingPagos, setLoadingPagos] = useState(false);
         const [fotosCliente, setFotosCliente] = useState({});
-        function cargarDatos() {
+        useEffect(() => {
           let lc = null;
           try {
             const s = localStorage.getItem("sgi_last_cot");
@@ -9768,10 +9843,6 @@
               clearTimeout(safety);
               setLoading(false);
             });
-        }
-
-        useEffect(() => {
-          cargarDatos();
         }, [user]);
 
         useEffect(() => {
@@ -13694,9 +13765,6 @@
         const [guardadoStatus, setGuardadoStatus] = useState({});
         const [isListening, setIsListening] = useState(false);
         const [waBanner, setWaBanner] = useState(null);
-        const [recWaveBars, setRecWaveBars] = React.useState([]);
-        const [recSeconds, setRecSeconds] = React.useState(0);
-        const recTimerRef = React.useRef(null);
         const msgsRef = useRef(null);
         const recogRef = useRef(null);
         useEffect(() => {
@@ -13712,51 +13780,25 @@
 
         function toggleVoice() {
           const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-          if (!SR) { alert('Tu navegador no soporta reconocimiento de voz. Usá Chrome.'); return; }
+          if (!SR) {
+            alert("Tu navegador no soporta reconocimiento de voz");
+            return;
+          }
           if (isListening) {
             recogRef.current?.stop();
-            clearInterval(recTimerRef.current);
             setIsListening(false);
-            setRecWaveBars([]);
-            setRecSeconds(0);
             return;
           }
           const r = new SR();
-          r.lang = 'es-AR';
+          r.lang = "es-AR";
           r.continuous = false;
           r.interimResults = false;
-          r.onresult = (e) => {
-            const transcript = e.results[0][0].transcript;
-            setInput(transcript);
-            clearInterval(recTimerRef.current);
-            setIsListening(false);
-            setRecWaveBars([]);
-            setRecSeconds(0);
-          };
-          r.onend = () => {
-            clearInterval(recTimerRef.current);
-            setIsListening(false);
-            setRecWaveBars([]);
-            setRecSeconds(0);
-          };
-          r.onerror = () => {
-            clearInterval(recTimerRef.current);
-            setIsListening(false);
-            setRecWaveBars([]);
-            setRecSeconds(0);
-          };
+          r.onresult = (e) => setInput(e.results[0][0].transcript);
+          r.onend = () => setIsListening(false);
+          r.onerror = () => setIsListening(false);
           recogRef.current = r;
           r.start();
           setIsListening(true);
-          setRecSeconds(0);
-          setRecWaveBars([]);
-          recTimerRef.current = setInterval(() => {
-            setRecSeconds(s => s + 1);
-            setRecWaveBars(prev => {
-              const next = [...prev, Math.floor(Math.random() * 14) + 4];
-              return next.length > 28 ? next.slice(-28) : next;
-            });
-          }, 200);
         }
 
         async function fetchBiblioteca() {
@@ -13863,7 +13905,6 @@
               height: "calc(100vh - 110px)",
             }}
           >
-            <style>{`@keyframes sgiBlink { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
             <div
               style={{
                 background: C.navy,
@@ -13969,7 +14010,7 @@
                             lineHeight: 1.5,
                           }}
                         >
-                          <span>{m.text}</span>
+                          {m.text}
                         </div>
                       ) : (
                         <div
@@ -14143,20 +14184,6 @@
                     </div>
                   </div>
                 )}
-                {isListening && (
-                  <div style={{ background:'rgba(239,68,68,0.08)', borderTop:'.5px solid rgba(239,68,68,0.2)', padding:'8px 14px', display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
-                    <div style={{ width:8, height:8, borderRadius:'50%', background:'#EF4444', flexShrink:0, animation:'sgiBlink 1s infinite' }}/>
-                    <div style={{ flex:1, display:'flex', alignItems:'center', gap:2, height:24, overflow:'hidden' }}>
-                      {recWaveBars.map((h,i) => (
-                        <div key={i} style={{ width:3, borderRadius:2, background:'#EF4444', height:h+'px', opacity:0.7, flexShrink:0 }}/>
-                      ))}
-                    </div>
-                    <div style={{ fontSize:11, color:'#EF4444', flexShrink:0 }}>
-                      Escuchando... 0:{String(recSeconds).padStart(2,'0')}
-                    </div>
-                    <button onClick={toggleVoice} style={{ background:'rgba(239,68,68,0.2)', border:'.5px solid rgba(239,68,68,0.3)', borderRadius:20, padding:'4px 10px', fontSize:11, color:'#EF4444', cursor:'pointer', fontFamily:'inherit' }}>Detener</button>
-                  </div>
-                )}
                 <div
                   style={{
                     display: "flex",
@@ -14169,14 +14196,22 @@
                 >
                   <button
                     onClick={toggleVoice}
-                    style={{ width:36, height:36, borderRadius:'50%', border:`1px solid ${isListening ? '#EF4444' : C.border2}`, background: isListening ? '#EF4444' : C.off, color: isListening ? '#fff' : C.t3, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}
-                    aria-label={isListening ? 'Detener' : 'Grabar audio'}
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      border: `1px solid ${isListening ? "#EF4444" : C.border2}`,
+                      background: isListening ? "#FEE2E2" : C.off,
+                      color: isListening ? "#EF4444" : C.t3,
+                      fontSize: 15,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
                   >
-                    {isListening ? (
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="white"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                    )}
+                    🎙️
                   </button>
                   <input
                     value={input}
@@ -23124,33 +23159,8 @@
 
       function AdminSidebar({ onClose, onNav, t, user, onSignOut, onAdminView, adminView }) {
         const [showPerfiles, setShowPerfiles] = React.useState(false);
-        const [notifs, setNotifs] = React.useState([]);
         const nombre = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Admin';
         const inicial = (user?.user_metadata?.full_name || user?.email || 'A')[0].toUpperCase();
-
-        React.useEffect(() => {
-          if (!supa) return;
-          supa
-            .from("notificaciones")
-            .select("*")
-            .order("created_at", { ascending: false })
-            .limit(10)
-            .then(({ data }) => setNotifs(data || []))
-            .catch(() => {});
-          const ch = supa
-            .channel("notificaciones-admin-sidebar")
-            .on(
-              "postgres_changes",
-              { event: "INSERT", schema: "public", table: "notificaciones" },
-              (payload) => {
-                setNotifs((prev) => [payload.new, ...prev].slice(0, 10));
-              },
-            )
-            .subscribe();
-          return () => {
-            supa.removeChannel(ch);
-          };
-        }, []);
         return (
           <>
             <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:890 }} />
@@ -23186,8 +23196,7 @@
                     onMouseEnter={e => { e.currentTarget.style.background='var(--c-off)'; e.currentTarget.style.color='var(--c-text)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background=''; e.currentTarget.style.color='var(--c-text2)'; }}>
                     <span style={{ width:20, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{item.icon}</span>
-                    <span style={{flex:1}}>{item.label}</span>
-                    {item.badge > 0 && <span style={{background:'#EF4444',color:'#fff',borderRadius:10,padding:'1px 6px',fontSize:9,fontWeight:700,marginLeft:4}}>{item.badge > 9 ? '9+' : item.badge}</span>}
+                    <span>{item.label}</span>
                   </div>
                 ))}
                 <div style={{ fontSize:9, color:'var(--c-text3, rgba(128,128,128,0.6))', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>Gestión</div>
@@ -23200,8 +23209,7 @@
                     onMouseEnter={e => { e.currentTarget.style.background='var(--c-off)'; e.currentTarget.style.color='var(--c-text)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background=''; e.currentTarget.style.color='var(--c-text2)'; }}>
                     <span style={{ width:20, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{item.icon}</span>
-                    <span style={{flex:1}}>{item.label}</span>
-                    {item.badge > 0 && <span style={{background:'#EF4444',color:'#fff',borderRadius:10,padding:'1px 6px',fontSize:9,fontWeight:700,marginLeft:4}}>{item.badge > 9 ? '9+' : item.badge}</span>}
+                    <span>{item.label}</span>
                   </div>
                 ))}
                 <div style={{ fontSize:9, color:'var(--c-text3, rgba(128,128,128,0.6))', padding:'10px 14px 3px', textTransform:'uppercase', letterSpacing:'0.8px' }}>Herramientas</div>
@@ -23210,14 +23218,13 @@
                   { id:'cot', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>, label: t.cotizar||'Cotizador IA' },
                   { id:'chat', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, label: t.ia||'Asistente IA' },
                   { id:'estadisticas', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, label: t.estadisticas||'Estadísticas' },
-                  { id:'notificaciones', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>, label:'Notificaciones', badge: notifs.filter(n=>!n.leida).length },
+                  { id:'notificaciones', icon:<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>, label: t.notificaciones||'Notificaciones' },
                 ].map(item => (
                   <div key={item.id} onClick={() => { onNav(item.id); onClose(); }} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', fontSize:12, color:'var(--c-text2)', cursor:'pointer' }}
                     onMouseEnter={e => { e.currentTarget.style.background='var(--c-off)'; e.currentTarget.style.color='var(--c-text)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background=''; e.currentTarget.style.color='var(--c-text2)'; }}>
                     <span style={{ width:20, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{item.icon}</span>
-                    <span style={{flex:1}}>{item.label}</span>
-                    {item.badge > 0 && <span style={{background:'#EF4444',color:'#fff',borderRadius:10,padding:'1px 6px',fontSize:9,fontWeight:700,marginLeft:4}}>{item.badge > 9 ? '9+' : item.badge}</span>}
+                    <span>{item.label}</span>
                   </div>
                 ))}</div>)}
               </div>
@@ -23253,24 +23260,6 @@
                     </div>
                   )}
                 </div>
-                {(()=>{
-                  const [soundOn, setSoundOn] = React.useState(localStorage.getItem('sgi_sound') !== 'off');
-                  return (
-                    <div onClick={() => {
-                      const next = !soundOn;
-                      setSoundOn(next);
-                      localStorage.setItem('sgi_sound', next ? 'on' : 'off');
-                    }} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 0', cursor:'pointer' }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--c-text2)' }}>
-                        <span style={{ display:'flex' }}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>{soundOn && <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>}</svg></span>
-                        <span>{soundOn ? 'Sonido activo' : 'Sonido desactivado'}</span>
-                      </div>
-                      <div style={{ width:30, height:16, borderRadius:8, background: soundOn ? '#22C55E' : 'var(--c-border)', position:'relative', flexShrink:0, transition:'background 0.2s' }}>
-                        <div style={{ width:12, height:12, borderRadius:'50%', background:'#fff', position:'absolute', top:2, left: soundOn ? 16 : 2, transition:'left 0.2s' }}/>
-                      </div>
-                    </div>
-                  );
-                })()}
                 <div onClick={() => { onNav('terms'); onClose(); }} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, color:'var(--c-text3)', cursor:'pointer', padding:'6px 0' }}>
                   <span style={{ display:'flex' }}><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
                   <span>Términos y Privacidad</span>
@@ -23290,11 +23279,7 @@
         const esEmpresa = isEmpresa(perfil);
         const storageKey = 'sgi_notif_prefs_' + (perfil || 'cliente');
         const [prefs, setPrefs] = React.useState(() => {
-          try {
-            const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
-            if (saved) return saved;
-          } catch {}
-          return { obra: true, pagos: true, mensajes: true, pedidos: true, ventas: true, stock: true };
+          try { return JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch { return {}; }
         });
         const [notifActivo, setNotifActivo] = React.useState(
           localStorage.getItem('sgi_notif_perm') === 'granted'
@@ -23346,24 +23331,9 @@
         );
       }
 
-      function NotificacionesScreen({ user, t, onNav, onSolicitarNotificaciones }) {
+      function NotificacionesScreen({ user, t, onNav }) {
         const [notifs, setNotifs] = useState([]);
         const [cargando, setCargando] = useState(true);
-        const [tab, setTab] = React.useState('historial');
-        const [notifPermission, setNotifPermission] = React.useState(localStorage.getItem('sgi_notif_perm') || 'default');
-        const storageKeyPrefs = 'sgi_notif_prefs_cliente';
-        const [prefsNotif, setPrefsNotif] = React.useState(() => {
-          try {
-            const saved = JSON.parse(localStorage.getItem(storageKeyPrefs) || 'null');
-            if (saved) return saved;
-          } catch {}
-          return { obra: true, pagos: true, mensajes: true };
-        });
-        const togglePref = (key) => {
-          const next = { ...prefsNotif, [key]: !prefsNotif[key] };
-          setPrefsNotif(next);
-          localStorage.setItem(storageKeyPrefs, JSON.stringify(next));
-        };
 
         useEffect(() => {
           if (!supa || !user?.id) { setCargando(false); return; }
@@ -23407,112 +23377,60 @@
         const sinLeer = notifs.filter((n) => !n.leida).length;
 
         return (
-          <div style={{ background: C.bg, minHeight:'100%', paddingBottom:24 }}>
-            <div style={{ background: C.navy, padding:'12px 14px', display:'flex', alignItems:'center', gap:10 }}>
+          <div>
+            <div style={{ background: C.navy, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
               {onNav && (
-                <button onClick={() => onNav('home')}
-                  style={{ background:'none', border:'none', color: C.t2, fontSize:13, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit', display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
-                  {t.volver ? `← ${t.volver}` : '← Volver'}
+                <button onClick={() => onNav("home")}
+                  style={{ background: "none", border: "none", color: C.t2, fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                  {t.volver ? `← ${t.volver}` : "← Volver"}
                 </button>
               )}
-              <div style={{ flex:1, color: C.onNavy, fontSize:15, fontWeight:700 }}>
-                🔔 {t.notificaciones || 'Notificaciones'}
+              <div style={{ flex: 1, color: C.onNavy, fontSize: 15, fontWeight: 700 }}>
+                🔔 {t.notificaciones || "Notificaciones"}
               </div>
-              {sinLeer > 0 && tab === 'historial' && (
+              {sinLeer > 0 && (
                 <button onClick={marcarTodasLeidas}
-                  style={{ background:'none', border:`.5px solid ${C.border2}`, borderRadius:6, padding:'4px 8px', fontSize:10, fontWeight:700, color: C.acc, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
-                  {t.marcarTodasLeidas || 'Marcar todas'}
+                  style={{ background: "none", border: `.5px solid ${C.border2}`, borderRadius: 6, padding: "4px 8px", fontSize: 10, fontWeight: 700, color: C.acc, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>
+                  {t.marcarTodasLeidas || "Marcar todas"}
                 </button>
               )}
             </div>
-
-            <div style={{ display:'flex', borderBottom:`.5px solid ${C.border}`, background: C.navy }}>
-              {['historial','preferencias'].map(t2 => (
-                <div key={t2} onClick={() => setTab(t2)}
-                  style={{ flex:1, padding:'10px 0', textAlign:'center', fontSize:13, fontWeight:600, cursor:'pointer', color: tab===t2 ? C.acc : C.t3, borderBottom: tab===t2 ? `2px solid ${C.acc}` : '2px solid transparent', transition:'all 0.2s' }}>
-                  {t2 === 'historial' ? `Historial${sinLeer > 0 ? ` (${sinLeer})` : ''}` : 'Preferencias'}
+            <div style={{ padding: "12px 14px" }}>
+              {cargando && (
+                <div style={{ padding: 16, color: C.t3, fontSize: 12, textAlign: "center" }}>
+                  {t.cargando || "Cargando..."}
+                </div>
+              )}
+              {!cargando && notifs.length === 0 && (
+                <div style={{ padding: "40px 16px", color: C.t3, fontSize: 12, textAlign: "center" }}>
+                  {t.sinNotificaciones || "Sin notificaciones nuevas"}
+                </div>
+              )}
+              {notifs.map((n) => (
+                <div key={n.id} onClick={() => { if (!n.leida) marcarLeida(n.id); }}
+                  style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 0", borderBottom: `.5px solid ${C.border}`, cursor: n.leida ? "default" : "pointer", background: n.leida ? "transparent" : "rgba(74,159,255,.04)" }}>
+                  <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.4 }}>{NOTIF_ICON[n.tipo] || "📩"}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2, gap: 6 }}>
+                      <div style={{ color: C.t1, fontSize: 13, fontWeight: 700, flex: 1 }}>{n.titulo}</div>
+                      {!n.leida && (
+                        <span style={{ background: "#2563EB", color: "#fff", borderRadius: 8, padding: "2px 6px", fontSize: 9, fontWeight: 700, flexShrink: 0 }}>
+                          {t.notifNueva || "Nueva"}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ color: C.t2, fontSize: 12, marginBottom: 4 }}>{n.mensaje}</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: C.t3, fontSize: 10 }}>{tiempoRelativo(n.created_at)}</span>
+                      <button onClick={(e) => { e.stopPropagation(); eliminarNotif(n.id); }}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: "0 2px", fontSize: 13, lineHeight: 1, color: "rgba(255,82,82,.7)" }}>
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-
-            {tab === 'historial' ? (
-              <div style={{ padding:'12px 14px' }}>
-                {cargando && <div style={{ padding:16, color: C.t3, fontSize:12, textAlign:'center' }}>{t.cargando || 'Cargando...'}</div>}
-                {!cargando && notifs.length === 0 && (
-                  <div style={{ padding:'60px 16px', textAlign:'center' }}>
-                    <div style={{ fontSize:40, marginBottom:12 }}>🔔</div>
-                    <div style={{ color: C.t1, fontSize:15, fontWeight:700, marginBottom:6 }}>Sin notificaciones</div>
-                    <div style={{ color: C.t3, fontSize:12 }}>Acá vas a ver las actualizaciones de tu obra</div>
-                  </div>
-                )}
-                {notifs.map((n) => (
-                  <div key={n.id} onClick={() => { if (!n.leida) marcarLeida(n.id); }}
-                    style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'12px 0', borderBottom:`.5px solid ${C.border}`, cursor: n.leida ? 'default' : 'pointer', background: n.leida ? 'transparent' : 'rgba(74,159,255,.04)', borderLeft: n.leida ? 'none' : `3px solid ${C.acc}`, paddingLeft: n.leida ? 0 : 10 }}>
-                    <span style={{ fontSize:18, flexShrink:0, lineHeight:1.4 }}>{NOTIF_ICON[n.tipo] || '📩'}</span>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:2, gap:6 }}>
-                        <div style={{ color: C.t1, fontSize:13, fontWeight: n.leida ? 500 : 700, flex:1 }}>{n.titulo}</div>
-                        {!n.leida && <span style={{ background:'#2563EB', color:'#fff', borderRadius:8, padding:'2px 6px', fontSize:9, fontWeight:700, flexShrink:0 }}>{t.notifNueva || 'Nueva'}</span>}
-                      </div>
-                      <div style={{ color: C.t2, fontSize:12, marginBottom:4 }}>{n.mensaje}</div>
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                        <span style={{ color: C.t3, fontSize:10 }}>{tiempoRelativo(n.created_at)}</span>
-                        <button onClick={(e) => { e.stopPropagation(); eliminarNotif(n.id); }}
-                          style={{ background:'none', border:'none', cursor:'pointer', padding:'0 2px', fontSize:13, lineHeight:1, color:'rgba(255,82,82,.7)' }}>🗑️</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ padding:'12px 14px' }}>
-                <div style={{ fontSize:10, color: C.t3, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:10 }}>Tipos de notificación</div>
-                {[
-                  { key:'obra', icon:'🏗', label:'Avance de obra', sub:'Cuando cambia el progreso' },
-                  { key:'pagos', icon:'💳', label:'Pagos y vencimientos', sub:'Recordatorios de cuotas' },
-                  { key:'mensajes', icon:'💬', label:'Mensajes', sub:'Respuestas del administrador' },
-                ].map(item => {
-                  const active = prefsNotif[item.key] !== false;
-                  return (
-                    <div key={item.key} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:`.5px solid ${C.border}` }}>
-                      <span style={{ fontSize:20, flexShrink:0 }}>{item.icon}</span>
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:13, fontWeight:500, color: C.t1 }}>{item.label}</div>
-                        <div style={{ fontSize:11, color: C.t3, marginTop:1 }}>{item.sub}</div>
-                      </div>
-                      <div onClick={() => togglePref(item.key)} style={{ width:36, height:20, borderRadius:10, background: active ? '#22C55E' : C.border, position:'relative', flexShrink:0, cursor:'pointer', transition:'background 0.2s' }}>
-                        <div style={{ width:16, height:16, borderRadius:'50%', background:'#fff', position:'absolute', top:2, left: active ? 18 : 2, transition:'left 0.2s' }}/>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                <div style={{ fontSize:10, color: C.t3, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:10, marginTop:16 }}>Notificaciones push</div>
-                <div style={{ background: notifPermission === 'granted' ? 'rgba(34,197,94,0.08)' : 'rgba(74,159,255,0.08)', border:`.5px solid ${notifPermission === 'granted' ? 'rgba(34,197,94,0.3)' : 'rgba(74,159,255,0.3)'}`, borderRadius:12, padding:'12px 14px', marginBottom:12 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <span style={{ fontSize:22 }}>{notifPermission === 'granted' ? '🔔' : '🔕'}</span>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:13, fontWeight:600, color: notifPermission === 'granted' ? '#22C55E' : C.acc }}>{notifPermission === 'granted' ? 'Push activo' : 'Push inactivo'}</div>
-                      <div style={{ fontSize:11, color: C.t3, marginTop:1 }}>{notifPermission === 'granted' ? 'Recibís notificaciones en tu celular' : 'Activá para recibir avisos en tu celular'}</div>
-                    </div>
-                    {notifPermission !== 'granted' && (
-                      <button onClick={() => { onSolicitarNotificaciones && onSolicitarNotificaciones(); setTab('preferencias'); }}
-                        style={{ background: C.acc, border:'none', borderRadius:8, padding:'7px 12px', fontSize:11, fontWeight:700, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
-                        Activar
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ background: C.card, borderRadius:10, border:`.5px solid ${C.border}`, padding:'12px 14px' }}>
-                  <div style={{ fontSize:11, color: C.t2, lineHeight:1.6 }}>
-                    💡 Para recibir notificaciones en tu celular, instalá la app:<br/>
-                    <strong>Chrome Android:</strong> menú ⋮ → Agregar a pantalla de inicio<br/>
-                    <strong>Safari iOS:</strong> botón compartir □↑ → Agregar a pantalla de inicio
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         );
       }
@@ -23661,27 +23579,6 @@
               <div style={{ borderTop:`1px solid ${C.border}`, marginTop:12, paddingTop:12 }}>
                 <div style={{ fontSize:11, fontWeight:700, color: C.t2, textTransform:'uppercase', letterSpacing:0.5, marginBottom:10 }}>Notificaciones</div>
                 <NotifPanel perfil={perfil} onSolicitarNotificaciones={onSolicitarNotificaciones} />
-              </div>
-              <div style={{ borderTop:`1px solid ${C.border}`, marginTop:12, paddingTop:12 }}>
-                <div style={{ fontSize:11, fontWeight:700, color: C.t2, textTransform:'uppercase', letterSpacing:0.5, marginBottom:10 }}>Preferencias</div>
-                {(()=>{
-                  const [soundOn, setSoundOn] = React.useState(localStorage.getItem('sgi_sound') !== 'off');
-                  return (
-                    <div onClick={() => {
-                      const next = !soundOn;
-                      setSoundOn(next);
-                      localStorage.setItem('sgi_sound', next ? 'on' : 'off');
-                    }} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:`.5px solid ${C.border}`, cursor:'pointer' }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                        <span style={{ fontSize:16 }}>{soundOn ? '🔊' : '🔇'}</span>
-                        <span style={{ fontSize:13, color: C.t1 }}>Sonido de teclas</span>
-                      </div>
-                      <div style={{ width:34, height:18, borderRadius:9, background: soundOn ? '#22C55E' : C.border, position:'relative', flexShrink:0, transition:'background 0.2s' }}>
-                        <div style={{ width:14, height:14, borderRadius:'50%', background:'#fff', position:'absolute', top:2, left: soundOn ? 18 : 2, transition:'left 0.2s' }}/>
-                      </div>
-                    </div>
-                  );
-                })()}
               </div>
               <div style={{borderTop:"1px solid rgba(255,255,255,.08)",marginTop:12,paddingTop:12}}>
                 <button onClick={()=>{onNav("terms");onClose();}}
@@ -24350,7 +24247,7 @@
             .catch(() => {});
         }, []);
         useEffect(() => {
-          if (!supa || !user?.id || isAdmin(efectivoRol)) { setNotifCount(0); return; }
+          if (!supa || !user?.id) { setNotifCount(0); return; }
           const fetchNotifCount = () => {
             supa
               .from("notificaciones")
@@ -24785,7 +24682,6 @@
 
         function playTap() {
           if (!soundOn) return;
-          if (localStorage.getItem('sgi_sound') === 'off') return;
           try {
             const ctx = new (
               window.AudioContext || window.webkitAudioContext
@@ -25539,7 +25435,7 @@
           ),
           empresamapa: <EmpresaMapaScreen user={user} onNav={handleNav} t={t} />,
           notificaciones: (
-            <NotificacionesScreen user={user} t={t} onNav={handleNav} onSolicitarNotificaciones={solicitarNotificaciones} />
+            <NotificacionesScreen user={user} t={t} onNav={handleNav} />
           ),
         };
 
@@ -25578,7 +25474,6 @@
               onSidebar={isAdmin(userRol) ? () => setShowSidebar(true) : undefined}
               onNotificaciones={() => handleNav("notificaciones")}
               notifCount={notifCount}
-              userRol={efectivoRol}
             />
             <div
               style={{
@@ -25852,7 +25747,7 @@
                         </div>
                       </div>
                       <button
-                        onClick={async () => { await solicitarNotificaciones(user); }}
+                        onClick={() => solicitarNotificaciones()}
                         style={{
                           background:
                             notifPermission === "granted" ? C.green : "#2563EB",
